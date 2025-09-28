@@ -1,0 +1,1191 @@
+openapi: 3.0.3
+info:
+  title: Accounting API
+  description: |
+    Bank-level secure REST API for universal accounting and financial operations.
+
+    ## Features
+    - JWT authentication with refresh tokens
+    - Role-based access control (6 roles)
+    - Multi-tenant architecture with organization isolation
+    - Comprehensive validation with express-validator
+    - Audit logging for all operations
+    - Stripe payment integration
+    - File upload capabilities
+    - Complex filtering and pagination
+
+    ## Security
+    This API implements bank-level security measures including:
+    - End-to-end encryption
+    - Rate limiting
+    - CORS protection
+    - Helmet security headers
+    - Input validation and sanitization
+    - Audit trail for all operations
+
+    ## Authentication
+    The API uses JWT tokens for authentication. Include the Bearer token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+
+    ## Rate Limiting
+    API requests are rate-limited. See response headers for current limits:
+    - `X-RateLimit-Limit`: Request limit per window
+    - `X-RateLimit-Remaining`: Remaining requests in window
+    - `X-RateLimit-Reset`: Time when window resets
+
+  version: 1.0.0
+  contact:
+    name: Lifestream Dynamics
+    email: support@lifestreamdynamics.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Development server
+  - url: https://api.accounting.com/api/v1
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from the /auth/login endpoint.
+
+        Example:
+        ```
+        Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        ```
+
+  parameters:
+    OrganizationId:
+      name: organizationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Organization UUID
+
+    PaginationLimit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Number of items to return
+
+    PaginationOffset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: Number of items to skip
+
+    SortBy:
+      name: sortBy
+      in: query
+      schema:
+        type: string
+      description: Field to sort by
+
+    SortOrder:
+      name: sortOrder
+      in: query
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: asc
+      description: Sort order
+
+    SearchQuery:
+      name: search
+      in: query
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+      description: Search query string
+
+  schemas:
+    # Common Types
+    UUID:
+      type: string
+      format: uuid
+      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      example: '550e8400-e29b-41d4-a716-446655440000'
+
+    Timestamp:
+      type: string
+      format: date-time
+      example: '2023-12-01T10:30:00.000Z'
+
+    Decimal:
+      type: string
+      pattern: '^\d+(\.\d{1,2})?$'
+      example: '123.45'
+      description: Decimal value with up to 2 decimal places
+
+    Email:
+      type: string
+      format: email
+      example: 'user@example.com'
+
+    PhoneNumber:
+      type: string
+      pattern: '^\+?[\d\s\-\(\)]+$'
+      example: '+1 (555) 123-4567'
+
+    # Enums
+    UserRole:
+      type: string
+      enum:
+        - SUPER_ADMIN
+        - ADMIN
+        - MANAGER
+        - ACCOUNTANT
+        - EMPLOYEE
+        - VIEWER
+      description: |
+        User roles with different permission levels:
+        - `SUPER_ADMIN`: Full system access across all organizations
+        - `ADMIN`: Organization admin with full access within organization
+        - `MANAGER`: Can manage customers, quotes, invoices, projects
+        - `ACCOUNTANT`: Focus on financial operations and reporting
+        - `EMPLOYEE`: Limited access to assigned projects and tasks
+        - `VIEWER`: Read-only access to organization data
+
+    OrganizationType:
+      type: string
+      enum:
+        - SINGLE_BUSINESS
+        - MULTI_LOCATION
+        - FRANCHISE
+        - ENTERPRISE
+
+    CustomerType:
+      type: string
+      enum:
+        - PERSON
+        - BUSINESS
+
+    CustomerTier:
+      type: string
+      enum:
+        - PERSONAL
+        - SMALL_BUSINESS
+        - ENTERPRISE
+        - EMERGENCY
+
+    CustomerStatus:
+      type: string
+      enum:
+        - PROSPECT
+        - ACTIVE
+        - INACTIVE
+        - SUSPENDED
+        - ARCHIVED
+
+    BusinessType:
+      type: string
+      enum:
+        - SOLE_PROPRIETORSHIP
+        - PARTNERSHIP
+        - CORPORATION
+        - LLC
+        - NON_PROFIT
+        - GOVERNMENT
+
+    QuoteStatus:
+      type: string
+      enum:
+        - DRAFT
+        - SENT
+        - VIEWED
+        - ACCEPTED
+        - REJECTED
+        - EXPIRED
+        - REVISED
+
+    InvoiceStatus:
+      type: string
+      enum:
+        - DRAFT
+        - SENT
+        - VIEWED
+        - PARTIALLY_PAID
+        - PAID
+        - OVERDUE
+        - CANCELLED
+        - REFUNDED
+
+    PaymentMethod:
+      type: string
+      enum:
+        - STRIPE_CARD
+        - INTERAC_ETRANSFER
+        - CASH
+        - BANK_TRANSFER
+        - CHEQUE
+        - OTHER
+
+    PaymentStatus:
+      type: string
+      enum:
+        - PENDING
+        - PROCESSING
+        - COMPLETED
+        - FAILED
+        - CANCELLED
+        - REFUNDED
+
+    ProjectStatus:
+      type: string
+      enum:
+        - QUOTED
+        - APPROVED
+        - SCHEDULED
+        - IN_PROGRESS
+        - ON_HOLD
+        - COMPLETED
+        - CANCELLED
+
+    # Address Schema
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+          maxLength: 255
+          example: '123 Main St'
+        city:
+          type: string
+          maxLength: 100
+          example: 'Toronto'
+        province:
+          type: string
+          maxLength: 50
+          example: 'ON'
+        postalCode:
+          type: string
+          pattern: '^[A-Z]\d[A-Z] \d[A-Z]\d$'
+          example: 'M5V 3A8'
+        country:
+          type: string
+          maxLength: 50
+          default: 'Canada'
+          example: 'Canada'
+      required:
+        - street
+        - city
+        - province
+        - postalCode
+
+    # Pagination Response
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          description: Total number of items
+        limit:
+          type: integer
+          minimum: 1
+          description: Number of items per page
+        offset:
+          type: integer
+          minimum: 0
+          description: Number of items skipped
+        hasNext:
+          type: boolean
+          description: Whether there are more items
+        hasPrev:
+          type: boolean
+          description: Whether there are previous items
+      required:
+        - total
+        - limit
+        - offset
+        - hasNext
+        - hasPrev
+
+    # Error Schemas
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+              code:
+                type: string
+      required:
+        - error
+        - message
+      example:
+        error: 'ValidationError'
+        message: 'Request validation failed'
+        details:
+          - field: 'email'
+            message: 'Invalid email format'
+            code: 'INVALID_EMAIL'
+
+    ValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              enum: ['ValidationError']
+          example:
+            error: 'ValidationError'
+            message: 'Request validation failed'
+            details:
+              - field: 'email'
+                message: 'Invalid email format'
+                code: 'INVALID_EMAIL'
+
+    AuthenticationError:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              enum: ['AuthenticationError']
+          example:
+            error: 'AuthenticationError'
+            message: 'Invalid credentials'
+
+    AuthorizationError:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              enum: ['AuthorizationError']
+          example:
+            error: 'AuthorizationError'
+            message: 'Insufficient permissions'
+
+    NotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              enum: ['NotFoundError']
+          example:
+            error: 'NotFoundError'
+            message: 'Resource not found'
+
+    ConflictError:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              enum: ['ConflictError']
+          example:
+            error: 'ConflictError'
+            message: 'Resource already exists'
+
+    RateLimitError:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              enum: ['RateLimitError']
+          example:
+            error: 'RateLimitError'
+            message: 'Too many requests from this IP, please try again later'
+
+    InternalServerError:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              enum: ['InternalServerError']
+          example:
+            error: 'InternalServerError'
+            message: 'An unexpected error occurred'
+
+    # Auth Schemas
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        password:
+          type: string
+          minLength: 8
+          example: 'SecurePassword123!'
+        organizationId:
+          $ref: '#/components/schemas/UUID'
+      required:
+        - email
+        - password
+        - organizationId
+
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token (expires in 15 minutes)
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+        refreshToken:
+          type: string
+          description: JWT refresh token (expires in 7 days)
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+        user:
+          $ref: '#/components/schemas/User'
+        organization:
+          $ref: '#/components/schemas/Organization'
+      required:
+        - accessToken
+        - refreshToken
+        - user
+        - organization
+
+    RefreshTokenRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          description: Valid refresh token
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+      required:
+        - refreshToken
+
+    RegisterRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: 'John'
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: 'Doe'
+        email:
+          $ref: '#/components/schemas/Email'
+        password:
+          type: string
+          minLength: 8
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]'
+          description: Must contain at least one uppercase letter, one lowercase letter, one number, and one special character
+          example: 'SecurePassword123!'
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        organizationName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: 'Acme Corporation'
+        organizationType:
+          $ref: '#/components/schemas/OrganizationType'
+      required:
+        - firstName
+        - lastName
+        - email
+        - password
+        - organizationName
+        - organizationType
+
+    # User Schema
+    User:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        firstName:
+          type: string
+          example: 'John'
+        lastName:
+          type: string
+          example: 'Doe'
+        email:
+          $ref: '#/components/schemas/Email'
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        role:
+          $ref: '#/components/schemas/UserRole'
+        isActive:
+          type: boolean
+          example: true
+        lastLogin:
+          $ref: '#/components/schemas/Timestamp'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        organizationId:
+          $ref: '#/components/schemas/UUID'
+      required:
+        - id
+        - firstName
+        - lastName
+        - email
+        - role
+        - isActive
+        - createdAt
+        - updatedAt
+        - organizationId
+
+    CreateUserRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: 'John'
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: 'Doe'
+        email:
+          $ref: '#/components/schemas/Email'
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        role:
+          $ref: '#/components/schemas/UserRole'
+        password:
+          type: string
+          minLength: 8
+          example: 'SecurePassword123!'
+      required:
+        - firstName
+        - lastName
+        - email
+        - role
+        - password
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: 'John'
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: 'Doe'
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        role:
+          $ref: '#/components/schemas/UserRole'
+        isActive:
+          type: boolean
+
+    # Organization Schema
+    Organization:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          example: 'Acme Corporation'
+        type:
+          $ref: '#/components/schemas/OrganizationType'
+        website:
+          type: string
+          format: uri
+          example: 'https://acme.com'
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        email:
+          $ref: '#/components/schemas/Email'
+        address:
+          $ref: '#/components/schemas/Address'
+        taxNumber:
+          type: string
+          example: '123456789'
+        isActive:
+          type: boolean
+          example: true
+        settings:
+          type: object
+          properties:
+            timezone:
+              type: string
+              example: 'America/Toronto'
+            currency:
+              type: string
+              example: 'CAD'
+            fiscalYearStart:
+              type: string
+              format: date
+              example: '2024-01-01'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+      required:
+        - id
+        - name
+        - type
+        - isActive
+        - createdAt
+        - updatedAt
+
+    CreateOrganizationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: 'Acme Corporation'
+        type:
+          $ref: '#/components/schemas/OrganizationType'
+        website:
+          type: string
+          format: uri
+          example: 'https://acme.com'
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        email:
+          $ref: '#/components/schemas/Email'
+        address:
+          $ref: '#/components/schemas/Address'
+        taxNumber:
+          type: string
+          example: '123456789'
+      required:
+        - name
+        - type
+
+    UpdateOrganizationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: 'Acme Corporation'
+        website:
+          type: string
+          format: uri
+          example: 'https://acme.com'
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        email:
+          $ref: '#/components/schemas/Email'
+        address:
+          $ref: '#/components/schemas/Address'
+        taxNumber:
+          type: string
+          example: '123456789'
+        isActive:
+          type: boolean
+
+    # Customer Schema
+    Customer:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        type:
+          $ref: '#/components/schemas/CustomerType'
+        tier:
+          $ref: '#/components/schemas/CustomerTier'
+        status:
+          $ref: '#/components/schemas/CustomerStatus'
+        firstName:
+          type: string
+          example: 'Jane'
+        lastName:
+          type: string
+          example: 'Smith'
+        companyName:
+          type: string
+          example: 'Smith Enterprises'
+        businessType:
+          $ref: '#/components/schemas/BusinessType'
+        email:
+          $ref: '#/components/schemas/Email'
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        address:
+          $ref: '#/components/schemas/Address'
+        billingAddress:
+          $ref: '#/components/schemas/Address'
+        taxNumber:
+          type: string
+          example: '987654321'
+        notes:
+          type: string
+          example: 'Preferred customer with expedited service'
+        totalRevenue:
+          $ref: '#/components/schemas/Decimal'
+        lastContactDate:
+          $ref: '#/components/schemas/Timestamp'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        organizationId:
+          $ref: '#/components/schemas/UUID'
+      required:
+        - id
+        - type
+        - tier
+        - status
+        - email
+        - createdAt
+        - updatedAt
+        - organizationId
+
+    CreateCustomerRequest:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/CustomerType'
+        tier:
+          $ref: '#/components/schemas/CustomerTier'
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: 'Jane'
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: 'Smith'
+        companyName:
+          type: string
+          maxLength: 100
+          example: 'Smith Enterprises'
+        businessType:
+          $ref: '#/components/schemas/BusinessType'
+        email:
+          $ref: '#/components/schemas/Email'
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        address:
+          $ref: '#/components/schemas/Address'
+        billingAddress:
+          $ref: '#/components/schemas/Address'
+        taxNumber:
+          type: string
+          example: '987654321'
+        notes:
+          type: string
+          maxLength: 1000
+          example: 'Preferred customer with expedited service'
+      required:
+        - type
+        - tier
+        - email
+
+    # Additional schemas for Quote, Invoice, Payment, Project, etc. would continue here...
+
+  responses:
+    BadRequest:
+      description: Bad request - validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthenticationError'
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthorizationError'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NotFoundError'
+
+    Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConflictError'
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RateLimitError'
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Request limit per window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Remaining requests in window
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+          description: Time when window resets (Unix timestamp)
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+
+# Health Check Endpoints
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Basic health check endpoint
+      security: []
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy]
+                  timestamp:
+                    $ref: '#/components/schemas/Timestamp'
+                  environment:
+                    type: string
+                    example: 'production'
+                  version:
+                    type: string
+                    example: '1.0.0'
+                required:
+                  - status
+                  - timestamp
+              example:
+                status: 'healthy'
+                timestamp: '2023-12-01T10:30:00.000Z'
+                environment: 'production'
+                version: '1.0.0'
+
+  /health/db:
+    get:
+      tags:
+        - Health
+      summary: Database health check
+      description: Check database connectivity
+      security: []
+      responses:
+        '200':
+          description: Database is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy]
+                  database:
+                    type: string
+                    enum: [connected]
+                required:
+                  - status
+                  - database
+              example:
+                status: 'healthy'
+                database: 'connected'
+        '503':
+          description: Database is unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [unhealthy]
+                  database:
+                    type: string
+                    enum: [disconnected]
+                  error:
+                    type: object
+                    description: Error details (only in development)
+                required:
+                  - status
+                  - database
+              example:
+                status: 'unhealthy'
+                database: 'disconnected'
+
+  # Authentication Endpoints
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: |
+        Authenticate user and return JWT tokens.
+
+        ## Security Requirements
+        - Valid email and password combination
+        - Valid organization ID
+        - Account must be active
+
+        ## Response
+        Returns both access token (15 min expiry) and refresh token (7 day expiry).
+
+        ## Rate Limiting
+        This endpoint has additional rate limiting (5 requests per minute per IP).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: 'admin@acme.com'
+              password: 'SecurePassword123!'
+              organizationId: '550e8400-e29b-41d4-a716-446655440000'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              example:
+                accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                user:
+                  id: '550e8400-e29b-41d4-a716-446655440001'
+                  firstName: 'John'
+                  lastName: 'Doe'
+                  email: 'admin@acme.com'
+                  role: 'ADMIN'
+                  isActive: true
+                  lastLogin: '2023-12-01T10:30:00.000Z'
+                  createdAt: '2023-01-01T00:00:00.000Z'
+                  updatedAt: '2023-12-01T10:30:00.000Z'
+                  organizationId: '550e8400-e29b-41d4-a716-446655440000'
+                organization:
+                  id: '550e8400-e29b-41d4-a716-446655440000'
+                  name: 'Acme Corporation'
+                  type: 'SINGLE_BUSINESS'
+                  isActive: true
+                  createdAt: '2023-01-01T00:00:00.000Z'
+                  updatedAt: '2023-01-01T00:00:00.000Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: |
+        Logout user and invalidate refresh token.
+
+        ## Security
+        - Requires valid JWT token
+        - Invalidates the provided refresh token
+        - Clears any server-side sessions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Logout successful'
+                required:
+                  - message
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: |
+        Use refresh token to obtain new access token.
+
+        ## Security
+        - Requires valid refresh token
+        - Returns new access token with 15 minute expiry
+        - Refresh token is single-use (new refresh token returned)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+            example:
+              refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+      responses:
+        '200':
+          description: Token refresh successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    description: New JWT access token
+                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                  refreshToken:
+                    type: string
+                    description: New refresh token
+                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                required:
+                  - accessToken
+                  - refreshToken
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register new user and organization
+      description: |
+        Register a new user account and create a new organization.
+
+        ## Features
+        - Creates new organization
+        - Creates admin user for the organization
+        - Sends welcome email (if email service configured)
+        - Returns login tokens immediately
+
+        ## Validation
+        - Email must be unique across the system
+        - Password must meet security requirements
+        - Organization name must be provided
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              firstName: 'John'
+              lastName: 'Doe'
+              email: 'john@newcompany.com'
+              password: 'SecurePassword123!'
+              phone: '+1 (555) 123-4567'
+              organizationName: 'New Company Inc'
+              organizationType: 'SINGLE_BUSINESS'
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Organizations
+    description: Organization management
+  - name: Customers
+    description: Customer and business contact management
+  - name: Quotes
+    description: Quote estimation and workflow management
+  - name: Appointments
+    description: Appointment scheduling with business logic
+  - name: Invoices
+    description: Invoice management with deposit handling
+  - name: Payments
+    description: Payment processing with Stripe integration
+  - name: Projects
+    description: Project management with time tracking
+
+# Note: This is a partial specification. Additional endpoints for Organizations, Customers,
+# Quotes, Appointments, Invoices, Payments, and Projects would be added following the same pattern.

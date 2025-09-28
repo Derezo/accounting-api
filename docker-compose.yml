@@ -1,0 +1,189 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: accounting-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: accounting_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d accounting_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - accounting-network
+    security_opt:
+      - no-new-privileges:true
+
+  # Redis Cache & Session Store
+  redis:
+    image: redis:7-alpine
+    container_name: accounting-redis
+    restart: unless-stopped
+    command: redis-server --requirepass redis_password --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "redis_password", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - accounting-network
+    security_opt:
+      - no-new-privileges:true
+
+  # Application API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: accounting-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      API_VERSION: v1
+      DATABASE_URL: postgresql://postgres:postgres_password@postgres:5432/accounting_db?schema=public
+      REDIS_URL: redis://:redis_password@redis:6379
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      JWT_REFRESH_SECRET: dev-refresh-secret-change-in-production
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      ENCRYPTION_KEY: dev-encryption-key-32-chars-long
+      API_KEY_SALT: dev-api-key-salt
+      RATE_LIMIT_WINDOW_MS: 900000
+      RATE_LIMIT_MAX_REQUESTS: 100
+      LOG_LEVEL: debug
+      DEFAULT_CURRENCY: CAD
+      DEFAULT_TAX_RATE: 0.13
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./logs:/app/logs
+    ports:
+      - "3000:3000"
+      - "9229:9229" # Debug port
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - accounting-network
+    security_opt:
+      - no-new-privileges:true
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: accounting-nginx
+    restart: unless-stopped
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - accounting-network
+    security_opt:
+      - no-new-privileges:true
+
+  # Security Scanner (Development only)
+  security-scanner:
+    image: owasp/zap2docker-stable
+    container_name: accounting-security-scanner
+    profiles: ["security"]
+    command: zap-baseline.py -t http://nginx -J zap-report.json
+    volumes:
+      - ./security-reports:/zap/wrk:rw
+    depends_on:
+      - nginx
+    networks:
+      - accounting-network
+
+  # API Documentation Server
+  docs:
+    build:
+      context: .
+      dockerfile: docker/docs.Dockerfile
+      target: production
+    container_name: accounting-docs
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - accounting-network
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.docs.rule=Host(`docs.localhost`)"
+      - "traefik.http.services.docs.loadbalancer.server.port=80"
+
+  # Database Backup Service
+  backup:
+    image: postgres:15-alpine
+    container_name: accounting-backup
+    profiles: ["backup"]
+    environment:
+      PGPASSWORD: postgres_password
+    volumes:
+      - ./backups:/backups
+      - ./docker/backup/backup.sh:/backup.sh:ro
+    command: sh /backup.sh
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - accounting-network
+
+networks:
+  accounting-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

@@ -1,0 +1,873 @@
+# Extended OpenAPI specification for remaining endpoints
+# This file contains the additional endpoint definitions for the Accounting API
+
+# Additional schemas for the remaining endpoints
+components:
+  schemas:
+    # Quote Schemas
+    Quote:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        customerId:
+          $ref: '#/components/schemas/UUID'
+        quoteNumber:
+          type: string
+          example: 'Q-2023-001'
+        status:
+          $ref: '#/components/schemas/QuoteStatus'
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                $ref: '#/components/schemas/UUID'
+              description:
+                type: string
+                example: 'Accounting consultation'
+              quantity:
+                $ref: '#/components/schemas/Decimal'
+              unitPrice:
+                $ref: '#/components/schemas/Decimal'
+              total:
+                $ref: '#/components/schemas/Decimal'
+            required:
+              - description
+              - quantity
+              - unitPrice
+              - total
+        subtotal:
+          $ref: '#/components/schemas/Decimal'
+        taxRate:
+          $ref: '#/components/schemas/Decimal'
+        taxAmount:
+          $ref: '#/components/schemas/Decimal'
+        total:
+          $ref: '#/components/schemas/Decimal'
+        validUntil:
+          $ref: '#/components/schemas/Timestamp'
+        notes:
+          type: string
+          example: 'Special pricing for bulk services'
+        terms:
+          type: string
+          example: 'Payment due within 30 days'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        organizationId:
+          $ref: '#/components/schemas/UUID'
+      required:
+        - id
+        - customerId
+        - quoteNumber
+        - status
+        - items
+        - subtotal
+        - total
+        - validUntil
+        - createdAt
+        - updatedAt
+        - organizationId
+
+    CreateQuoteRequest:
+      type: object
+      properties:
+        customerId:
+          $ref: '#/components/schemas/UUID'
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+                minLength: 1
+                maxLength: 255
+                example: 'Accounting consultation'
+              quantity:
+                $ref: '#/components/schemas/Decimal'
+              unitPrice:
+                $ref: '#/components/schemas/Decimal'
+            required:
+              - description
+              - quantity
+              - unitPrice
+          minItems: 1
+        taxRate:
+          $ref: '#/components/schemas/Decimal'
+        validUntil:
+          $ref: '#/components/schemas/Timestamp'
+        notes:
+          type: string
+          maxLength: 1000
+        terms:
+          type: string
+          maxLength: 1000
+      required:
+        - customerId
+        - items
+
+    # Appointment Schemas
+    Appointment:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        customerId:
+          $ref: '#/components/schemas/UUID'
+        title:
+          type: string
+          example: 'Initial consultation'
+        description:
+          type: string
+          example: 'Discuss accounting needs and setup'
+        startTime:
+          $ref: '#/components/schemas/Timestamp'
+        endTime:
+          $ref: '#/components/schemas/Timestamp'
+        location:
+          type: string
+          example: 'Office conference room'
+        isVirtual:
+          type: boolean
+          default: false
+        meetingLink:
+          type: string
+          format: uri
+          example: 'https://zoom.us/j/1234567890'
+        status:
+          type: string
+          enum:
+            - SCHEDULED
+            - CONFIRMED
+            - IN_PROGRESS
+            - COMPLETED
+            - CANCELLED
+            - NO_SHOW
+        reminders:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [EMAIL, SMS]
+              minutesBefore:
+                type: integer
+                minimum: 0
+                example: 60
+        notes:
+          type: string
+          example: 'Bring financial statements'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        organizationId:
+          $ref: '#/components/schemas/UUID'
+      required:
+        - id
+        - customerId
+        - title
+        - startTime
+        - endTime
+        - status
+        - createdAt
+        - updatedAt
+        - organizationId
+
+    CreateAppointmentRequest:
+      type: object
+      properties:
+        customerId:
+          $ref: '#/components/schemas/UUID'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: 'Initial consultation'
+        description:
+          type: string
+          maxLength: 1000
+          example: 'Discuss accounting needs and setup'
+        startTime:
+          $ref: '#/components/schemas/Timestamp'
+        endTime:
+          $ref: '#/components/schemas/Timestamp'
+        location:
+          type: string
+          maxLength: 255
+          example: 'Office conference room'
+        isVirtual:
+          type: boolean
+          default: false
+        meetingLink:
+          type: string
+          format: uri
+          example: 'https://zoom.us/j/1234567890'
+        reminders:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [EMAIL, SMS]
+              minutesBefore:
+                type: integer
+                minimum: 0
+                maximum: 10080
+                example: 60
+        notes:
+          type: string
+          maxLength: 1000
+          example: 'Bring financial statements'
+      required:
+        - customerId
+        - title
+        - startTime
+        - endTime
+
+    # Invoice Schemas
+    Invoice:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        customerId:
+          $ref: '#/components/schemas/UUID'
+        quoteId:
+          $ref: '#/components/schemas/UUID'
+        invoiceNumber:
+          type: string
+          example: 'INV-2023-001'
+        status:
+          $ref: '#/components/schemas/InvoiceStatus'
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                $ref: '#/components/schemas/UUID'
+              description:
+                type: string
+                example: 'Accounting consultation'
+              quantity:
+                $ref: '#/components/schemas/Decimal'
+              unitPrice:
+                $ref: '#/components/schemas/Decimal'
+              total:
+                $ref: '#/components/schemas/Decimal'
+            required:
+              - description
+              - quantity
+              - unitPrice
+              - total
+        subtotal:
+          $ref: '#/components/schemas/Decimal'
+        taxRate:
+          $ref: '#/components/schemas/Decimal'
+        taxAmount:
+          $ref: '#/components/schemas/Decimal'
+        total:
+          $ref: '#/components/schemas/Decimal'
+        amountPaid:
+          $ref: '#/components/schemas/Decimal'
+        amountDue:
+          $ref: '#/components/schemas/Decimal'
+        depositRequired:
+          $ref: '#/components/schemas/Decimal'
+        depositPaid:
+          $ref: '#/components/schemas/Decimal'
+        issueDate:
+          $ref: '#/components/schemas/Timestamp'
+        dueDate:
+          $ref: '#/components/schemas/Timestamp'
+        paidDate:
+          $ref: '#/components/schemas/Timestamp'
+        notes:
+          type: string
+          example: 'Payment due within 30 days'
+        terms:
+          type: string
+          example: 'Net 30 payment terms'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        organizationId:
+          $ref: '#/components/schemas/UUID'
+      required:
+        - id
+        - customerId
+        - invoiceNumber
+        - status
+        - items
+        - subtotal
+        - total
+        - amountDue
+        - issueDate
+        - dueDate
+        - createdAt
+        - updatedAt
+        - organizationId
+
+    CreateInvoiceRequest:
+      type: object
+      properties:
+        customerId:
+          $ref: '#/components/schemas/UUID'
+        quoteId:
+          $ref: '#/components/schemas/UUID'
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+                minLength: 1
+                maxLength: 255
+                example: 'Accounting consultation'
+              quantity:
+                $ref: '#/components/schemas/Decimal'
+              unitPrice:
+                $ref: '#/components/schemas/Decimal'
+            required:
+              - description
+              - quantity
+              - unitPrice
+          minItems: 1
+        taxRate:
+          $ref: '#/components/schemas/Decimal'
+        depositRequired:
+          $ref: '#/components/schemas/Decimal'
+        dueDate:
+          $ref: '#/components/schemas/Timestamp'
+        notes:
+          type: string
+          maxLength: 1000
+        terms:
+          type: string
+          maxLength: 1000
+      required:
+        - customerId
+        - items
+        - dueDate
+
+    # Payment Schemas
+    Payment:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        invoiceId:
+          $ref: '#/components/schemas/UUID'
+        customerId:
+          $ref: '#/components/schemas/UUID'
+        amount:
+          $ref: '#/components/schemas/Decimal'
+        method:
+          $ref: '#/components/schemas/PaymentMethod'
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
+        transactionId:
+          type: string
+          example: 'pi_1A2B3C4D5E6F7G8H'
+        stripePaymentIntentId:
+          type: string
+          example: 'pi_1A2B3C4D5E6F7G8H'
+        stripeChargeId:
+          type: string
+          example: 'ch_1A2B3C4D5E6F7G8H'
+        reference:
+          type: string
+          example: 'ETR-20231201-001'
+        notes:
+          type: string
+          example: 'Payment for services rendered'
+        processedAt:
+          $ref: '#/components/schemas/Timestamp'
+        failedAt:
+          $ref: '#/components/schemas/Timestamp'
+        failureReason:
+          type: string
+          example: 'Insufficient funds'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        organizationId:
+          $ref: '#/components/schemas/UUID'
+      required:
+        - id
+        - invoiceId
+        - customerId
+        - amount
+        - method
+        - status
+        - createdAt
+        - updatedAt
+        - organizationId
+
+    CreatePaymentRequest:
+      type: object
+      properties:
+        invoiceId:
+          $ref: '#/components/schemas/UUID'
+        amount:
+          $ref: '#/components/schemas/Decimal'
+        method:
+          $ref: '#/components/schemas/PaymentMethod'
+        reference:
+          type: string
+          maxLength: 100
+          example: 'ETR-20231201-001'
+        notes:
+          type: string
+          maxLength: 1000
+          example: 'Payment for services rendered'
+        # Stripe-specific fields
+        paymentMethodId:
+          type: string
+          description: Stripe payment method ID
+          example: 'pm_1A2B3C4D5E6F7G8H'
+        confirmationToken:
+          type: string
+          description: Stripe confirmation token
+          example: 'pi_1A2B3C4D5E6F7G8H_secret_xyz'
+      required:
+        - invoiceId
+        - amount
+        - method
+
+    # Project Schemas
+    Project:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        customerId:
+          $ref: '#/components/schemas/UUID'
+        quoteId:
+          $ref: '#/components/schemas/UUID'
+        invoiceId:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          example: 'Annual tax preparation'
+        description:
+          type: string
+          example: 'Complete tax return preparation for fiscal year 2023'
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        startDate:
+          $ref: '#/components/schemas/Timestamp'
+        endDate:
+          $ref: '#/components/schemas/Timestamp'
+        estimatedHours:
+          $ref: '#/components/schemas/Decimal'
+        actualHours:
+          $ref: '#/components/schemas/Decimal'
+        hourlyRate:
+          $ref: '#/components/schemas/Decimal'
+        budgetAmount:
+          $ref: '#/components/schemas/Decimal'
+        actualAmount:
+          $ref: '#/components/schemas/Decimal'
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 75
+          description: Project completion percentage
+        tags:
+          type: array
+          items:
+            type: string
+          example: ['tax', 'annual', 'urgent']
+        notes:
+          type: string
+          example: 'Client prefers communication via email'
+        milestones:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                $ref: '#/components/schemas/UUID'
+              title:
+                type: string
+                example: 'Document collection'
+              description:
+                type: string
+                example: 'Collect all necessary tax documents'
+              dueDate:
+                $ref: '#/components/schemas/Timestamp'
+              completed:
+                type: boolean
+                default: false
+              completedAt:
+                $ref: '#/components/schemas/Timestamp'
+        timeEntries:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                $ref: '#/components/schemas/UUID'
+              userId:
+                $ref: '#/components/schemas/UUID'
+              date:
+                type: string
+                format: date
+                example: '2023-12-01'
+              hours:
+                $ref: '#/components/schemas/Decimal'
+              description:
+                type: string
+                example: 'Reviewed financial statements'
+              billable:
+                type: boolean
+                default: true
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        organizationId:
+          $ref: '#/components/schemas/UUID'
+      required:
+        - id
+        - customerId
+        - name
+        - status
+        - estimatedHours
+        - hourlyRate
+        - budgetAmount
+        - progress
+        - createdAt
+        - updatedAt
+        - organizationId
+
+    CreateProjectRequest:
+      type: object
+      properties:
+        customerId:
+          $ref: '#/components/schemas/UUID'
+        quoteId:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: 'Annual tax preparation'
+        description:
+          type: string
+          maxLength: 1000
+          example: 'Complete tax return preparation for fiscal year 2023'
+        startDate:
+          $ref: '#/components/schemas/Timestamp'
+        endDate:
+          $ref: '#/components/schemas/Timestamp'
+        estimatedHours:
+          $ref: '#/components/schemas/Decimal'
+        hourlyRate:
+          $ref: '#/components/schemas/Decimal'
+        budgetAmount:
+          $ref: '#/components/schemas/Decimal'
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          maxItems: 10
+          example: ['tax', 'annual', 'urgent']
+        notes:
+          type: string
+          maxLength: 1000
+          example: 'Client prefers communication via email'
+        milestones:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                minLength: 1
+                maxLength: 100
+                example: 'Document collection'
+              description:
+                type: string
+                maxLength: 500
+                example: 'Collect all necessary tax documents'
+              dueDate:
+                $ref: '#/components/schemas/Timestamp'
+            required:
+              - title
+              - dueDate
+      required:
+        - customerId
+        - name
+        - estimatedHours
+        - hourlyRate
+        - budgetAmount
+
+# Additional paths for the extended endpoints
+paths:
+  # Organizations
+  /organizations:
+    get:
+      tags:
+        - Organizations
+      summary: List organizations
+      description: |
+        Get list of organizations. SUPER_ADMIN can see all organizations,
+        other users can only see their own organization.
+      parameters:
+        - $ref: '#/components/parameters/PaginationLimit'
+        - $ref: '#/components/parameters/PaginationOffset'
+        - $ref: '#/components/parameters/SortBy'
+        - $ref: '#/components/parameters/SortOrder'
+        - $ref: '#/components/parameters/SearchQuery'
+      responses:
+        '200':
+          description: Organizations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Organization'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                required:
+                  - data
+                  - meta
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Organizations
+      summary: Create organization
+      description: |
+        Create a new organization. Only SUPER_ADMIN can create organizations.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrganizationRequest'
+      responses:
+        '201':
+          description: Organization created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /organizations/{organizationId}:
+    get:
+      tags:
+        - Organizations
+      summary: Get organization
+      description: Get organization details by ID
+      parameters:
+        - $ref: '#/components/parameters/OrganizationId'
+      responses:
+        '200':
+          description: Organization retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Organizations
+      summary: Update organization
+      description: Update organization details
+      parameters:
+        - $ref: '#/components/parameters/OrganizationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrganizationRequest'
+      responses:
+        '200':
+          description: Organization updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Customers
+  /customers:
+    get:
+      tags:
+        - Customers
+      summary: List customers
+      description: |
+        Get list of customers with filtering and pagination options.
+
+        ## Filtering Options
+        - Search by name, email, or company
+        - Filter by customer type, tier, or status
+        - Sort by various fields
+      parameters:
+        - $ref: '#/components/parameters/PaginationLimit'
+        - $ref: '#/components/parameters/PaginationOffset'
+        - $ref: '#/components/parameters/SortBy'
+        - $ref: '#/components/parameters/SortOrder'
+        - $ref: '#/components/parameters/SearchQuery'
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/CustomerType'
+          description: Filter by customer type
+        - name: tier
+          in: query
+          schema:
+            $ref: '#/components/schemas/CustomerTier'
+          description: Filter by customer tier
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/CustomerStatus'
+          description: Filter by customer status
+      responses:
+        '200':
+          description: Customers retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Customer'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                required:
+                  - data
+                  - meta
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Customers
+      summary: Create customer
+      description: |
+        Create a new customer (person or business).
+
+        ## Validation Rules
+        - Email must be unique within organization
+        - Business customers require company name
+        - Person customers require first and last name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerRequest'
+            examples:
+              person:
+                summary: Person customer
+                value:
+                  type: 'PERSON'
+                  tier: 'PERSONAL'
+                  firstName: 'John'
+                  lastName: 'Doe'
+                  email: 'john.doe@example.com'
+                  phone: '+1 (555) 123-4567'
+                  address:
+                    street: '123 Main St'
+                    city: 'Toronto'
+                    province: 'ON'
+                    postalCode: 'M5V 3A8'
+                    country: 'Canada'
+              business:
+                summary: Business customer
+                value:
+                  type: 'BUSINESS'
+                  tier: 'SMALL_BUSINESS'
+                  companyName: 'Acme Corp'
+                  businessType: 'CORPORATION'
+                  email: 'contact@acme.com'
+                  phone: '+1 (555) 987-6543'
+                  address:
+                    street: '456 Business Ave'
+                    city: 'Vancouver'
+                    province: 'BC'
+                    postalCode: 'V6B 1A1'
+                    country: 'Canada'
+                  taxNumber: '123456789RT0001'
+      responses:
+        '201':
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ... Additional endpoint definitions would continue here for all remaining operations
+  # This includes all CRUD operations for customers, quotes, appointments, invoices, payments, and projects
+  # Each following the same detailed pattern with comprehensive descriptions, examples, and error responses

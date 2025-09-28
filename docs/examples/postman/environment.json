@@ -1,0 +1,90 @@
+{
+  "name": "Accounting API - Development",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "description": "Base URL for the API",
+      "enabled": true
+    },
+    {
+      "key": "testEmail",
+      "value": "admin@example.com",
+      "description": "Test user email for login",
+      "enabled": true
+    },
+    {
+      "key": "testPassword",
+      "value": "SecurePassword123!",
+      "description": "Test user password for login",
+      "enabled": true
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "JWT access token (auto-populated after login)",
+      "enabled": true
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "description": "JWT refresh token (auto-populated after login)",
+      "enabled": true
+    },
+    {
+      "key": "tokenExpiry",
+      "value": "",
+      "description": "Token expiry timestamp (auto-populated)",
+      "enabled": true
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "description": "Current user ID (auto-populated after login)",
+      "enabled": true
+    },
+    {
+      "key": "organizationId",
+      "value": "",
+      "description": "Current organization ID (auto-populated after login)",
+      "enabled": true
+    },
+    {
+      "key": "customerId",
+      "value": "",
+      "description": "Test customer ID (auto-populated after creating customer)",
+      "enabled": true
+    },
+    {
+      "key": "quoteId",
+      "value": "",
+      "description": "Test quote ID (auto-populated after creating quote)",
+      "enabled": true
+    },
+    {
+      "key": "invoiceId",
+      "value": "",
+      "description": "Test invoice ID (auto-populated after creating invoice)",
+      "enabled": true
+    },
+    {
+      "key": "projectId",
+      "value": "",
+      "description": "Test project ID (auto-populated after creating project)",
+      "enabled": true
+    },
+    {
+      "key": "paymentIntentId",
+      "value": "",
+      "description": "Stripe payment intent ID (auto-populated)",
+      "enabled": true
+    },
+    {
+      "key": "clientSecret",
+      "value": "",
+      "description": "Stripe client secret (auto-populated)",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

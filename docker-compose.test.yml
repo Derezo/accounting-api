@@ -1,0 +1,143 @@
+version: '3.8'
+
+services:
+  # Test database service
+  test-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: accounting_test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"
+    volumes:
+      - test_db_data:/var/lib/postgresql/data
+      - ./prisma/migrations:/docker-entrypoint-initdb.d/migrations:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d accounting_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for testing session management and caching
+  test-redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - test_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Test runner service
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://test_user:test_password@test-db:5432/accounting_test
+      TEST_DATABASE_URL: postgresql://test_user:test_password@test-db:5432/accounting_test
+      REDIS_URL: redis://test-redis:6379
+      JWT_SECRET: test-jwt-secret-for-integration-tests
+      ENCRYPTION_KEY: test-encryption-key-32-chars-integration
+      STRIPE_SECRET_KEY: sk_test_mock_key_for_testing
+      CI: true
+    depends_on:
+      test-db:
+        condition: service_healthy
+      test-redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - test_results:/app/test-results
+      - coverage_results:/app/coverage
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Waiting for services to be ready...' &&
+        sleep 5 &&
+        echo 'Generating Prisma client...' &&
+        npx prisma generate &&
+        echo 'Setting up test database...' &&
+        npx prisma db push --force-reset &&
+        echo 'Running integration tests...' &&
+        npm run test:integration:coverage
+      "
+
+  # Performance test service
+  performance-tester:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://test_user:test_password@test-db:5432/accounting_test
+      REDIS_URL: redis://test-redis:6379
+      JWT_SECRET: test-jwt-secret-for-performance-tests
+      ENCRYPTION_KEY: test-encryption-key-32-chars-performance
+      PERFORMANCE_TEST: true
+      TEST_TIMEOUT: 300000  # 5 minutes
+    depends_on:
+      test-db:
+        condition: service_healthy
+      test-redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - performance_results:/app/performance-results
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Setting up performance test environment...' &&
+        npx prisma generate &&
+        npx prisma db push --force-reset &&
+        echo 'Running performance tests...' &&
+        npm run test:integration -- --testPathPattern=performance-security --detectOpenHandles
+      "
+
+  # Security test service
+  security-tester:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://test_user:test_password@test-db:5432/accounting_test
+      REDIS_URL: redis://test-redis:6379
+      JWT_SECRET: test-jwt-secret-for-security-tests
+      ENCRYPTION_KEY: test-encryption-key-32-chars-security
+      SECURITY_TEST: true
+    depends_on:
+      test-db:
+        condition: service_healthy
+      test-redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - security_results:/app/security-results
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Setting up security test environment...' &&
+        npx prisma generate &&
+        npx prisma db push --force-reset &&
+        echo 'Running security tests...' &&
+        npm run test:integration -- --testPathPattern=performance-security --testNamePattern='security|authentication|authorization'
+      "
+
+volumes:
+  test_db_data:
+  test_redis_data:
+  test_results:
+  coverage_results:
+  performance_results:
+  security_results:

@@ -1,0 +1,837 @@
+{
+  "info": {
+    "name": "Accounting API",
+    "description": "Complete collection for testing the Accounting API endpoints",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-refresh token if needed",
+          "const accessToken = pm.environment.get('accessToken');",
+          "const tokenExpiry = pm.environment.get('tokenExpiry');",
+          "const refreshToken = pm.environment.get('refreshToken');",
+          "",
+          "if (!accessToken || (tokenExpiry && Date.now() > tokenExpiry)) {",
+          "  if (refreshToken) {",
+          "    // Attempt to refresh token",
+          "    pm.sendRequest({",
+          "      url: pm.environment.get('baseUrl') + '/auth/refresh',",
+          "      method: 'POST',",
+          "      header: {",
+          "        'Content-Type': 'application/json'",
+          "      },",
+          "      body: {",
+          "        mode: 'raw',",
+          "        raw: JSON.stringify({",
+          "          refreshToken: refreshToken",
+          "        })",
+          "      }",
+          "    }, (err, response) => {",
+          "      if (err) {",
+          "        console.log('Token refresh failed:', err);",
+          "        return;",
+          "      }",
+          "      ",
+          "      if (response.code === 200) {",
+          "        const data = response.json();",
+          "        pm.environment.set('accessToken', data.accessToken);",
+          "        pm.environment.set('refreshToken', data.refreshToken);",
+          "        pm.environment.set('tokenExpiry', Date.now() + (14 * 60 * 1000)); // 14 minutes",
+          "        console.log('Token refreshed successfully');",
+          "      } else {",
+          "        console.log('Token refresh failed:', response.json());",
+          "      }",
+          "    });",
+          "  }",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Checks",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Database Health Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/db",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "db"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set('accessToken', data.accessToken);",
+                  "  pm.environment.set('refreshToken', data.refreshToken);",
+                  "  pm.environment.set('tokenExpiry', Date.now() + (14 * 60 * 1000));",
+                  "  pm.environment.set('userId', data.user.id);",
+                  "  pm.environment.set('organizationId', data.organization.id);",
+                  "  console.log('Registration successful, tokens saved');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"phone\": \"+1 (555) 123-4567\",\n  \"organizationName\": \"Doe Accounting\",\n  \"organizationType\": \"SINGLE_BUSINESS\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set('accessToken', data.accessToken);",
+                  "  pm.environment.set('refreshToken', data.refreshToken);",
+                  "  pm.environment.set('tokenExpiry', Date.now() + (14 * 60 * 1000));",
+                  "  pm.environment.set('userId', data.user.id);",
+                  "  pm.environment.set('organizationId', data.organization.id);",
+                  "  console.log('Login successful, tokens saved');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"organizationId\": \"{{organizationId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set('accessToken', data.accessToken);",
+                  "  pm.environment.set('refreshToken', data.refreshToken);",
+                  "  pm.environment.set('tokenExpiry', Date.now() + (14 * 60 * 1000));",
+                  "  console.log('Token refreshed successfully');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Organizations",
+      "item": [
+        {
+          "name": "Get Organizations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/organizations?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Organization",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Organization",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Organization Name\",\n  \"website\": \"https://updated-company.com\",\n  \"phone\": \"+1 (555) 999-8888\",\n  \"email\": \"info@updated-company.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "Get Customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers?limit=20&offset=0&sortBy=createdAt&sortOrder=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Person Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set('customerId', data.id);",
+                  "  console.log('Customer created:', data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"PERSON\",\n  \"tier\": \"PERSONAL\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"phone\": \"+1 (555) 987-6543\",\n  \"address\": {\n    \"street\": \"456 Oak Ave\",\n    \"city\": \"Vancouver\",\n    \"province\": \"BC\",\n    \"postalCode\": \"V6B 1A1\",\n    \"country\": \"Canada\"\n  },\n  \"notes\": \"Preferred customer with expedited service\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers"]
+            }
+          }
+        },
+        {
+          "name": "Create Business Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"BUSINESS\",\n  \"tier\": \"SMALL_BUSINESS\",\n  \"companyName\": \"Tech Solutions Inc\",\n  \"businessType\": \"CORPORATION\",\n  \"email\": \"contact@techsolutions.com\",\n  \"phone\": \"+1 (555) 555-5555\",\n  \"address\": {\n    \"street\": \"789 Business Blvd\",\n    \"city\": \"Calgary\",\n    \"province\": \"AB\",\n    \"postalCode\": \"T2P 1J9\",\n    \"country\": \"Canada\"\n  },\n  \"taxNumber\": \"123456789RT0001\",\n  \"notes\": \"Growing tech company\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1 (555) 111-2222\",\n  \"tier\": \"ENTERPRISE\",\n  \"notes\": \"Updated customer information\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Quotes",
+      "item": [
+        {
+          "name": "Get Quotes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/quotes?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["quotes"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Quote",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set('quoteId', data.id);",
+                  "  console.log('Quote created:', data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"items\": [\n    {\n      \"description\": \"Accounting consultation\",\n      \"quantity\": \"2.00\",\n      \"unitPrice\": \"150.00\"\n    },\n    {\n      \"description\": \"Tax preparation\",\n      \"quantity\": \"1.00\",\n      \"unitPrice\": \"300.00\"\n    }\n  ],\n  \"taxRate\": \"0.13\",\n  \"validUntil\": \"2024-01-31T23:59:59.000Z\",\n  \"notes\": \"Special pricing for new customer\",\n  \"terms\": \"Payment due within 30 days of acceptance\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/quotes",
+              "host": ["{{baseUrl}}"],
+              "path": ["quotes"]
+            }
+          }
+        },
+        {
+          "name": "Get Quote",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/quotes/{{quoteId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["quotes", "{{quoteId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Quote Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SENT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/quotes/{{quoteId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["quotes", "{{quoteId}}", "status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invoices",
+      "item": [
+        {
+          "name": "Get Invoices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/invoices?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Invoice",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set('invoiceId', data.id);",
+                  "  console.log('Invoice created:', data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"items\": [\n    {\n      \"description\": \"Consulting Services - December 2023\",\n      \"quantity\": \"10.00\",\n      \"unitPrice\": \"100.00\"\n    }\n  ],\n  \"taxRate\": \"0.13\",\n  \"depositRequired\": \"200.00\",\n  \"dueDate\": \"2024-01-31T23:59:59.000Z\",\n  \"notes\": \"Payment due within 30 days\",\n  \"terms\": \"Net 30 payment terms\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/invoices",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices"]
+            }
+          }
+        },
+        {
+          "name": "Create Invoice from Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quoteId\": \"{{quoteId}}\",\n  \"depositRequired\": \"150.00\",\n  \"dueDate\": \"2024-02-15T23:59:59.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/invoices/from-quote",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices", "from-quote"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Get Payments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Payment Intent (Stripe)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set('paymentIntentId', data.stripePaymentIntentId);",
+                  "  pm.environment.set('clientSecret', data.clientSecret);",
+                  "  console.log('Payment intent created:', data.stripePaymentIntentId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceId\": \"{{invoiceId}}\",\n  \"amount\": \"500.00\",\n  \"method\": \"STRIPE_CARD\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments/intent",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "intent"]
+            }
+          }
+        },
+        {
+          "name": "Record Manual Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceId\": \"{{invoiceId}}\",\n  \"amount\": \"200.00\",\n  \"method\": \"INTERAC_ETRANSFER\",\n  \"reference\": \"ETR-20231201-001\",\n  \"notes\": \"E-transfer received from customer\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Get Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.environment.set('projectId', data.id);",
+                  "  console.log('Project created:', data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"name\": \"Annual Tax Preparation 2023\",\n  \"description\": \"Complete tax return preparation for fiscal year 2023\",\n  \"startDate\": \"2024-01-01T09:00:00.000Z\",\n  \"endDate\": \"2024-03-31T17:00:00.000Z\",\n  \"estimatedHours\": \"40.00\",\n  \"hourlyRate\": \"125.00\",\n  \"budgetAmount\": \"5000.00\",\n  \"tags\": [\"tax\", \"annual\", \"2023\"],\n  \"notes\": \"Client prefers email communication\",\n  \"milestones\": [\n    {\n      \"title\": \"Document Collection\",\n      \"description\": \"Collect all necessary tax documents from client\",\n      \"dueDate\": \"2024-01-15T17:00:00.000Z\"\n    },\n    {\n      \"title\": \"Initial Review\",\n      \"description\": \"Review and organize collected documents\",\n      \"dueDate\": \"2024-02-01T17:00:00.000Z\"\n    },\n    {\n      \"title\": \"Tax Return Preparation\",\n      \"description\": \"Prepare complete tax return\",\n      \"dueDate\": \"2024-03-15T17:00:00.000Z\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects"]
+            }
+          }
+        },
+        {
+          "name": "Add Time Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2024-01-10\",\n  \"hours\": \"3.50\",\n  \"description\": \"Reviewed client's financial statements and identified missing documents\",\n  \"billable\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/time-entries",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "time-entries"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Appointments",
+      "item": [
+        {
+          "name": "Get Appointments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/appointments?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"title\": \"Initial Consultation\",\n  \"description\": \"Discuss accounting needs and project scope\",\n  \"startTime\": \"2024-01-15T10:00:00.000Z\",\n  \"endTime\": \"2024-01-15T11:00:00.000Z\",\n  \"location\": \"Conference Room A\",\n  \"isVirtual\": false,\n  \"reminders\": [\n    {\n      \"type\": \"EMAIL\",\n      \"minutesBefore\": 1440\n    },\n    {\n      \"type\": \"EMAIL\",\n      \"minutesBefore\": 60\n    }\n  ],\n  \"notes\": \"Bring financial statements for the last 2 years\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

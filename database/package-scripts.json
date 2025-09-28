@@ -1,0 +1,176 @@
+{
+  "name": "Database Management Scripts",
+  "description": "Add these scripts to your package.json for easy database management",
+  "scripts": {
+    "comment": "=== Core Database Operations ===",
+    "db:setup": "ts-node database/scripts/seed-manager.ts all --environment development --clean --demo",
+    "db:setup:test": "cross-env NODE_ENV=testing ts-node database/scripts/seed-manager.ts all --clean",
+    "db:setup:staging": "ts-node database/scripts/seed-manager.ts all --environment staging --demo",
+    "db:reset": "ts-node database/scripts/migrate-manager.ts reset --force && npm run db:setup",
+    "db:reset:test": "cross-env NODE_ENV=testing npm run db:reset",
+
+    "comment2": "=== Migration Management ===",
+    "db:migrate": "ts-node database/scripts/migrate-manager.ts deploy",
+    "db:migrate:dev": "ts-node database/scripts/migrate-manager.ts deploy --environment development",
+    "db:migrate:test": "cross-env NODE_ENV=testing ts-node database/scripts/migrate-manager.ts deploy",
+    "db:migrate:staging": "ts-node database/scripts/migrate-manager.ts deploy --environment staging --backup",
+    "db:migrate:prod": "ts-node database/scripts/migrate-manager.ts deploy --environment production --backup --force",
+    "db:migrate:create": "ts-node database/scripts/migrate-manager.ts create",
+    "db:migrate:rollback": "ts-node database/scripts/migrate-manager.ts rollback",
+    "db:migrate:status": "ts-node database/scripts/migrate-manager.ts status",
+    "db:migrate:preview": "ts-node database/scripts/migrate-manager.ts deploy --dry-run",
+
+    "comment3": "=== Data Seeding ===",
+    "db:seed": "ts-node database/scripts/seed-manager.ts all --environment development",
+    "db:seed:ref": "ts-node database/scripts/seed-manager.ts all --environment development --clean",
+    "db:seed:demo": "ts-node database/scripts/seed-manager.ts all --environment development --demo",
+    "db:seed:org": "ts-node database/scripts/seed-manager.ts org",
+    "db:seed:clean": "ts-node database/scripts/seed-manager.ts clean",
+    "db:seed:validate": "ts-node database/scripts/seed-manager.ts validate",
+
+    "comment4": "=== Backup & Restore ===",
+    "db:backup": "ts-node database/scripts/backup-manager-cli.ts create --compress --description 'Manual backup'",
+    "db:backup:prod": "ts-node database/scripts/backup-manager-cli.ts create --environment production --compress --tags 'production,manual'",
+    "db:backup:auto": "ts-node database/scripts/backup-manager-cli.ts create --compress --tags 'automated,daily'",
+    "db:backup:encrypted": "ts-node database/scripts/backup-manager-cli.ts create --compress --encrypt",
+    "db:backup:list": "ts-node database/scripts/backup-manager-cli.ts list",
+    "db:backup:cleanup": "ts-node database/scripts/backup-manager-cli.ts cleanup --retention 30",
+    "db:restore": "ts-node database/scripts/backup-manager-cli.ts restore",
+    "db:restore:validate": "ts-node database/scripts/backup-manager-cli.ts restore --validate-only",
+
+    "comment5": "=== Health & Maintenance ===",
+    "db:health": "ts-node database/scripts/maintenance-manager.ts health",
+    "db:health:prod": "ts-node database/scripts/maintenance-manager.ts health --environment production",
+    "db:health:json": "ts-node database/scripts/maintenance-manager.ts health --format json",
+    "db:maintenance": "ts-node database/scripts/maintenance-manager.ts auto",
+    "db:maintenance:plan": "ts-node database/scripts/maintenance-manager.ts plan",
+    "db:optimize": "ts-node database/scripts/maintenance-manager.ts optimize",
+
+    "comment6": "=== Performance Monitoring ===",
+    "db:performance": "ts-node database/scripts/performance-cli.ts report",
+    "db:performance:json": "ts-node database/scripts/performance-cli.ts report --format json",
+    "db:performance:export": "ts-node database/scripts/performance-cli.ts export --output performance-data.json",
+    "db:monitor": "ts-node database/scripts/performance-cli.ts monitor --interval 60",
+    "db:monitor:short": "ts-node database/scripts/performance-cli.ts monitor --interval 30 --duration 1800",
+    "db:analyze": "ts-node database/scripts/performance-cli.ts analyze",
+    "db:recommendations": "ts-node database/scripts/performance-cli.ts recommendations",
+    "db:load-test": "ts-node database/scripts/performance-cli.ts load-test --queries 100 --concurrency 5",
+
+    "comment7": "=== Security & Compliance ===",
+    "db:compliance": "ts-node database/scripts/compliance-cli.ts compliance-report",
+    "db:compliance:org": "ts-node database/scripts/compliance-cli.ts compliance-report --org",
+    "db:encrypt": "ts-node database/scripts/compliance-cli.ts validate-encryption",
+    "db:encrypt:fix": "ts-node database/scripts/compliance-cli.ts validate-encryption --fix",
+    "db:encrypt:rotate": "ts-node database/scripts/compliance-cli.ts rotate-key",
+    "db:gdpr:access": "ts-node database/scripts/compliance-cli.ts gdpr-access",
+    "db:gdpr:erasure": "ts-node database/scripts/compliance-cli.ts gdpr-erasure",
+    "db:gdpr:erasure:preview": "ts-node database/scripts/compliance-cli.ts gdpr-erasure --dry-run",
+    "db:anonymize": "ts-node database/scripts/compliance-cli.ts anonymize --preserve-structure --dry-run",
+    "db:data-lineage": "ts-node database/scripts/compliance-cli.ts data-lineage",
+
+    "comment8": "=== CI/CD Integration ===",
+    "db:ci": "ts-node database/scripts/ci-cd-manager.ts ci-pipeline --generate-report",
+    "db:ci:test": "cross-env NODE_ENV=testing ts-node database/scripts/ci-cd-manager.ts ci-pipeline",
+    "db:ci:staging": "ts-node database/scripts/ci-cd-manager.ts ci-pipeline --environment staging",
+    "db:ci:prod": "ts-node database/scripts/ci-cd-manager.ts ci-pipeline --environment production",
+    "db:deploy": "ts-node database/scripts/ci-cd-manager.ts deploy",
+    "db:deploy:staging": "ts-node database/scripts/ci-cd-manager.ts deploy --environment staging --backup --migrations --health-check",
+    "db:deploy:prod": "ts-node database/scripts/ci-cd-manager.ts deploy --environment production --backup --migrations --health-check",
+    "db:setup:env": "ts-node database/scripts/ci-cd-manager.ts setup",
+    "db:promote": "ts-node database/scripts/ci-cd-manager.ts promote",
+    "db:promote:preview": "ts-node database/scripts/ci-cd-manager.ts promote --dry-run",
+    "db:report:deployment": "ts-node database/scripts/ci-cd-manager.ts report",
+
+    "comment9": "=== Development Helpers ===",
+    "db:logs": "tail -f database/logs/database-development.log",
+    "db:logs:performance": "tail -f database/logs/performance.log",
+    "db:logs:maintenance": "tail -f database/logs/maintenance.log",
+    "db:logs:compliance": "tail -f database/logs/compliance.log",
+    "db:connect": "prisma studio",
+    "db:validate": "ts-node database/scripts/seed-manager.ts validate",
+
+    "comment10": "=== Environment-Specific Shortcuts ===",
+    "db:dev": "npm run db:setup && npm run db:health",
+    "db:test": "cross-env NODE_ENV=testing npm run db:setup:test",
+    "db:staging": "npm run db:ci:staging && npm run db:deploy:staging",
+    "db:prod": "npm run db:ci:prod && npm run db:deploy:prod",
+
+    "comment11": "=== Composite Operations ===",
+    "db:full-reset": "npm run db:reset && npm run db:health && npm run db:performance",
+    "db:safe-deploy": "npm run db:backup && npm run db:migrate && npm run db:health",
+    "db:morning-check": "npm run db:health && npm run db:performance && npm run db:backup:list",
+    "db:weekly-maintenance": "npm run db:backup && npm run db:maintenance && npm run db:backup:cleanup",
+
+    "comment12": "=== Organization Management ===",
+    "db:org:create": "ts-node database/scripts/organization-manager.ts create",
+    "db:org:seed": "ts-node database/scripts/seed-manager.ts org",
+    "db:org:export": "ts-node database/scripts/backup-manager-cli.ts export",
+    "db:org:anonymize": "ts-node database/scripts/compliance-cli.ts anonymize",
+
+    "comment13": "=== Emergency Operations ===",
+    "db:emergency:backup": "ts-node database/scripts/backup-manager-cli.ts create --compress --description 'Emergency backup' --tags 'emergency'",
+    "db:emergency:health": "ts-node database/scripts/maintenance-manager.ts health --format json",
+    "db:emergency:rollback": "ts-node database/scripts/migrate-manager.ts rollback --force",
+    "db:emergency:restore": "ts-node database/scripts/backup-manager-cli.ts restore --force"
+  },
+
+  "devDependencies_note": "Add these to your package.json devDependencies if not already present",
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+
+  "usage_examples": {
+    "daily_workflow": [
+      "npm run db:morning-check",
+      "npm run db:dev  # for development work",
+      "npm run db:test  # before running tests"
+    ],
+    "feature_development": [
+      "npm run db:migrate:create",
+      "# edit migration files",
+      "npm run db:migrate:preview",
+      "npm run db:migrate",
+      "npm run db:health"
+    ],
+    "deployment_workflow": [
+      "npm run db:ci:staging",
+      "npm run db:deploy:staging",
+      "npm run db:ci:prod",
+      "npm run db:deploy:prod"
+    ],
+    "maintenance": [
+      "npm run db:weekly-maintenance",
+      "npm run db:performance",
+      "npm run db:compliance"
+    ],
+    "emergency": [
+      "npm run db:emergency:backup",
+      "npm run db:emergency:health",
+      "npm run db:emergency:restore <filename>"
+    ]
+  },
+
+  "environment_setup": {
+    "development": [
+      "npm run db:setup",
+      "npm run db:monitor"
+    ],
+    "testing": [
+      "npm run db:test",
+      "npm run db:health"
+    ],
+    "staging": [
+      "npm run db:setup:staging",
+      "npm run db:health",
+      "npm run db:anonymize"
+    ],
+    "production": [
+      "npm run db:ci:prod",
+      "npm run db:deploy:prod",
+      "npm run db:backup",
+      "npm run db:compliance"
+    ]
+  }
+}
