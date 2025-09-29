@@ -5,23 +5,24 @@
  * encryption services in a production environment.
  */
 
-import { PrismaClient } from '@prisma/client';
-import { Redis } from 'redis';
+
+import { createClient, RedisClientType } from 'redis';
 import EncryptionService, { EncryptionServiceConfig } from '../services/encryption.service';
 import { logger } from '../utils/logger';
 
+import { prisma } from '../config/database';
 // Example initialization in your main application
 export async function initializeEncryptionInApp() {
   // Initialize database connection
-  const prisma = new PrismaClient();
+  
 
   // Initialize Redis for caching (optional but recommended)
-  const redis = new Redis({
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD,
-    retryDelayOnFailover: 100,
-    maxRetriesPerRequest: 3
+  const redis = createClient({
+    socket: {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+    },
+    password: process.env.REDIS_PASSWORD
   });
 
   // Configure encryption service
@@ -47,7 +48,7 @@ export async function initializeEncryptionInApp() {
   const encryptionService = new EncryptionService(
     prisma,
     encryptionConfig,
-    redis
+    redis as RedisClientType
   );
 
   try {
@@ -76,7 +77,7 @@ export async function initializeEncryptionInApp() {
 
 // Example usage in API routes
 export async function exampleApiUsage() {
-  const prisma = new PrismaClient();
+  
 
   // The encryption middleware is automatically applied to Prisma,
   // so sensitive data will be encrypted/decrypted transparently
@@ -311,7 +312,7 @@ export async function handleSecurityIncident() {
   const encryptionService = await initializeEncryptionInApp();
 
   try {
-    logger.critical('Security incident detected - initiating emergency procedures');
+    logger.error('Security incident detected - initiating emergency procedures');
 
     // Perform emergency lockdown
     await encryptionService.emergencyLockdown('Security incident detected: unauthorized access attempt');
@@ -341,14 +342,14 @@ export async function handleSecurityIncident() {
     const { encryptionMonitoringService } = await import('../services/encryption-monitoring.service');
     const dashboard = await encryptionMonitoringService.getMonitoringDashboard();
 
-    logger.critical('Security incident response completed', {
+    logger.error('Security incident response completed', {
       systemHealth: dashboard.systemHealth,
       alertCount: dashboard.recentAlerts.length,
       criticalAlerts: dashboard.recentAlerts.filter(a => a.severity === 'critical').length
     });
 
   } catch (error) {
-    logger.critical('Emergency security procedures failed', {
+    logger.error('Emergency security procedures failed', {
       error: error instanceof Error ? error.message : 'Unknown error'
     });
     throw error;

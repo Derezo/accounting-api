@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{invoice.invoiceNumber}}</title>
+    <style>
+        {{{styles}}}
+
+        /* Modern invoice styles */
+        body {
+            font-family: {{branding.fontFamily}}, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: {{branding.textColor}};
+        }
+
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+
+        .invoice-header {
+            background: linear-gradient(135deg, {{branding.primaryColor}} 0%, {{branding.accentColor}} 100%);
+            color: white;
+            padding: 30px 40px;
+            position: relative;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .company-info {
+            flex: 1;
+        }
+
+        .company-logo {
+            max-height: 60px;
+            max-width: 180px;
+            margin-bottom: 15px;
+            filter: brightness(0) invert(1);
+        }
+
+        .company-name {
+            font-size: 24px;
+            font-weight: 300;
+            margin-bottom: 8px;
+        }
+
+        .company-details {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .invoice-details {
+            text-align: right;
+            flex: 1;
+        }
+
+        .invoice-number {
+            font-size: 32px;
+            font-weight: 100;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .invoice-meta {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content-section {
+            padding: 40px;
+        }
+
+        .billing-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .billing-card {
+            background: #f8f9fc;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid {{branding.accentColor}};
+        }
+
+        .billing-title {
+            font-weight: 600;
+            color: {{branding.primaryColor}};
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .customer-details {
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .items-section {
+            margin-bottom: 40px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+        }
+
+        .items-table th {
+            background: {{branding.primaryColor}};
+            color: white;
+            padding: 16px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .items-table td {
+            padding: 16px;
+            border-bottom: 1px solid #eef2f7;
+            font-size: 15px;
+        }
+
+        .items-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .items-table tr:hover {
+            background-color: #f8f9fc;
+        }
+
+        .amount-column {
+            text-align: right;
+            font-weight: 500;
+        }
+
+        .totals-section {
+            background: #f8f9fc;
+            padding: 25px;
+            border-radius: 8px;
+            margin-left: auto;
+            width: 300px;
+        }
+
+        .totals-table {
+            width: 100%;
+        }
+
+        .totals-table td {
+            padding: 12px 0;
+            border-bottom: 1px solid #e1e8ed;
+            font-size: 15px;
+        }
+
+        .totals-table .total-row td {
+            padding: 16px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: {{branding.primaryColor}};
+            border-bottom: none;
+            border-top: 2px solid {{branding.primaryColor}};
+        }
+
+        .info-card {
+            background: #f8f9fc;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid {{branding.accentColor}};
+            margin-bottom: 25px;
+        }
+
+        .info-card h4 {
+            margin: 0 0 12px 0;
+            color: {{branding.primaryColor}};
+            font-weight: 600;
+        }
+
+        .footer {
+            background: #f1f5f9;
+            padding: 25px 40px;
+            text-align: center;
+            font-size: 13px;
+            color: {{branding.secondaryColor}};
+            border-top: 1px solid #e1e8ed;
+        }
+
+        .tax-exempt {
+            background: #fef3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Header Section -->
+        <div class="invoice-header">
+            <div class="header-content">
+                <div class="company-info">
+                    {{#if branding.showLogo}}
+                        {{#if branding.logoUrl}}
+                            <img src="{{branding.logoUrl}}" alt="{{organization.name}}" class="company-logo">
+                        {{/if}}
+                    {{/if}}
+
+                    {{#if branding.showOrgName}}
+                        <div class="company-name">{{organization.name}}</div>
+                    {{/if}}
+
+                    <div class="company-details">
+                        {{#if organization.legalName}}
+                            <div>{{organization.legalName}}</div>
+                        {{/if}}
+                        <div>{{organization.email}}</div>
+                        <div>{{organization.phone}}</div>
+                        {{#if organization.website}}
+                            <div>{{organization.website}}</div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                <div class="invoice-details">
+                    <div class="invoice-number">Invoice</div>
+                    <div style="font-size: 20px; font-weight: 500;">{{invoice.invoiceNumber}}</div>
+                    <div class="invoice-meta" style="margin-top: 15px;">
+                        <div><strong>Issue Date:</strong> {{formatDate invoice.issueDate}}</div>
+                        <div><strong>Due Date:</strong> {{formatDate invoice.dueDate}}</div>
+                        {{#if invoice.quote}}
+                            <div><strong>Quote:</strong> {{invoice.quote.quoteNumber}}</div>
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <!-- Billing Information -->
+            <div class="billing-section">
+                <div class="billing-card">
+                    <div class="billing-title">Bill To</div>
+                    <div class="customer-details">
+                        {{#if customer.business}}
+                            <div><strong>{{customer.business.legalName}}</strong></div>
+                            {{#if customer.business.tradeName}}
+                                <div style="color: {{../branding.secondaryColor}};">{{customer.business.tradeName}}</div>
+                            {{/if}}
+                        {{else}}
+                            <div><strong>{{customer.person.firstName}} {{customer.person.lastName}}</strong></div>
+                        {{/if}}
+
+                        {{#if customer.person.email}}
+                            <div style="margin-top: 8px;">{{customer.person.email}}</div>
+                        {{/if}}
+                        {{#if customer.person.phone}}
+                            <div>{{customer.person.phone}}</div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                <div class="billing-card">
+                    <div class="billing-title">Payment Details</div>
+                    <div>
+                        <div style="font-size: 18px; font-weight: 600; color: {{branding.primaryColor}};">
+                            {{invoice.currency}} {{formatCurrency invoice.total}}
+                        </div>
+                        {{#if invoice.depositRequired}}
+                            <div style="margin-top: 8px;">Deposit: {{formatCurrency invoice.depositRequired}}</div>
+                        {{/if}}
+                        <div style="margin-top: 8px;">
+                            <span style="display: inline-block; padding: 4px 12px; background: {{branding.accentColor}}; color: white; border-radius: 4px; font-size: 12px; text-transform: uppercase;">
+                                {{invoice.status}}
+                            </span>
+                        </div>
+                        {{#if invoice.paidAt}}
+                            <div style="margin-top: 8px; color: #28a745;">Paid: {{formatDate invoice.paidAt}}</div>
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Line Items -->
+            <div class="items-section">
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th style="width: 15%;">Qty</th>
+                            <th style="width: 15%;">Unit Price</th>
+                            {{#unless branding.taxDisabled}}
+                                <th style="width: 12%;">Tax</th>
+                            {{/unless}}
+                            <th style="width: 15%;" class="amount-column">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each invoice.items}}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 500;">{{this.description}}</div>
+                                {{#if this.product}}
+                                    <div style="font-size: 13px; color: {{../branding.secondaryColor}}; margin-top: 4px;">SKU: {{this.product.sku}}</div>
+                                {{/if}}
+                                {{#if this.service}}
+                                    <div style="font-size: 13px; color: {{../branding.secondaryColor}}; margin-top: 4px;">Service: {{this.service.code}}</div>
+                                {{/if}}
+                            </td>
+                            <td>{{formatDecimal this.quantity}}</td>
+                            <td>{{formatCurrency this.unitPrice}}</td>
+                            {{#unless ../branding.taxDisabled}}
+                                <td>{{formatPercent this.taxRate}}%</td>
+                            {{/unless}}
+                            <td class="amount-column">{{formatCurrency this.total}}</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Totals Section -->
+            <div class="totals-section">
+                <table class="totals-table">
+                    <tr>
+                        <td>Subtotal</td>
+                        <td class="amount-column">{{formatCurrency invoice.subtotal}}</td>
+                    </tr>
+                    {{#unless branding.taxDisabled}}
+                        {{#if invoice.taxAmount}}
+                            <tr>
+                                <td>Tax</td>
+                                <td class="amount-column">{{formatCurrency invoice.taxAmount}}</td>
+                            </tr>
+                        {{/if}}
+                    {{/unless}}
+                    <tr class="total-row">
+                        <td>Total</td>
+                        <td class="amount-column">{{formatCurrency invoice.total}}</td>
+                    </tr>
+                    {{#if invoice.amountPaid}}
+                        <tr>
+                            <td>Amount Paid</td>
+                            <td class="amount-column">{{formatCurrency invoice.amountPaid}}</td>
+                        </tr>
+                        <tr class="total-row" style="color: #dc3545;">
+                            <td>Balance Due</td>
+                            <td class="amount-column">{{formatCurrency invoice.balance}}</td>
+                        </tr>
+                    {{/if}}
+                </table>
+            </div>
+
+            <!-- Tax Exempt Notice -->
+            {{#if branding.taxDisabled}}
+                <div class="tax-exempt">
+                    <strong>Tax Exempt:</strong> Tax calculations have been disabled for this organization.
+                </div>
+            {{/if}}
+
+            <!-- Terms & Notes -->
+            {{#if invoice.terms}}
+                <div class="info-card">
+                    <h4>Terms & Conditions</h4>
+                    <p style="margin: 0;">{{invoice.terms}}</p>
+                </div>
+            {{/if}}
+
+            {{#if invoice.notes}}
+                <div class="info-card">
+                    <h4>Notes</h4>
+                    <p style="margin: 0;">{{invoice.notes}}</p>
+                </div>
+            {{/if}}
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p style="margin: 0 0 8px 0; font-weight: 500;">Thank you for your business!</p>
+            {{#if organization.businessNumber}}
+                <p style="margin: 4px 0;">Business Number: {{organization.businessNumber}}</p>
+            {{/if}}
+            {{#if organization.taxNumber}}
+                <p style="margin: 4px 0;">Tax Number: {{organization.taxNumber}}</p>
+            {{/if}}
+        </div>
+    </div>
+</body>
+</html>

@@ -13,7 +13,8 @@ export const UserRole = {
   MANAGER: 'MANAGER',
   ACCOUNTANT: 'ACCOUNTANT',
   EMPLOYEE: 'EMPLOYEE',
-  VIEWER: 'VIEWER'
+  VIEWER: 'VIEWER',
+  CLIENT: 'CLIENT'
 } as const;
 
 export type UserRole = typeof UserRole[keyof typeof UserRole];
@@ -158,3 +159,37 @@ export const AuditAction = {
 } as const;
 
 export type AuditAction = typeof AuditAction[keyof typeof AuditAction];
+
+export const DocumentCategory = {
+  INVOICE: 'INVOICE',
+  RECEIPT: 'RECEIPT',
+  CONTRACT: 'CONTRACT',
+  QUOTE: 'QUOTE',
+  TAX_DOCUMENT: 'TAX_DOCUMENT',
+  PROOF_OF_PAYMENT: 'PROOF_OF_PAYMENT',
+  IDENTIFICATION: 'IDENTIFICATION',
+  INSURANCE: 'INSURANCE',
+  LEGAL: 'LEGAL',
+  COMPLIANCE: 'COMPLIANCE',
+  FINANCIAL_STATEMENT: 'FINANCIAL_STATEMENT',
+  OTHER: 'OTHER'
+} as const;
+
+export type DocumentCategory = typeof DocumentCategory[keyof typeof DocumentCategory];
+
+export const ProcessingStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED'
+} as const;
+
+export type ProcessingStatus = typeof ProcessingStatus[keyof typeof ProcessingStatus];
+
+export const AccessLevel = {
+  PUBLIC: 'PUBLIC',
+  PRIVATE: 'PRIVATE',
+  RESTRICTED: 'RESTRICTED'
+} as const;
+
+export type AccessLevel = typeof AccessLevel[keyof typeof AccessLevel];

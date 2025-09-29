@@ -1,0 +1,457 @@
+{
+  "metadata": {
+    "generated": "2025-09-29",
+    "description": "Workflow-based Role-to-Endpoint mapping for business process testing",
+    "version": "1.0.0",
+    "source": "8-stage customer lifecycle + event-driven architecture analysis"
+  },
+  "businessWorkflows": {
+    "customerLifecycle": {
+      "description": "8-Stage Customer Lifecycle: Request Quote → Quote Estimated → Quote Accepted → Appointment Scheduled → Invoice Generated → Deposit Paid → Work Begins → Project Completion",
+      "stages": {
+        "1_request_quote": {
+          "description": "Initial quote request from customer",
+          "allowedRoles": ["CLIENT", "EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+          "endpoints": {
+            "POST /quotes": {
+              "roles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Only internal staff can create quotes, not clients"
+            },
+            "POST /customers": {
+              "roles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Must create customer record for new quote requests"
+            },
+            "GET /customers/:id": {
+              "roles": ["CLIENT", "VIEWER", "EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "CLIENT can only view own record"
+            }
+          }
+        },
+        "2_quote_estimated": {
+          "description": "Quote is estimated and prepared for customer",
+          "allowedRoles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+          "endpoints": {
+            "PUT /quotes/:id": {
+              "roles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Can update quote with pricing and terms"
+            },
+            "POST /quotes/:id/send": {
+              "roles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Can send quote to customer for review"
+            }
+          }
+        },
+        "3_quote_accepted": {
+          "description": "Customer accepts the quote",
+          "allowedRoles": ["CLIENT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+          "endpoints": {
+            "POST /quotes/:id/accept": {
+              "roles": ["MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Only management can formally accept quotes in system"
+            },
+            "GET /quotes/:id": {
+              "roles": ["CLIENT", "VIEWER", "EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "CLIENT can view own quotes, VIEWER can view all"
+            }
+          }
+        },
+        "4_appointment_scheduled": {
+          "description": "Appointment scheduled for work delivery",
+          "allowedRoles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+          "endpoints": {
+            "POST /appointments": {
+              "roles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Schedule appointment after quote acceptance"
+            },
+            "PUT /appointments/:id": {
+              "roles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Can modify appointment details"
+            },
+            "POST /appointments/:id/confirm": {
+              "roles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Confirm appointment with customer"
+            }
+          }
+        },
+        "5_invoice_generated": {
+          "description": "Invoice is generated from accepted quote",
+          "allowedRoles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+          "endpoints": {
+            "POST /invoices/from-quote": {
+              "roles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Generate invoice from accepted quote"
+            },
+            "POST /invoices": {
+              "roles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Create manual invoice if needed"
+            },
+            "POST /invoices/:id/send": {
+              "roles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Send invoice to customer for payment"
+            }
+          }
+        },
+        "6_deposit_paid": {
+          "description": "Customer pays deposit (25-50%)",
+          "allowedRoles": ["ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+          "endpoints": {
+            "POST /payments": {
+              "roles": ["ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Record deposit payment - only financial staff"
+            },
+            "POST /invoices/:id/payment": {
+              "roles": ["ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Process partial payment for invoice"
+            },
+            "POST /manual-payments": {
+              "roles": ["ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Record manual payments like checks, cash"
+            }
+          }
+        },
+        "7_work_begins": {
+          "description": "Project work begins after deposit received",
+          "allowedRoles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+          "endpoints": {
+            "POST /projects": {
+              "roles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Create project from quote/invoice"
+            },
+            "PUT /projects/:id": {
+              "roles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Update project status and progress"
+            },
+            "POST /appointments/:id/complete": {
+              "roles": ["EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Mark appointments as completed"
+            }
+          }
+        },
+        "8_project_completion": {
+          "description": "Project is completed and final payment collected",
+          "allowedRoles": ["MANAGER", "ADMIN", "SUPER_ADMIN"],
+          "endpoints": {
+            "POST /projects/:id/complete": {
+              "roles": ["MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Only management can mark projects complete"
+            },
+            "POST /invoices/:id/payment": {
+              "roles": ["ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Process final payment for completed work"
+            }
+          }
+        }
+      }
+    },
+    "financialWorkflows": {
+      "description": "Double-entry bookkeeping and financial management workflows",
+      "workflows": {
+        "revenue_recognition": {
+          "description": "ASC 606 compliant revenue recognition process",
+          "allowedRoles": ["ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+          "endpoints": {
+            "POST /journal-entries": {
+              "roles": ["ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Create journal entries for revenue recognition"
+            },
+            "GET /financial-statements/income-statement": {
+              "roles": ["VIEWER", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "View revenue recognition in financial reports"
+            }
+          }
+        },
+        "payment_processing": {
+          "description": "End-to-end payment processing and reconciliation",
+          "allowedRoles": ["ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+          "endpoints": {
+            "POST /payments/:id/process": {
+              "roles": ["MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Only management can process payments"
+            },
+            "POST /payments/:id/refund": {
+              "roles": ["MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Only management can authorize refunds"
+            },
+            "GET /payments/analytics/summary": {
+              "roles": ["VIEWER", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "View payment analytics and trends"
+            }
+          }
+        },
+        "tax_compliance": {
+          "description": "Canadian tax calculation and compliance workflows",
+          "allowedRoles": ["ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+          "endpoints": {
+            "POST /tax/calculate": {
+              "roles": ["VIEWER", "EMPLOYEE", "ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Anyone can calculate tax for transactions"
+            },
+            "GET /tax/compliance-report": {
+              "roles": ["ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Only financial staff can access tax reports"
+            },
+            "GET /tax/gst-hst-report": {
+              "roles": ["ACCOUNTANT", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Government tax reporting - restricted access"
+            }
+          }
+        }
+      }
+    },
+    "accessControlWorkflows": {
+      "description": "Role-specific access control and security workflows",
+      "workflows": {
+        "user_management": {
+          "description": "Organization user and role management",
+          "allowedRoles": ["ADMIN", "SUPER_ADMIN"],
+          "endpoints": {
+            "POST /users": {
+              "roles": ["ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Only admins can create new users"
+            },
+            "PUT /users/:userId": {
+              "roles": ["ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Only admins can modify user accounts"
+            },
+            "DELETE /users/:userId": {
+              "roles": ["ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Only admins can deactivate users"
+            },
+            "POST /users/invite": {
+              "roles": ["ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Only admins can invite new users"
+            }
+          }
+        },
+        "audit_monitoring": {
+          "description": "System audit and compliance monitoring",
+          "allowedRoles": ["MANAGER", "ADMIN", "SUPER_ADMIN"],
+          "endpoints": {
+            "GET /audit/logs": {
+              "roles": ["MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Only management can view audit logs"
+            },
+            "GET /audit/logs/export": {
+              "roles": ["ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Only admins can export audit data"
+            },
+            "GET /audit/logs/stats/summary": {
+              "roles": ["MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Management can view audit statistics"
+            }
+          }
+        },
+        "data_management": {
+          "description": "Data deletion and archive operations",
+          "allowedRoles": ["MANAGER", "ADMIN", "SUPER_ADMIN"],
+          "endpoints": {
+            "DELETE /customers/:id": {
+              "roles": ["MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Only management can delete customers"
+            },
+            "DELETE /projects/:id": {
+              "roles": ["MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Only management can delete projects"
+            },
+            "POST /projects/:id/archive": {
+              "roles": ["MANAGER", "ADMIN", "SUPER_ADMIN"],
+              "businessRule": "Only management can archive projects"
+            }
+          }
+        }
+      }
+    },
+    "clientSelfService": {
+      "description": "Client-specific self-service workflows with restricted access",
+      "workflows": {
+        "invoice_viewing": {
+          "description": "Clients can only view their own invoices",
+          "allowedRoles": ["CLIENT"],
+          "endpoints": {
+            "GET /invoices/:id": {
+              "roles": ["CLIENT"],
+              "businessRule": "CLIENT can only access invoices where they are the customer",
+              "specialValidation": "Must validate invoice.customerId matches user.customerId"
+            },
+            "POST /invoices/:id/viewed": {
+              "roles": ["CLIENT"],
+              "businessRule": "Track when client views their invoice"
+            }
+          }
+        },
+        "quote_viewing": {
+          "description": "Clients can view their own quotes",
+          "allowedRoles": ["CLIENT"],
+          "endpoints": {
+            "GET /quotes/:id": {
+              "roles": ["CLIENT"],
+              "businessRule": "CLIENT can only access quotes where they are the customer",
+              "specialValidation": "Must validate quote.customerId matches user.customerId"
+            }
+          }
+        },
+        "profile_management": {
+          "description": "Clients can manage their own profile",
+          "allowedRoles": ["CLIENT"],
+          "endpoints": {
+            "GET /auth/me": {
+              "roles": ["CLIENT"],
+              "businessRule": "Clients can view their own profile"
+            },
+            "PUT /auth/me": {
+              "roles": ["CLIENT"],
+              "businessRule": "Clients can update their own profile"
+            }
+          }
+        }
+      }
+    }
+  },
+  "workflowTestScenarios": {
+    "crossRoleWorkflowTests": [
+      {
+        "name": "Complete Customer Lifecycle",
+        "description": "Test full 8-stage customer lifecycle with proper role transitions",
+        "stages": [
+          {
+            "stage": "quote_creation",
+            "role": "EMPLOYEE",
+            "action": "POST /customers + POST /quotes",
+            "expectedResult": "SUCCESS"
+          },
+          {
+            "stage": "quote_acceptance",
+            "role": "MANAGER",
+            "action": "POST /quotes/:id/accept",
+            "expectedResult": "SUCCESS"
+          },
+          {
+            "stage": "invoice_generation",
+            "role": "EMPLOYEE",
+            "action": "POST /invoices/from-quote",
+            "expectedResult": "SUCCESS"
+          },
+          {
+            "stage": "payment_processing",
+            "role": "ACCOUNTANT",
+            "action": "POST /payments",
+            "expectedResult": "SUCCESS"
+          },
+          {
+            "stage": "project_completion",
+            "role": "MANAGER",
+            "action": "POST /projects/:id/complete",
+            "expectedResult": "SUCCESS"
+          }
+        ]
+      }
+    ],
+    "roleViolationTests": [
+      {
+        "name": "EMPLOYEE cannot delete customers",
+        "role": "EMPLOYEE",
+        "action": "DELETE /customers/:id",
+        "expectedResult": "FORBIDDEN",
+        "businessReason": "Only management can delete customer records"
+      },
+      {
+        "name": "CLIENT cannot create quotes",
+        "role": "CLIENT",
+        "action": "POST /quotes",
+        "expectedResult": "FORBIDDEN",
+        "businessReason": "Clients cannot create their own quotes"
+      },
+      {
+        "name": "VIEWER cannot process payments",
+        "role": "VIEWER",
+        "action": "POST /payments",
+        "expectedResult": "FORBIDDEN",
+        "businessReason": "Read-only role cannot perform financial transactions"
+      },
+      {
+        "name": "ACCOUNTANT cannot delete projects",
+        "role": "ACCOUNTANT",
+        "action": "DELETE /projects/:id",
+        "expectedResult": "FORBIDDEN",
+        "businessReason": "Only management can delete project records"
+      }
+    ],
+    "businessProcessIntegrityTests": [
+      {
+        "name": "Cannot invoice without accepted quote",
+        "description": "Test that invoice creation requires prior quote acceptance",
+        "workflow": [
+          {
+            "step": "Create quote",
+            "role": "EMPLOYEE",
+            "action": "POST /quotes",
+            "expectedResult": "SUCCESS"
+          },
+          {
+            "step": "Try to create invoice without acceptance",
+            "role": "EMPLOYEE",
+            "action": "POST /invoices/from-quote",
+            "expectedResult": "BAD_REQUEST",
+            "businessRule": "Quote must be accepted before invoice creation"
+          }
+        ]
+      },
+      {
+        "name": "Cannot complete project without payment",
+        "description": "Test that project completion requires deposit payment",
+        "workflow": [
+          {
+            "step": "Create project",
+            "role": "EMPLOYEE",
+            "action": "POST /projects",
+            "expectedResult": "SUCCESS"
+          },
+          {
+            "step": "Try to complete without payment",
+            "role": "MANAGER",
+            "action": "POST /projects/:id/complete",
+            "expectedResult": "BAD_REQUEST",
+            "businessRule": "Project requires deposit payment before completion"
+          }
+        ]
+      }
+    ]
+  },
+  "specialAccessRules": {
+    "ownershipBased": {
+      "description": "Special access rules based on data ownership",
+      "rules": [
+        {
+          "endpoint": "GET /users/:userId",
+          "rule": "Users can access their own profile regardless of role",
+          "validation": "userId must match authenticated user's ID"
+        },
+        {
+          "endpoint": "PUT /users/:userId",
+          "rule": "Users can update their own profile regardless of role",
+          "validation": "userId must match authenticated user's ID"
+        },
+        {
+          "endpoint": "GET /invoices/:id",
+          "rule": "CLIENT can only access invoices where they are the customer",
+          "validation": "invoice.customerId must match user.customerId for CLIENT role"
+        }
+      ]
+    },
+    "contextualAccess": {
+      "description": "Access rules that depend on business context",
+      "rules": [
+        {
+          "endpoint": "POST /manual-payments/:id/approve",
+          "rule": "MANAGER can approve payments created by ACCOUNTANT",
+          "validation": "Payment must exist and be in PENDING status"
+        },
+        {
+          "endpoint": "POST /quotes/:id/expire",
+          "rule": "Only MANAGER can manually expire quotes",
+          "validation": "Quote must not be already accepted or expired"
+        }
+      ]
+    }
+  }
+}

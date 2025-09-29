@@ -1,0 +1,117 @@
+/* Classic Black & White Invoice Style */
+
+/* Override default branding colors for classic theme */
+:root {
+  --primary-color: #000000;
+  --secondary-color: #666666;
+  --accent-color: #333333;
+  --background-color: #ffffff;
+  --text-color: #000000;
+}
+
+body {
+  font-family: "Times New Roman", Times, serif !important;
+}
+
+.invoice-container {
+  border: 2px solid #000000;
+}
+
+.invoice-header {
+  border-bottom: 3px solid #000000 !important;
+}
+
+.company-name {
+  font-family: "Times New Roman", Times, serif;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.invoice-number {
+  font-family: "Times New Roman", Times, serif;
+  text-decoration: underline;
+}
+
+.billing-title {
+  border-bottom: 1px solid #000000;
+  padding-bottom: 5px;
+}
+
+.items-table th {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.items-table tr:nth-child(even) {
+  background-color: #f8f8f8 !important;
+}
+
+.totals-section .total-row {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.payment-info {
+  border: 2px solid #000000 !important;
+  background-color: #ffffff !important;
+  border-left: 4px solid #000000 !important;
+}
+
+.footer {
+  border-top: 2px solid #000000 !important;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+/* Modern template adjustments for classic style */
+.billing-card {
+  border: 1px solid #000000 !important;
+  background-color: #ffffff !important;
+  border-left: 4px solid #000000 !important;
+}
+
+.info-card {
+  border: 1px solid #000000 !important;
+  background-color: #ffffff !important;
+  border-left: 4px solid #000000 !important;
+}
+
+.totals-section {
+  border: 2px solid #000000 !important;
+  background-color: #ffffff !important;
+}
+
+/* Tax exempt styling */
+.tax-exempt {
+  border: 2px solid #000000 !important;
+  background-color: #ffffff !important;
+  font-weight: bold;
+}
+
+/* Minimal template adjustments */
+.invoice-header {
+  border-bottom: 3px double #000000 !important;
+}
+
+.totals-table .total-row {
+  border-top: 2px solid #000000 !important;
+  font-weight: bold;
+}
+
+.payment-terms {
+  border-top: 2px solid #000000 !important;
+}
+
+/* Print styles */
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+  }
+
+  .invoice-container {
+    box-shadow: none;
+    border: 2px solid #000000;
+  }
+}

@@ -1,11 +1,12 @@
 import crypto from 'crypto';
-import { PrismaClient } from '@prisma/client';
+
 import { config } from '../config/config';
 import { auditService } from './audit.service';
 import { PaymentMethod, PaymentStatus } from '../types/enums';
 
-const prisma = new PrismaClient();
 
+
+import { prisma } from '../config/database';
 export interface SecurityAlert {
   id: string;
   type: 'FRAUD_DETECTION' | 'POLICY_VIOLATION' | 'SYSTEM_ANOMALY' | 'DATA_BREACH' | 'COMPLIANCE_VIOLATION';
@@ -517,7 +518,7 @@ export class PaymentSecurityService {
     };
   }
 
-  private containsSensitiveCardData(metadata: any): boolean {
+  private containsSensitiveCardData(metadata: Record<string, unknown>): boolean {
     const cardNumberPattern = /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/;
     const cvvPattern = /\b\d{3,4}\b/;
 
@@ -722,7 +723,7 @@ export class PaymentSecurityService {
 
   // ==================== DATA MASKING ====================
 
-  maskSensitiveData(data: any, fields: string[] = []): any {
+  maskSensitiveData(data: Record<string, unknown>, fields: string[] = []): unknown {
     const defaultSensitiveFields = [
       'socialInsNumber',
       'taxNumber',
@@ -738,7 +739,7 @@ export class PaymentSecurityService {
     return this.recursiveMask(data, fieldsToMask);
   }
 
-  private recursiveMask(obj: any, fieldsToMask: string[]): any {
+  private recursiveMask(obj: any, fieldsToMask: string[]): unknown {
     if (obj === null || obj === undefined) return obj;
 
     if (Array.isArray(obj)) {
@@ -746,7 +747,7 @@ export class PaymentSecurityService {
     }
 
     if (typeof obj === 'object') {
-      const masked: any = {};
+      const masked: unknown = {};
       for (const [key, value] of Object.entries(obj)) {
         if (fieldsToMask.includes(key)) {
           masked[key] = this.maskValue(value);

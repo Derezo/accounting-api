@@ -1,10 +1,11 @@
-import { PrismaClient, Organization } from '@prisma/client';
+import {  Organization } from '@prisma/client';
 import { generateRandomToken } from '../utils/crypto';
 import { OrganizationType } from '../types/enums';
 import { auditService } from './audit.service';
 
-const prisma = new PrismaClient();
 
+
+import { prisma } from '../config/database';
 interface CreateOrganizationData {
   name: string;
   legalName?: string;

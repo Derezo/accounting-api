@@ -25,7 +25,7 @@ describe('Performance and Security Integration Tests', () => {
       console.log('Testing login rate limiting...');
 
       // Make rapid login attempts
-      const loginAttempts = [];
+      const loginAttempts: any[] = [];
       for (let i = 0; i < 10; i++) {
         loginAttempts.push(
           baseRequest()
@@ -56,7 +56,7 @@ describe('Performance and Security Integration Tests', () => {
       console.log('Testing API rate limiting...');
 
       // Make rapid API requests
-      const apiRequests = [];
+      const apiRequests: any[] = [];
       for (let i = 0; i < 50; i++) {
         apiRequests.push(
           authenticatedRequest(adminToken)
@@ -94,7 +94,7 @@ describe('Performance and Security Integration Tests', () => {
       console.log('Testing concurrent session handling...');
 
       // Create multiple users for concurrent testing
-      const concurrentUsers = [];
+      const concurrentUsers: any[] = [];
       for (let i = 0; i < 10; i++) {
         const user = await prisma.user.create({
           data: {
@@ -128,7 +128,7 @@ describe('Performance and Security Integration Tests', () => {
         const token = loginResponse.body.token;
 
         // Make several API calls
-        const apiCalls = [];
+        const apiCalls: any[] = [];
         for (let j = 0; j < 5; j++) {
           apiCalls.push(
             authenticatedRequest(token)
@@ -298,7 +298,7 @@ describe('Performance and Security Integration Tests', () => {
       console.log('Testing brute force protection...');
 
       // Attempt multiple failed logins
-      const failedAttempts = [];
+      const failedAttempts: any[] = [];
       for (let i = 0; i < 10; i++) {
         failedAttempts.push(
           baseRequest()
@@ -489,7 +489,7 @@ describe('Performance and Security Integration Tests', () => {
       const batches = Math.ceil(totalCustomers / batchSize);
 
       for (let batch = 0; batch < batches; batch++) {
-        const batchPromises = [];
+        const batchPromises: any[] = [];
 
         for (let i = 0; i < batchSize && (batch * batchSize + i) < totalCustomers; i++) {
           const customerIndex = batch * batchSize + i;
@@ -532,7 +532,7 @@ describe('Performance and Security Integration Tests', () => {
       console.log('Testing pagination performance...');
 
       const pageSizes = [10, 25, 50, 100];
-      const performanceResults = [];
+      const performanceResults: any[] = [];
 
       for (const pageSize of pageSizes) {
         performanceTimer.start();
@@ -602,7 +602,7 @@ describe('Performance and Security Integration Tests', () => {
       const initialMemory = process.memoryUsage();
 
       // Perform memory-intensive operations
-      const operations = [];
+      const operations: any[] = [];
       for (let i = 0; i < 100; i++) {
         operations.push(
           authenticatedRequest(adminToken)

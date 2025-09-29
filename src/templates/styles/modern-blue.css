@@ -1,0 +1,174 @@
+/* Modern Blue Invoice Style */
+
+/* Override default branding colors for modern blue theme */
+:root {
+  --primary-color: #2563eb;
+  --secondary-color: #64748b;
+  --accent-color: #3b82f6;
+  --background-color: #ffffff;
+  --text-color: #1e293b;
+}
+
+body {
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+}
+
+.invoice-container {
+  box-shadow: 0 20px 50px rgba(37, 99, 235, 0.15) !important;
+  border: 1px solid #e2e8f0;
+}
+
+.invoice-header {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;
+  position: relative;
+}
+
+.invoice-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #06b6d4, #10b981);
+}
+
+.company-name {
+  font-weight: 600 !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.invoice-number {
+  font-weight: 300 !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.billing-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-left: 4px solid #3b82f6 !important;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1) !important;
+}
+
+.billing-title {
+  color: #2563eb !important;
+  font-weight: 600 !important;
+}
+
+.items-table {
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1) !important;
+}
+
+.items-table th {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;
+  color: #ffffff !important;
+  font-weight: 500 !important;
+}
+
+.items-table tr:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.totals-section {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1) !important;
+}
+
+.totals-table .total-row td {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;
+  color: #ffffff !important;
+}
+
+.info-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-left: 4px solid #3b82f6 !important;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1) !important;
+}
+
+.info-card h4 {
+  color: #2563eb !important;
+}
+
+.payment-info {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-left: 4px solid #3b82f6 !important;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1) !important;
+}
+
+.footer {
+  background: #f1f5f9 !important;
+  border-top: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+.tax-exempt {
+  background: linear-gradient(135deg, #fef3cd 0%, #fde68a 100%) !important;
+  color: #92400e !important;
+  border: 1px solid #f59e0b !important;
+  border-left: 4px solid #f59e0b !important;
+}
+
+/* Status badge styling */
+.invoice-details [style*="background: #3b82f6"] {
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%) !important;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Classic template adjustments */
+.invoice-header {
+  border-bottom: 3px solid #3b82f6 !important;
+}
+
+/* Minimal template adjustments */
+.totals-table .total-row {
+  border-top: 2px solid #2563eb !important;
+  color: #2563eb !important;
+}
+
+.customer-title {
+  color: #2563eb !important;
+}
+
+.items-table th {
+  border-bottom: 1px solid #2563eb !important;
+  color: #2563eb !important;
+  background: none !important;
+}
+
+.payment-terms {
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+/* Hover effects */
+.billing-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px rgba(59, 130, 246, 0.15) !important;
+  transition: all 0.2s ease;
+}
+
+.totals-section:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px rgba(59, 130, 246, 0.15) !important;
+  transition: all 0.2s ease;
+}
+
+/* Print styles */
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    background: white !important;
+  }
+
+  .invoice-container {
+    box-shadow: none !important;
+  }
+
+  .billing-card:hover,
+  .totals-section:hover {
+    transform: none !important;
+  }
+}

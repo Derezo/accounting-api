@@ -3,6 +3,7 @@ import { body, query, validationResult } from 'express-validator';
 import { invoiceService } from '../services/invoice.service';
 import { InvoiceStatus } from '../types/enums';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
+import { Decimal } from '@prisma/client/runtime/library';
 
 // Validation rules
 export const validateCreateInvoice = [
@@ -91,17 +92,17 @@ export class InvoiceController {
         dueDate: new Date(req.body.dueDate),
         currency: req.body.currency,
         exchangeRate: req.body.exchangeRate ? parseFloat(req.body.exchangeRate) : undefined,
-        depositRequired: parseFloat(req.body.depositRequired),
+        depositRequired: new Decimal(req.body.depositRequired),
         terms: req.body.terms,
         notes: req.body.notes,
         items: req.body.items.map((item: any) => ({
           productId: item.productId,
           serviceId: item.serviceId,
           description: item.description,
-          quantity: parseFloat(item.quantity),
-          unitPrice: parseFloat(item.unitPrice),
-          discountPercent: item.discountPercent ? parseFloat(item.discountPercent) : undefined,
-          taxRate: parseFloat(item.taxRate)
+          quantity: new Decimal(item.quantity),
+          unitPrice: new Decimal(item.unitPrice),
+          discountPercent: item.discountPercent ? new Decimal(item.discountPercent) : undefined,
+          taxRate: new Decimal(item.taxRate)
         }))
       };
 
@@ -280,7 +281,7 @@ export class InvoiceController {
       if (req.body.dueDate !== undefined) updateData.dueDate = new Date(req.body.dueDate);
       if (req.body.currency !== undefined) updateData.currency = req.body.currency;
       if (req.body.exchangeRate !== undefined) updateData.exchangeRate = parseFloat(req.body.exchangeRate);
-      if (req.body.depositRequired !== undefined) updateData.depositRequired = parseFloat(req.body.depositRequired);
+      if (req.body.depositRequired !== undefined) updateData.depositRequired = new Decimal(req.body.depositRequired);
       if (req.body.terms !== undefined) updateData.terms = req.body.terms;
       if (req.body.notes !== undefined) updateData.notes = req.body.notes;
       if (req.body.items !== undefined) {
@@ -288,10 +289,10 @@ export class InvoiceController {
           productId: item.productId,
           serviceId: item.serviceId,
           description: item.description,
-          quantity: parseFloat(item.quantity),
-          unitPrice: parseFloat(item.unitPrice),
-          discountPercent: item.discountPercent ? parseFloat(item.discountPercent) : undefined,
-          taxRate: parseFloat(item.taxRate)
+          quantity: new Decimal(item.quantity),
+          unitPrice: new Decimal(item.unitPrice),
+          discountPercent: item.discountPercent ? new Decimal(item.discountPercent) : undefined,
+          taxRate: new Decimal(item.taxRate)
         }));
       }
 

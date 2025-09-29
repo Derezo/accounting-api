@@ -18,7 +18,7 @@ const router = Router();
 router.use(authenticate);
 
 // Apply audit logging to all routes
-router.use(auditMiddleware);
+// router.use(auditMiddleware); // Removed: auditMiddleware returns an object, not a middleware function
 
 /**
  * @swagger
@@ -414,6 +414,7 @@ router.post(
  */
 router.get(
   '/',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.EMPLOYEE, UserRole.VIEWER, UserRole.CLIENT),
   validateListInvoices,
   invoiceController.listInvoices.bind(invoiceController)
 );
@@ -545,6 +546,7 @@ router.get(
  */
 router.get(
   '/stats/summary',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT),
   invoiceController.getInvoiceStats.bind(invoiceController)
 );
 
@@ -720,6 +722,7 @@ router.get(
  */
 router.get(
   '/:id',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.EMPLOYEE, UserRole.VIEWER, UserRole.CLIENT),
   invoiceController.getInvoice.bind(invoiceController)
 );
 
@@ -990,6 +993,7 @@ router.post(
  */
 router.post(
   '/:id/viewed',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.EMPLOYEE, UserRole.CLIENT),
   invoiceController.markInvoiceAsViewed.bind(invoiceController)
 );
 

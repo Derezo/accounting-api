@@ -62,6 +62,7 @@ export async function cleanupDatabase(prisma: PrismaClient): Promise<void> {
 
     // Delete all data in dependency order (child tables first)
     const tableNames = [
+      'audit_logs',      // Must be first as it can reference any entity
       'journal_entries',
       'transactions',
       'appointments',
@@ -87,7 +88,6 @@ export async function cleanupDatabase(prisma: PrismaClient): Promise<void> {
       'accounts',
       'sessions',
       'api_keys',
-      'audit_logs',
       'users',
       'organizations'
     ];

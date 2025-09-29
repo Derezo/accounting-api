@@ -2,30 +2,160 @@ import { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { authService } from '../services/auth.service';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
+import { ErrorResponseUtil } from '../utils/error-response';
 
 export const validateRegister = [
-  body('email').isEmail().normalizeEmail(),
-  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-  body('firstName').notEmpty().trim(),
-  body('lastName').notEmpty().trim(),
-  body('organizationName').notEmpty().trim(),
-  body('organizationDomain').optional().trim()
+  body('email').isEmail().normalizeEmail().escape(),
+  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters').custom((value) => {
+    // Validate password complexity while allowing special characters
+    if (typeof value !== 'string') {
+      throw new Error('Password must be a string');
+    }
+    // Check for potential injection patterns while allowing legitimate special chars
+    const dangerousPatterns = [
+      /<script/i,
+      /<\/script>/i,
+      /javascript:/i,
+      /vbscript:/i,
+      /onload=/i,
+      /onerror=/i,
+      /data:text\/html/i,
+      /\x00/,  // null bytes
+      /\x1a/   // control characters
+    ];
+
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(value)) {
+        throw new Error('Password contains invalid characters');
+      }
+    }
+
+    return true;
+  }),
+  body('firstName').notEmpty().trim().escape().isLength({ max: 100 }).withMessage('First name must be less than 100 characters'),
+  body('lastName').notEmpty().trim().escape().isLength({ max: 100 }).withMessage('Last name must be less than 100 characters'),
+  body('organizationName').notEmpty().trim().escape().isLength({ max: 200 }).withMessage('Organization name must be less than 200 characters'),
+  body('organizationDomain').optional().trim().escape().isLength({ max: 100 }).withMessage('Organization domain must be less than 100 characters').matches(/^[a-zA-Z0-9.-]+$/).withMessage('Invalid domain format')
 ];
 
 export const validateLogin = [
-  body('email').isEmail().normalizeEmail(),
-  body('password').notEmpty(),
-  body('twoFactorCode').optional().isLength({ min: 6, max: 6 })
+  body('email').isEmail().normalizeEmail().escape(),
+  body('password').notEmpty().custom((value) => {
+    // Validate password while allowing special characters but blocking dangerous patterns
+    if (typeof value !== 'string') {
+      throw new Error('Password must be a string');
+    }
+
+    // Check for potential injection patterns while allowing legitimate special chars
+    const dangerousPatterns = [
+      /<script/i,
+      /<\/script>/i,
+      /javascript:/i,
+      /vbscript:/i,
+      /onload=/i,
+      /onerror=/i,
+      /data:text\/html/i,
+      /\x00/,  // null bytes
+      /\x1a/   // control characters
+    ];
+
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(value)) {
+        throw new Error('Password contains invalid characters');
+      }
+    }
+
+    return true;
+  }),
+  body('twoFactorCode').optional().isLength({ min: 6, max: 6 }).isNumeric().withMessage('Two factor code must be numeric')
 ];
 
 export const validateChangePassword = [
-  body('oldPassword').notEmpty(),
-  body('newPassword').isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
+  body('oldPassword').notEmpty().custom((value) => {
+    // Validate password while allowing special characters but blocking dangerous patterns
+    if (typeof value !== 'string') {
+      throw new Error('Password must be a string');
+    }
+
+    // Check for potential injection patterns while allowing legitimate special chars
+    const dangerousPatterns = [
+      /<script/i,
+      /<\/script>/i,
+      /javascript:/i,
+      /vbscript:/i,
+      /onload=/i,
+      /onerror=/i,
+      /data:text\/html/i,
+      /\x00/,  // null bytes
+      /\x1a/   // control characters
+    ];
+
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(value)) {
+        throw new Error('Password contains invalid characters');
+      }
+    }
+
+    return true;
+  }),
+  body('newPassword').isLength({ min: 8 }).withMessage('Password must be at least 8 characters').custom((value) => {
+    // Validate password while allowing special characters but blocking dangerous patterns
+    if (typeof value !== 'string') {
+      throw new Error('Password must be a string');
+    }
+
+    // Check for potential injection patterns while allowing legitimate special chars
+    const dangerousPatterns = [
+      /<script/i,
+      /<\/script>/i,
+      /javascript:/i,
+      /vbscript:/i,
+      /onload=/i,
+      /onerror=/i,
+      /data:text\/html/i,
+      /\x00/,  // null bytes
+      /\x1a/   // control characters
+    ];
+
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(value)) {
+        throw new Error('Password contains invalid characters');
+      }
+    }
+
+    return true;
+  })
 ];
 
 export const validateResetPassword = [
-  body('token').notEmpty(),
-  body('newPassword').isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
+  body('token').notEmpty().trim().escape().isLength({ max: 500 }).withMessage('Invalid token format'),
+  body('newPassword').isLength({ min: 8 }).withMessage('Password must be at least 8 characters').custom((value) => {
+    // Validate password while allowing special characters but blocking dangerous patterns
+    if (typeof value !== 'string') {
+      throw new Error('Password must be a string');
+    }
+
+    // Check for potential injection patterns while allowing legitimate special chars
+    const dangerousPatterns = [
+      /<script/i,
+      /<\/script>/i,
+      /javascript:/i,
+      /vbscript:/i,
+      /onload=/i,
+      /onerror=/i,
+      /data:text\/html/i,
+      /\x00/,  // null bytes
+      /\x1a/   // control characters
+    ];
+
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(value)) {
+        throw new Error('Password contains invalid characters');
+      }
+    }
+
+    return true;
+  })
 ];
 
 export class AuthController {
@@ -94,7 +224,9 @@ export class AuthController {
       const { refreshToken } = req.body;
 
       if (!refreshToken) {
-        res.status(400).json({ error: 'Refresh token required' });
+        ErrorResponseUtil.sendValidationError(res, [
+          { field: 'refreshToken', message: 'Refresh token is required', code: 'REQUIRED' } as any
+        ]);
         return;
       }
 
@@ -105,7 +237,7 @@ export class AuthController {
         tokens
       });
     } catch (error: any) {
-      res.status(401).json({ error: error.message });
+      ErrorResponseUtil.sendAuthenticationError(res, error.message);
     }
   }
 

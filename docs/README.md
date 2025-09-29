@@ -1,8 +1,8 @@
-# Accounting API Documentation
+# Universal Accounting API - Documentation
 
 ## Overview
 
-This directory contains comprehensive API documentation for the Accounting API, including OpenAPI specifications, interactive documentation, code examples, and deployment guides.
+The Universal Accounting API is a comprehensive, bank-level secure REST API backend designed to provide universal accounting, financial, and business management operations for businesses of all sizes. This directory contains complete documentation organized into focused sections for easier navigation and understanding.
 
 ## 📁 Directory Structure
 

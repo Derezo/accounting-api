@@ -1,8 +1,27 @@
-import { PrismaClient, Customer, Person, Business } from '@prisma/client';
+import { Customer, Person, Business } from '@prisma/client';
 import { CustomerTier, CustomerType, CustomerStatus } from '../types/enums';
 import { auditService } from './audit.service';
+import { prisma } from '../config/database';
+import { FieldEncryptionService } from './field-encryption.service';
 
-const prisma = new PrismaClient();
+export interface CustomerStats {
+  quotes: number;
+  invoices: number;
+  payments: number;
+  totalRevenue: number;
+  activeProjects: number;
+}
+
+interface EncryptedPersonData {
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  email?: string;
+  phone?: string;
+  mobile?: string;
+  dateOfBirth?: Date;
+  socialInsNumber?: string;
+}
 
 interface CreateCustomerData {
   type: CustomerType;
@@ -83,7 +102,129 @@ interface CustomerFilters {
   offset?: number;
 }
 
-export class CustomerService {
+class CustomerService {
+  private fieldEncryption: FieldEncryptionService;
+
+  constructor() {
+    this.fieldEncryption = new FieldEncryptionService();
+  }
+
+  /**
+   * Encrypt PII fields for person data
+   */
+  private async encryptPersonPII(
+    personData: CreateCustomerData['personData'] | UpdateCustomerData['personData'],
+    organizationId: string
+  ): Promise<EncryptedPersonData | null> {
+    if (!personData) return null;
+
+    const encrypted: EncryptedPersonData = {
+      firstName: personData.firstName || '',
+      lastName: personData.lastName || '',
+      middleName: personData.middleName,
+    };
+
+    // Encrypt sensitive fields
+    if ('socialInsNumber' in personData && personData.socialInsNumber) {
+      encrypted.socialInsNumber = await this.fieldEncryption.encryptField(
+        personData.socialInsNumber,
+        { organizationId, fieldName: 'socialInsNumber', deterministic: false }
+      );
+    }
+
+    if (personData.email) {
+      encrypted.email = await this.fieldEncryption.encryptField(
+        personData.email,
+        { organizationId, fieldName: 'email', deterministic: true, searchable: true }
+      );
+    }
+
+    if (personData.phone) {
+      encrypted.phone = await this.fieldEncryption.encryptField(
+        personData.phone,
+        { organizationId, fieldName: 'phone', deterministic: true }
+      );
+    }
+
+    if (personData.mobile) {
+      encrypted.mobile = await this.fieldEncryption.encryptField(
+        personData.mobile,
+        { organizationId, fieldName: 'mobile', deterministic: true }
+      );
+    }
+
+    if (personData.dateOfBirth) {
+      encrypted.dateOfBirth = new Date(personData.dateOfBirth);
+    }
+
+    return encrypted;
+  }
+
+  /**
+   * Decrypt PII fields for person data
+   */
+  private async decryptPersonPII(person: Person, organizationId: string): Promise<Person | null> {
+    if (!person) return null;
+
+    const decrypted: Person = {
+      ...person,
+    };
+
+    // Decrypt sensitive fields
+    if (person.socialInsNumber) {
+      try {
+        const result = await this.fieldEncryption.decryptField(
+          person.socialInsNumber,
+          { organizationId, fieldName: 'socialInsNumber' }
+        );
+        decrypted.socialInsNumber = result;
+      } catch (error) {
+        console.error('Failed to decrypt socialInsNumber:', error);
+        decrypted.socialInsNumber = '[ENCRYPTED]';
+      }
+    }
+
+    if (person.email) {
+      try {
+        const result = await this.fieldEncryption.decryptField(
+          person.email,
+          { organizationId, fieldName: 'email' }
+        );
+        decrypted.email = result;
+      } catch (error) {
+        console.error('Failed to decrypt email:', error);
+        decrypted.email = '[ENCRYPTED]';
+      }
+    }
+
+    if (person.phone) {
+      try {
+        const result = await this.fieldEncryption.decryptField(
+          person.phone,
+          { organizationId, fieldName: 'phone' }
+        );
+        decrypted.phone = result;
+      } catch (error) {
+        console.error('Failed to decrypt phone:', error);
+        decrypted.phone = '[ENCRYPTED]';
+      }
+    }
+
+    if (person.mobile) {
+      try {
+        const result = await this.fieldEncryption.decryptField(
+          person.mobile,
+          { organizationId, fieldName: 'mobile' }
+        );
+        decrypted.mobile = result;
+      } catch (error) {
+        console.error('Failed to decrypt mobile:', error);
+        decrypted.mobile = '[ENCRYPTED]';
+      }
+    }
+
+    return decrypted;
+  }
   async createCustomer(
     data: CreateCustomerData,
     organizationId: string,
@@ -97,20 +238,25 @@ export class CustomerService {
 
       // Create person or business record based on type
       if (data.type === CustomerType.PERSON && data.personData) {
-        const person = await tx.person.create({
-          data: {
-            organizationId,
-            firstName: data.personData.firstName,
-            lastName: data.personData.lastName,
-            middleName: data.personData.middleName,
-            email: data.personData.email,
-            phone: data.personData.phone,
-            mobile: data.personData.mobile,
-            dateOfBirth: data.personData.dateOfBirth ? new Date(data.personData.dateOfBirth) : null,
-            socialInsNumber: data.personData.socialInsNumber // TODO: encrypt this
-          }
-        });
-        personId = person.id;
+        // Encrypt PII data before storing
+        const encryptedPersonData = await this.encryptPersonPII(data.personData, organizationId);
+
+        if (encryptedPersonData) {
+          const person = await tx.person.create({
+            data: {
+              organizationId,
+              firstName: encryptedPersonData.firstName,
+              lastName: encryptedPersonData.lastName,
+              middleName: encryptedPersonData.middleName,
+              email: encryptedPersonData.email,
+              phone: encryptedPersonData.phone,
+              mobile: encryptedPersonData.mobile,
+              dateOfBirth: encryptedPersonData.dateOfBirth,
+              socialInsNumber: encryptedPersonData.socialInsNumber
+            }
+          });
+          personId = person.id;
+        }
       } else if (data.type === CustomerType.BUSINESS && data.businessData) {
         const business = await tx.business.create({
           data: {
@@ -156,17 +302,23 @@ export class CustomerService {
       return newCustomer;
     });
 
-    await auditService.logCreate(
-      'Customer',
-      customer.id,
-      customer,
-      {
-        organizationId,
-        userId: auditContext.userId,
-        ipAddress: auditContext.ipAddress,
-        userAgent: auditContext.userAgent
-      }
-    );
+    // Log customer creation for audit trail
+    try {
+      await auditService.logCreate(
+        'Customer',
+        customer.id,
+        customer,
+        {
+          organizationId,
+          userId: auditContext.userId,
+          ipAddress: auditContext.ipAddress,
+          userAgent: auditContext.userAgent
+        }
+      );
+    } catch (auditError) {
+      // Audit failures should not break customer creation
+      console.error('Audit logging failed for customer creation:', auditError);
+    }
 
     return customer;
   }
@@ -175,7 +327,7 @@ export class CustomerService {
     id: string,
     organizationId: string,
     auditContext: { userId: string; ipAddress?: string; userAgent?: string }
-  ): Promise<(Customer & { person?: Person | null; business?: Business | null; addresses?: any[] }) | null> {
+  ): Promise<(Customer & { person?: Person | null; business?: Business | null; addresses?: unknown[] }) | null> {
     const customer = await prisma.customer.findFirst({
       where: {
         id,
@@ -208,6 +360,14 @@ export class CustomerService {
           userAgent: auditContext.userAgent
         }
       );
+
+      // Decrypt PII data before returning
+      if (customer.person) {
+        const decryptedPerson = await this.decryptPersonPII(customer.person, organizationId);
+        if (decryptedPerson) {
+          customer.person = decryptedPerson;
+        }
+      }
     }
 
     return customer;
@@ -257,20 +417,26 @@ export class CustomerService {
 
       // Update person or business data if provided
       if (data.personData && customer.personId) {
-        const updatedPerson = await tx.person.update({
-          where: { id: customer.personId },
-          data: {
-            firstName: data.personData.firstName,
-            lastName: data.personData.lastName,
-            middleName: data.personData.middleName,
-            email: data.personData.email,
-            phone: data.personData.phone,
-            mobile: data.personData.mobile,
-            dateOfBirth: data.personData.dateOfBirth ? new Date(data.personData.dateOfBirth) : undefined,
-            updatedAt: new Date()
-          }
-        });
-        customer.person = updatedPerson;
+        // Encrypt PII data before updating
+        const encryptedPersonData = await this.encryptPersonPII(data.personData, organizationId);
+
+        if (encryptedPersonData) {
+          const updatedPerson = await tx.person.update({
+            where: { id: customer.personId },
+            data: {
+              firstName: encryptedPersonData.firstName,
+              lastName: encryptedPersonData.lastName,
+              middleName: encryptedPersonData.middleName,
+              email: encryptedPersonData.email,
+              phone: encryptedPersonData.phone,
+              mobile: encryptedPersonData.mobile,
+              dateOfBirth: encryptedPersonData.dateOfBirth,
+              socialInsNumber: encryptedPersonData.socialInsNumber,
+              updatedAt: new Date()
+            }
+          });
+          customer.person = updatedPerson;
+        }
       } else if (data.businessData && customer.businessId) {
         const updatedBusiness = await tx.business.update({
           where: { id: customer.businessId },
@@ -306,6 +472,14 @@ export class CustomerService {
       }
     );
 
+    // Decrypt PII data before returning
+    if (updatedCustomer.person) {
+      const decryptedPerson = await this.decryptPersonPII(updatedCustomer.person, organizationId);
+      if (decryptedPerson) {
+        updatedCustomer.person = decryptedPerson;
+      }
+    }
+
     return updatedCustomer;
   }
 
@@ -313,7 +487,7 @@ export class CustomerService {
     filters: CustomerFilters,
     organizationId: string
   ): Promise<{ customers: (Customer & { person?: Person | null; business?: Business | null })[], total: number }> {
-    const where: any = {
+    const where: Record<string, unknown> = {
       organizationId,
       deletedAt: null
     };
@@ -379,7 +553,20 @@ export class CustomerService {
       prisma.customer.count({ where })
     ]);
 
-    return { customers, total };
+    // Decrypt PII data for all customers with person data
+    const decryptedCustomers = await Promise.all(
+      customers.map(async (customer) => {
+        if (customer.person) {
+          const decryptedPerson = await this.decryptPersonPII(customer.person, organizationId);
+          if (decryptedPerson) {
+            customer.person = decryptedPerson;
+          }
+        }
+        return customer;
+      })
+    );
+
+    return { customers: decryptedCustomers, total };
   }
 
   async deleteCustomer(
@@ -449,7 +636,7 @@ export class CustomerService {
   async getCustomerStats(
     id: string,
     organizationId: string
-  ): Promise<any> {
+  ): Promise<CustomerStats> {
     const customer = await prisma.customer.findFirst({
       where: {
         id,
@@ -467,9 +654,7 @@ export class CustomerService {
       invoiceCount,
       paymentCount,
       totalRevenue,
-      activeProjects,
-      lastQuoteDate,
-      lastInvoiceDate
+      activeProjects
     ] = await Promise.all([
       prisma.quote.count({
         where: { customerId: id, deletedAt: null }
@@ -494,16 +679,6 @@ export class CustomerService {
           status: 'IN_PROGRESS',
           deletedAt: null
         }
-      }),
-      prisma.quote.findFirst({
-        where: { customerId: id, deletedAt: null },
-        orderBy: { createdAt: 'desc' },
-        select: { createdAt: true }
-      }),
-      prisma.invoice.findFirst({
-        where: { customerId: id, deletedAt: null },
-        orderBy: { createdAt: 'desc' },
-        select: { createdAt: true }
       })
     ]);
 
@@ -511,10 +686,8 @@ export class CustomerService {
       quotes: quoteCount,
       invoices: invoiceCount,
       payments: paymentCount,
-      totalRevenue: totalRevenue._sum.amount || 0,
-      activeProjects,
-      lastQuoteDate: lastQuoteDate?.createdAt,
-      lastInvoiceDate: lastInvoiceDate?.createdAt
+      totalRevenue: Number(totalRevenue._sum.amount) || 0,
+      activeProjects
     };
   }
 

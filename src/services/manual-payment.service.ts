@@ -1,13 +1,13 @@
-// @ts-nocheck
-import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
+import { Payment } from '@prisma/client';
 import { config } from '../config/config';
 import { auditService } from './audit.service';
 import { emailService } from './email.service';
 import { PaymentMethod, PaymentStatus } from '../types/enums';
 
-const prisma = new PrismaClient();
 
+
+import { prisma } from '../config/database';
 export interface CreateManualPaymentData {
   customerId: string;
   invoiceId?: string;
@@ -66,6 +66,36 @@ export interface PartialPaymentAllocation {
   }[];
 }
 
+export interface BatchPaymentResult {
+  successful: Payment[];
+  failed: { error: string; data: CreateManualPaymentData }[];
+  batchId: string;
+}
+
+export interface ReconciliationResult {
+  reconciledPayments: Payment[];
+  discrepancies: {
+    type: string;
+    expected: number;
+    actual: number;
+    difference: number;
+  }[];
+}
+
+export interface PaymentPlanResult {
+  paymentPlan: {
+    id: string;
+    customerId: string;
+    invoiceId?: string;
+    totalAmount: number;
+    currency: string;
+    installments: number;
+    status: string;
+    createdAt: Date;
+  };
+  scheduledPayments: Payment[];
+}
+
 export class ManualPaymentService {
   private generatePaymentNumber(paymentMethod: PaymentMethod): string {
     const methodPrefix = this.getMethodPrefix(paymentMethod);
@@ -95,7 +125,7 @@ export class ManualPaymentService {
     data: CreateManualPaymentData,
     organizationId: string,
     auditContext: { userId?: string; ipAddress?: string; userAgent?: string }
-  ): Promise<any> {
+  ): Promise<Payment> {
     // Verify customer exists and belongs to organization
     const customer = await prisma.customer.findFirst({
       where: {
@@ -131,7 +161,7 @@ export class ManualPaymentService {
 
       // Verify payment amount doesn't exceed remaining balance
       const remainingBalance = invoice.balance;
-      if (data.amount > remainingBalance) {
+      if (data.amount > remainingBalance.toNumber()) {
         throw new Error(`Payment amount (${data.amount}) exceeds remaining balance (${remainingBalance})`);
       }
     }
@@ -212,7 +242,7 @@ export class ManualPaymentService {
       const invoiceService = await import('./invoice.service');
       await invoiceService.invoiceService.recordPayment(
         payment.invoiceId,
-        payment.amount,
+        payment.amount.toNumber(),
         organizationId,
         { userId: auditContext.userId || 'system', ipAddress: auditContext.ipAddress, userAgent: auditContext.userAgent }
       );
@@ -224,9 +254,9 @@ export class ManualPaymentService {
       try {
         await emailService.sendPaymentReceipt(customerEmail, {
           paymentNumber: payment.paymentNumber,
-          amount: payment.amount,
+          amount: payment.amount.toNumber(),
           currency: payment.currency,
-          paymentMethod: this.formatPaymentMethod(payment.paymentMethod),
+          paymentMethod: this.formatPaymentMethod(payment.paymentMethod as PaymentMethod),
           paymentDate: payment.paymentDate,
           customerName: customer.person
             ? `${customer.person.firstName} ${customer.person.lastName}`
@@ -313,12 +343,12 @@ export class ManualPaymentService {
     organizationId: string,
     auditContext: { userId?: string; ipAddress?: string; userAgent?: string }
   ): Promise<{
-    successful: any[];
+    successful: unknown[];
     failed: { payment: CreateManualPaymentData; error: string }[];
     batchId: string;
   }> {
     const batchId = crypto.randomUUID();
-    const successful: any[] = [];
+    const successful: unknown[] = [];
     const failed: { payment: CreateManualPaymentData; error: string }[] = [];
 
     // Process each payment in the batch
@@ -374,8 +404,8 @@ export class ManualPaymentService {
     organizationId: string,
     auditContext: { userId?: string; ipAddress?: string; userAgent?: string }
   ): Promise<{
-    reconciledPayments: any[];
-    discrepancies: any[];
+    reconciledPayments: unknown[];
+    discrepancies: unknown[];
   }> {
     // Verify all payments exist and belong to organization
     const payments = await prisma.payment.findMany({
@@ -390,10 +420,10 @@ export class ManualPaymentService {
       throw new Error('Some payments not found or do not belong to organization');
     }
 
-    const reconciledPayments: any[] = [];
-    const discrepancies: any[] = [];
+    const reconciledPayments: unknown[] = [];
+    const discrepancies: unknown[] = [];
 
-    const totalPaymentAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
+    const totalPaymentAmount = payments.reduce((sum, payment) => sum + payment.amount.toNumber(), 0);
 
     // Check for amount discrepancies
     if (Math.abs(totalPaymentAmount - reconciliationData.bankAmount) > 0.01) {
@@ -461,7 +491,7 @@ export class ManualPaymentService {
     auditContext: { userId?: string; ipAddress?: string; userAgent?: string }
   ): Promise<{
     paymentPlan: any;
-    scheduledPayments: any[];
+    scheduledPayments: unknown[];
   }> {
     // Verify customer exists and belongs to organization
     const customer = await prisma.customer.findFirst({
@@ -580,7 +610,7 @@ export class ManualPaymentService {
     allocationData: PartialPaymentAllocation,
     organizationId: string,
     auditContext: { userId?: string; ipAddress?: string; userAgent?: string }
-  ): Promise<any> {
+  ): Promise<Payment> {
     // Verify payment exists and belongs to organization
     const payment = await prisma.payment.findFirst({
       where: {
@@ -610,7 +640,7 @@ export class ManualPaymentService {
 
     // Validate allocation amounts
     const totalAllocated = allocationData.allocations.reduce((sum, allocation) => sum + allocation.amount, 0);
-    if (Math.abs(totalAllocated - payment.amount) > 0.01) {
+    if (Math.abs(totalAllocated - payment.amount.toNumber()) > 0.01) {
       throw new Error('Total allocated amount does not match payment amount');
     }
 
@@ -669,7 +699,7 @@ export class ManualPaymentService {
     notes?: string,
     organizationId?: string,
     auditContext?: { userId?: string; ipAddress?: string; userAgent?: string }
-  ): Promise<any> {
+  ): Promise<unknown> {
     const payment = await prisma.payment.findFirst({
       where: {
         id: paymentId,

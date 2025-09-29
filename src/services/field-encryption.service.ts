@@ -162,6 +162,17 @@ export class FieldEncryptionService {
       throw new Error('Cannot decrypt empty value');
     }
 
+    // Check if the value is actually encrypted
+    if (!this.isEncryptedFormat(encryptedValue)) {
+      // Value is plain text (likely from seeded data), return as-is
+      logger.warn('Field appears to be plain text, not encrypted', {
+        organizationId: options.organizationId,
+        fieldName: options.fieldName,
+        valueLength: encryptedValue.length
+      });
+      return encryptedValue;
+    }
+
     const startTime = Date.now();
 
     try {
@@ -316,7 +327,7 @@ export class FieldEncryptionService {
    */
   private decryptProbabilistic(encryptedValue: string, key: EncryptionKey): string {
     const parts = encryptedValue.split(':');
-    if (parts.length !== 3) {
+    if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) {
       throw new Error('Invalid probabilistic encrypted format');
     }
 
@@ -338,7 +349,7 @@ export class FieldEncryptionService {
    */
   private decryptDeterministic(encryptedValue: string, key: EncryptionKey): string {
     const parts = encryptedValue.split(':');
-    if (parts.length !== 2) {
+    if (parts.length !== 2 || !parts[0] || !parts[1]) {
       throw new Error('Invalid deterministic encrypted format');
     }
 
@@ -431,6 +442,20 @@ export class FieldEncryptionService {
   }
 
   /**
+   * Check if a value is in encrypted format
+   */
+  private isEncryptedFormat(value: string): boolean {
+    try {
+      // Encrypted data should be base64 and contain JSON with expected fields
+      const decoded = Buffer.from(value, 'base64').toString();
+      const parsed = JSON.parse(decoded);
+      return parsed && typeof parsed.val === 'string' && typeof parsed.a === 'string' && typeof parsed.v === 'number';
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Deserialize encrypted field data
    */
   private deserializeEncryptedField(encryptedValue: string): EncryptedField {
@@ -483,14 +508,119 @@ export class FieldEncryptionService {
   /**
    * Format-preserving encryption for specific data types
    */
-  public encryptFormatPreserving(
+  public async encryptFormatPreserving(
     value: string,
     fieldType: string,
     options: EncryptionOptions
-  ): string {
+  ): Promise<string> {
     // For now, use standard encryption
     // In production, implement FPE algorithms for specific formats
-    return this.encryptField(value, options);
+    return await this.encryptField(value, options);
+  }
+
+  /**
+   * Encrypt buffer data (for file encryption)
+   */
+  public async encryptBuffer(
+    buffer: Buffer,
+    options: EncryptionOptions & { encryptionKey?: string }
+  ): Promise<Buffer> {
+    if (!buffer || buffer.length === 0) {
+      throw new Error('Cannot encrypt empty buffer');
+    }
+
+    try {
+      // Get encryption key
+      const key = options.encryptionKey ||
+        encryptionKeyManager.getActiveKey(
+          options.organizationId,
+          this.DATA_KEY_PURPOSE
+        );
+
+      // Use AES-256-GCM for file encryption
+      const algorithm = 'aes-256-gcm';
+      const iv = crypto.randomBytes(16);
+
+      // Derive key from string if needed
+      const keyBuffer = typeof key === 'string'
+        ? crypto.createHash('sha256').update(key).digest()
+        : key.key;
+
+      const cipher = crypto.createCipher(algorithm, keyBuffer);
+      cipher.setAAD(Buffer.from(options.fieldName || 'document'));
+
+      const encrypted = Buffer.concat([
+        cipher.update(buffer),
+        cipher.final()
+      ]);
+
+      const authTag = cipher.getAuthTag();
+
+      // Combine IV, auth tag, and encrypted data
+      const result = Buffer.concat([
+        iv,
+        authTag,
+        encrypted
+      ]);
+
+      return result;
+    } catch (error) {
+      logger.error('Buffer encryption failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        organizationId: options.organizationId,
+        fieldName: options.fieldName
+      });
+      throw new Error('Failed to encrypt buffer');
+    }
+  }
+
+  /**
+   * Decrypt buffer data (for file decryption)
+   */
+  public async decryptBuffer(
+    encryptedBuffer: Buffer,
+    options: EncryptionOptions & { encryptionKey?: string }
+  ): Promise<Buffer> {
+    if (!encryptedBuffer || encryptedBuffer.length === 0) {
+      throw new Error('Cannot decrypt empty buffer');
+    }
+
+    try {
+      // Get encryption key
+      const key = options.encryptionKey ||
+        encryptionKeyManager.getActiveKey(
+          options.organizationId,
+          this.DATA_KEY_PURPOSE
+        );
+
+      // Extract IV, auth tag, and encrypted data
+      const iv = encryptedBuffer.subarray(0, 16);
+      const authTag = encryptedBuffer.subarray(16, 32);
+      const encrypted = encryptedBuffer.subarray(32);
+
+      // Derive key from string if needed
+      const keyBuffer = typeof key === 'string'
+        ? crypto.createHash('sha256').update(key).digest()
+        : key.key;
+
+      const decipher = crypto.createDecipher('aes-256-gcm', keyBuffer);
+      decipher.setAuthTag(authTag);
+      decipher.setAAD(Buffer.from(options.fieldName || 'document'));
+
+      const decrypted = Buffer.concat([
+        decipher.update(encrypted),
+        decipher.final()
+      ]);
+
+      return decrypted;
+    } catch (error) {
+      logger.error('Buffer decryption failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        organizationId: options.organizationId,
+        fieldName: options.fieldName
+      });
+      throw new Error('Failed to decrypt buffer');
+    }
   }
 
   /**

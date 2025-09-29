@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { AuditAction } from '../types/enums';
-
-const prisma = new PrismaClient();
+import { prisma } from '../config/database';
 
 interface AuditContext {
   userId?: string;
@@ -11,11 +9,19 @@ interface AuditContext {
   requestId?: string;
 }
 
-interface AuditData {
+interface AuditChanges {
+  [key: string]: {
+    before?: unknown;
+    after?: unknown;
+  };
+}
+
+export interface AuditData {
   action: AuditAction;
   entityType: string;
   entityId: string;
-  changes?: any;
+  changes?: AuditChanges | Record<string, unknown>;
+  details?: Record<string, unknown>;
   context: AuditContext;
 }
 
@@ -45,7 +51,7 @@ export class AuditService {
   async logCreate(
     entityType: string,
     entityId: string,
-    data: any,
+    data: Record<string, unknown>,
     context: AuditContext
   ): Promise<void> {
     await this.logAction({
@@ -60,11 +66,11 @@ export class AuditService {
   async logUpdate(
     entityType: string,
     entityId: string,
-    oldData: any,
-    newData: any,
+    oldData: Record<string, unknown>,
+    newData: Record<string, unknown>,
     context: AuditContext
   ): Promise<void> {
-    const changes = this.compareObjects(oldData, newData);
+    const changes = this.compareObjects(oldData, newData) as Record<string, unknown>;
 
     if (Object.keys(changes).length > 0) {
       await this.logAction({
@@ -80,7 +86,7 @@ export class AuditService {
   async logDelete(
     entityType: string,
     entityId: string,
-    data: any,
+    data: Record<string, unknown>,
     context: AuditContext
   ): Promise<void> {
     await this.logAction({
@@ -133,7 +139,7 @@ export class AuditService {
 
   async logExport(
     entityType: string,
-    query: any,
+    query: Record<string, unknown>,
     recordCount: number,
     context: AuditContext
   ): Promise<void> {
@@ -173,7 +179,7 @@ export class AuditService {
       offset?: number;
     }
   ): Promise<any[]> {
-    const where: any = { organizationId };
+    const where: Record<string, unknown> = { organizationId };
 
     if (filters?.entityType) where.entityType = filters.entityType;
     if (filters?.entityId) where.entityId = filters.entityId;
@@ -182,8 +188,8 @@ export class AuditService {
 
     if (filters?.startDate || filters?.endDate) {
       where.timestamp = {};
-      if (filters.startDate) where.timestamp.gte = filters.startDate;
-      if (filters.endDate) where.timestamp.lte = filters.endDate;
+      if (filters.startDate) (where.timestamp as any).gte = filters.startDate;
+      if (filters.endDate) (where.timestamp as any).lte = filters.endDate;
     }
 
     return prisma.auditLog.findMany({
@@ -229,8 +235,8 @@ export class AuditService {
     });
   }
 
-  private compareObjects(oldData: any, newData: any): any {
-    const changes: any = {};
+  private compareObjects(oldData: any, newData: any): Record<string, unknown> {
+    const changes: Record<string, unknown> = {};
 
     // Find modified and new fields
     for (const key in newData) {
@@ -312,6 +318,355 @@ export class AuditService {
       headers.join(','),
       ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
     ].join('\n');
+  }
+
+  async getUserActivity(userId: string, organizationId: string, options?: {
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  }): Promise<Array<{
+    id: string;
+    timestamp: Date;
+    action: string;
+    entityType: string;
+    entityId: string;
+    ipAddress: string | null;
+    userAgent: string | null;
+    changes: Record<string, unknown>;
+    riskLevel: 'low' | 'medium' | 'high';
+  }>> {
+    const startDate = options?.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+    const endDate = options?.endDate || new Date();
+    const limit = options?.limit || 100;
+
+    const logs = await prisma.auditLog.findMany({
+      where: {
+        userId,
+        organizationId,
+        timestamp: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      orderBy: { timestamp: 'desc' },
+      take: limit
+    });
+
+    return logs.map(log => ({
+      id: log.id,
+      timestamp: log.timestamp,
+      action: log.action,
+      entityType: log.entityType,
+      entityId: log.entityId,
+      ipAddress: log.ipAddress,
+      userAgent: log.userAgent,
+      changes: log.changes ? JSON.parse(log.changes) : null,
+      riskLevel: this.calculateActivityRiskLevel(log)
+    }));
+  }
+
+  async getActiveSessions(organizationId: string): Promise<Array<{
+    userId: string;
+    userName: string;
+    ipAddress: string;
+    userAgent: string;
+    lastActivity: Date;
+    sessionDuration: number;
+    riskScore: number;
+    location?: string;
+  }>> {
+    // Get recent login events
+    const recentLogins = await prisma.auditLog.findMany({
+      where: {
+        organizationId,
+        action: 'LOGIN',
+        timestamp: {
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      },
+      orderBy: { timestamp: 'desc' }
+    });
+
+    // Group by user and get most recent activity
+    const sessionMap = new Map();
+
+    for (const login of recentLogins) {
+      if (!sessionMap.has(login.userId)) {
+        const lastActivity = await this.getLastUserActivity(login.userId!, organizationId);
+        sessionMap.set(login.userId, {
+          userId: login.userId,
+          userName: login.user ? `${login.user.firstName} ${login.user.lastName}` : 'Unknown',
+          ipAddress: login.ipAddress || 'Unknown',
+          userAgent: login.userAgent || 'Unknown',
+          lastActivity: lastActivity || login.timestamp,
+          sessionDuration: Date.now() - login.timestamp.getTime(),
+          riskScore: await this.calculateUserRiskScore(login.userId!, organizationId)
+        });
+      }
+    }
+
+    return Array.from(sessionMap.values());
+  }
+
+  async getSuspiciousActivity(organizationId: string, options?: {
+    severity?: 'low' | 'medium' | 'high' | 'critical';
+    limit?: number;
+  }): Promise<Array<{
+    id: string;
+    type: string;
+    description: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    timestamp: Date;
+    userId?: string;
+    userName?: string;
+    ipAddress?: string;
+    details: Record<string, unknown>;
+  }>> {
+    const limit = options?.limit || 50;
+
+    // Detect various suspicious patterns
+    const suspiciousActivities: Array<{
+      id: string;
+      type: string;
+      description: string;
+      severity: 'low' | 'medium' | 'high' | 'critical';
+      timestamp: Date;
+      userId?: string;
+      userName?: string;
+      ipAddress?: string;
+      details: Record<string, unknown>;
+    }> = [];
+
+    // 1. Multiple failed login attempts
+    const failedLogins = await prisma.auditLog.findMany({
+      where: {
+        organizationId,
+        action: 'LOGIN',
+        changes: {
+          contains: 'failed'
+        },
+        timestamp: {
+          gte: new Date(Date.now() - 60 * 60 * 1000) // Last hour
+        }
+      },
+      include: {
+        user: {
+          select: {
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+
+    // Group failed logins by IP
+    const failedByIP = new Map();
+    failedLogins.forEach(log => {
+      const ip = log.ipAddress || 'unknown';
+      if (!failedByIP.has(ip)) {
+        failedByIP.set(ip, []);
+      }
+      failedByIP.get(ip).push(log);
+    });
+
+    // Flag IPs with multiple failed attempts
+    failedByIP.forEach((attempts, ip) => {
+      if (attempts.length >= 5) {
+        suspiciousActivities.push({
+          id: `brute-force-${ip}-${Date.now()}`,
+          type: 'BRUTE_FORCE_ATTEMPT',
+          description: `Multiple failed login attempts from IP ${ip}`,
+          severity: attempts.length >= 10 ? 'critical' : 'high' as const,
+          timestamp: attempts[attempts.length - 1].timestamp,
+          ipAddress: ip,
+          details: {
+            attemptCount: attempts.length,
+            timeWindow: '1 hour',
+            targetUsers: attempts.map((a: any) => a.user ? `${a.user.firstName} ${a.user.lastName}` : 'Unknown')
+          }
+        });
+      }
+    });
+
+    // 2. Unusual access patterns (different from normal times/locations)
+    // This would require historical data analysis - simplified version here
+    const recentHighRiskActions = await prisma.auditLog.findMany({
+      where: {
+        organizationId,
+        action: {
+          in: ['DELETE', 'UPDATE']
+        },
+        entityType: {
+          in: ['USER', 'PAYMENT', 'INVOICE']
+        },
+        timestamp: {
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      },
+      take: limit
+    });
+
+    recentHighRiskActions.forEach(log => {
+      suspiciousActivities.push({
+        id: `high-risk-${log.id}`,
+        type: 'HIGH_RISK_ACTION',
+        description: `High-risk ${log.action.toLowerCase()} operation on ${log.entityType.toLowerCase()}`,
+        severity: 'medium' as const,
+        timestamp: log.timestamp,
+        userId: log.userId || undefined,
+        userName: log.user ? `${log.user.firstName} ${log.user.lastName}` : undefined,
+        ipAddress: log.ipAddress || undefined,
+        details: {
+          action: log.action,
+          entityType: log.entityType,
+          entityId: log.entityId,
+          changes: log.changes ? JSON.parse(log.changes) : null
+        }
+      });
+    });
+
+    // Filter by severity if specified
+    let filteredActivities = suspiciousActivities;
+    if (options?.severity) {
+      filteredActivities = suspiciousActivities.filter(a => a.severity === options.severity);
+    }
+
+    return filteredActivities
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, limit);
+  }
+
+  async getSecurityMetrics(organizationId: string): Promise<{
+    totalEvents: number;
+    criticalAlerts: number;
+    failedLogins: number;
+    activeUsers: number;
+    riskScore: number;
+    complianceStatus: 'compliant' | 'warning' | 'violation';
+  }> {
+    const now = new Date();
+    const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    const [totalEvents, failedLogins, activeUsers] = await Promise.all([
+      prisma.auditLog.count({
+        where: {
+          organizationId,
+          timestamp: { gte: last24Hours }
+        }
+      }),
+      prisma.auditLog.count({
+        where: {
+          organizationId,
+          action: 'LOGIN',
+          changes: { contains: 'failed' },
+          timestamp: { gte: last24Hours }
+        }
+      }),
+      prisma.auditLog.count({
+        where: {
+          organizationId,
+          action: 'LOGIN',
+          changes: { not: { contains: 'failed' } },
+          timestamp: { gte: last24Hours }
+        }
+      })
+    ]);
+
+    const suspiciousActivities = await this.getSuspiciousActivity(organizationId);
+    const criticalAlerts = suspiciousActivities.filter(a => a.severity === 'critical').length;
+
+    // Calculate overall risk score (0-100)
+    const riskScore = Math.min(100, Math.floor(
+      (failedLogins * 2) +
+      (criticalAlerts * 10) +
+      (suspiciousActivities.length * 1)
+    ));
+
+    // Determine compliance status
+    let complianceStatus: 'compliant' | 'warning' | 'violation' = 'compliant';
+    if (criticalAlerts > 0 || riskScore > 75) {
+      complianceStatus = 'violation';
+    } else if (riskScore > 50 || failedLogins > 10) {
+      complianceStatus = 'warning';
+    }
+
+    return {
+      totalEvents,
+      criticalAlerts,
+      failedLogins,
+      activeUsers,
+      riskScore,
+      complianceStatus
+    };
+  }
+
+  private calculateActivityRiskLevel(log: any): 'low' | 'medium' | 'high' {
+    const highRiskActions = ['DELETE', 'UPDATE', 'EXPORT'];
+    const highRiskEntities = ['USER', 'PAYMENT', 'INVOICE'];
+
+    if (highRiskActions.includes(log.action) && highRiskEntities.includes(log.entityType)) {
+      return 'high';
+    } else if (highRiskActions.includes(log.action) || highRiskEntities.includes(log.entityType)) {
+      return 'medium';
+    }
+    return 'low';
+  }
+
+  private async getLastUserActivity(userId: string, organizationId: string): Promise<Date | null> {
+    const lastActivity = await prisma.auditLog.findFirst({
+      where: {
+        userId,
+        organizationId
+      },
+      orderBy: { timestamp: 'desc' },
+      select: { timestamp: true }
+    });
+
+    return lastActivity?.timestamp || null;
+  }
+
+  private async calculateUserRiskScore(userId: string, organizationId: string): Promise<number> {
+    const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const [highRiskActions, failedLogins] = await Promise.all([
+      prisma.auditLog.count({
+        where: {
+          userId,
+          organizationId,
+          action: { in: ['DELETE', 'UPDATE'] },
+          timestamp: { gte: last24Hours }
+        }
+      }),
+      prisma.auditLog.count({
+        where: {
+          userId,
+          organizationId,
+          action: 'LOGIN',
+          changes: { contains: 'failed' },
+          timestamp: { gte: last24Hours }
+        }
+      })
+    ]);
+
+    return Math.min(100, (highRiskActions * 10) + (failedLogins * 5));
   }
 }
 

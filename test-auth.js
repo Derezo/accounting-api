@@ -9,7 +9,7 @@ async function testAuthentication() {
       },
       body: JSON.stringify({
         email: 'admin@acme.dev',
-        password: 'Admin2024!'
+        password: 'SuperAdmin123!'
       })
     });
 

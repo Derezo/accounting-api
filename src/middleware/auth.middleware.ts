@@ -1,19 +1,24 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/auth.service';
 import { UserRole } from '../types/enums';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
-export interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    organizationId: string;
-    role: string;
-    sessionId: string;
-  };
-  organization?: any;
+import { ErrorResponseUtil } from '../utils/error-response';
+import { hashApiKey } from '../utils/crypto';
+import { prisma } from '../config/database';
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        organizationId: string;
+        role: string;
+        sessionId: string;
+      };
+      organization?: any;
+    }
+  }
 }
+
+export interface AuthenticatedRequest extends Request {}
 
 export async function authenticate(
   req: AuthenticatedRequest,
@@ -24,7 +29,7 @@ export async function authenticate(
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({ error: 'Authentication required' });
+      ErrorResponseUtil.sendAuthenticationError(res, 'Bearer token required');
       return;
     }
 
@@ -38,12 +43,12 @@ export async function authenticate(
     });
 
     if (!user || !user.isActive) {
-      res.status(401).json({ error: 'User account inactive' });
+      ErrorResponseUtil.sendAuthenticationError(res, 'User account inactive');
       return;
     }
 
     if (!user.organization.isActive) {
-      res.status(403).json({ error: 'Organization account inactive' });
+      ErrorResponseUtil.sendAuthorizationError(res, 'Organization account inactive');
       return;
     }
 
@@ -58,18 +63,21 @@ export async function authenticate(
 
     next();
   } catch (error) {
-    res.status(401).json({ error: 'Invalid authentication token' });
+    ErrorResponseUtil.sendAuthenticationError(res, 'Invalid authentication token');
   }
 }
 
-export function authorize(...allowedRoles: UserRole[]) {
+export function authorize(...allowedRoles: UserRole[] | [UserRole[]]) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
 
-    if (!allowedRoles.includes(req.user.role as UserRole)) {
+    // Handle both array and spread parameter formats
+    const roles = Array.isArray(allowedRoles[0]) ? allowedRoles[0] : allowedRoles as UserRole[];
+
+    if (!roles.includes(req.user.role as UserRole) && req.user.role !== UserRole.SUPER_ADMIN) {
       res.status(403).json({ error: 'Insufficient permissions' });
       return;
     }
@@ -109,7 +117,7 @@ export async function validateApiKey(
       return;
     }
 
-    const hashedKey = require('../utils/crypto').hashApiKey(apiKey);
+    const hashedKey = hashApiKey(apiKey);
 
     const key = await prisma.apiKey.findUnique({
       where: { hashedKey },
@@ -174,51 +182,8 @@ export function requireOrganization(
   next();
 }
 
-export function multiTenantScope(model: any) {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
-    if (!req.user) {
-      res.status(401).json({ error: 'Authentication required' });
-      return;
-    }
 
-    // Add organization filter to all database queries
-    const originalFindMany = model.findMany;
-    const originalFindUnique = model.findUnique;
-    const originalFindFirst = model.findFirst;
-    const originalCreate = model.create;
-    const originalUpdate = model.update;
-    const originalDelete = model.delete;
-
-    model.findMany = function(args: any = {}) {
-      args.where = { ...args.where, organizationId: req.user!.organizationId };
-      return originalFindMany.call(this, args);
-    };
-
-    model.findUnique = function(args: any) {
-      args.where = { ...args.where, organizationId: req.user!.organizationId };
-      return originalFindUnique.call(this, args);
-    };
-
-    model.findFirst = function(args: any = {}) {
-      args.where = { ...args.where, organizationId: req.user!.organizationId };
-      return originalFindFirst.call(this, args);
-    };
-
-    model.create = function(args: any) {
-      args.data = { ...args.data, organizationId: req.user!.organizationId };
-      return originalCreate.call(this, args);
-    };
-
-    model.update = function(args: any) {
-      args.where = { ...args.where, organizationId: req.user!.organizationId };
-      return originalUpdate.call(this, args);
-    };
-
-    model.delete = function(args: any) {
-      args.where = { ...args.where, organizationId: req.user!.organizationId };
-      return originalDelete.call(this, args);
-    };
-
-    next();
-  };
-}
+// Aliases for compatibility
+export const authMiddleware = authenticate;
+export const authenticateToken = authenticate;
+export const authorizeRoles = authorize;

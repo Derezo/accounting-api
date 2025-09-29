@@ -1,8 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+
 import { PaymentMethod, PaymentStatus } from '../types/enums';
 
-const prisma = new PrismaClient();
 
+
+import { prisma } from '../config/database';
+import { FinancialMath, calculateRatio } from '../utils/financial';
 export interface PaymentAnalyticsFilter {
   startDate?: Date;
   endDate?: Date;
@@ -175,7 +177,7 @@ export class PaymentAnalyticsService {
         totalCount,
         averageAmount: totalCount > 0 ? totalAmount / totalCount : 0,
         averageProcessingTime,
-        successRate: totalCount > 0 ? (successfulPayments.length / totalCount) * 100 : 0,
+        successRate: totalCount > 0 ? FinancialMath.toNumber(calculateRatio(successfulPayments.length, totalCount)) : 0,
         totalFees,
         averageFee: totalCount > 0 ? totalFees / totalCount : 0
       };
@@ -244,7 +246,7 @@ export class PaymentAnalyticsService {
 
       const onTimePayments = paymentDelays.filter(delay => delay <= 0).length;
       const onTimePaymentRate = paymentDelays.length > 0
-        ? (onTimePayments / paymentDelays.length) * 100
+        ? FinancialMath.toNumber(calculateRatio(onTimePayments, paymentDelays.length))
         : 100;
 
       // Determine payment frequency
@@ -514,7 +516,7 @@ export class PaymentAnalyticsService {
         paymentId: payment.id,
         alertType: 'DUPLICATE_PAYMENT',
         severity: 'MEDIUM',
-        description: `Potential duplicate payment detected for amount ${payment.amount}`,
+        description: `Potential duplicate payment detected for amount ${payment.amount.toNumber()}`,
         detectedAt: new Date(),
         riskScore: 60
       });
@@ -527,7 +529,7 @@ export class PaymentAnalyticsService {
         paymentId: payment.id,
         alertType: 'UNUSUAL_AMOUNT',
         severity: 'LOW',
-        description: `Payment amount ${payment.amount} is significantly higher than usual`,
+        description: `Payment amount ${payment.amount.toNumber()} is significantly higher than usual`,
         detectedAt: new Date(),
         riskScore: 30
       });
@@ -549,12 +551,12 @@ export class PaymentAnalyticsService {
     return alerts.sort((a, b) => b.riskScore - a.riskScore);
   }
 
-  private findDuplicatePayments(payments: any[]): any[] {
+  private findDuplicatePayments(payments: unknown[]): unknown[] {
     const seen = new Map();
     const duplicates = [];
 
     for (const payment of payments) {
-      const key = `${payment.customerId}-${payment.amount}-${payment.paymentMethod}`;
+      const key = `${payment.customerId}-${payment.amount.toNumber()}-${payment.paymentMethod}`;
       if (seen.has(key)) {
         const existing = seen.get(key);
         const timeDiff = Math.abs(payment.paymentDate.getTime() - existing.paymentDate.getTime());
@@ -569,7 +571,7 @@ export class PaymentAnalyticsService {
     return duplicates;
   }
 
-  private findUnusualAmounts(payments: any[]): any[] {
+  private findUnusualAmounts(payments: unknown[]): unknown[] {
     if (payments.length < 10) return []; // Need sufficient data
 
     const amounts = payments.map(p => p.amount);
@@ -579,10 +581,10 @@ export class PaymentAnalyticsService {
 
     const threshold = mean + (2 * stdDev); // 2 standard deviations above mean
 
-    return payments.filter(payment => payment.amount > threshold);
+    return payments.filter(payment => payment.amount.toNumber() > threshold);
   }
 
-  private findRapidSuccessionPayments(payments: any[]): any[] {
+  private findRapidSuccessionPayments(payments: unknown[]): unknown[] {
     const customerPayments = payments.reduce((acc, payment) => {
       if (!acc[payment.customerId]) {
         acc[payment.customerId] = [];
@@ -616,8 +618,8 @@ export class PaymentAnalyticsService {
     return [...new Set(rapidPayments)]; // Remove duplicates
   }
 
-  private buildWhereClause(organizationId: string, filter: PaymentAnalyticsFilter): any {
-    const where: any = {
+  private buildWhereClause(organizationId: string, filter: PaymentAnalyticsFilter): unknown {
+    const where: Record<string, unknown> = {
       organizationId,
       deletedAt: null
     };
@@ -642,7 +644,7 @@ export class PaymentAnalyticsService {
     return where;
   }
 
-  private groupPaymentsByPeriod(payments: any[], groupBy: 'DAY' | 'WEEK' | 'MONTH' | 'QUARTER'): Record<string, any[]> {
+  private groupPaymentsByPeriod(payments: unknown[], groupBy: 'DAY' | 'WEEK' | 'MONTH' | 'QUARTER'): Record<string, any[]> {
     return payments.reduce((acc, payment) => {
       const period = this.formatPeriod(payment.paymentDate, groupBy);
       if (!acc[period]) {

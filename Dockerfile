@@ -46,11 +46,14 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Start development server with debug enabled
 CMD ["dumb-init", "npm", "run", "dev"]
 
-# Production build stage
-FROM base AS build
+# Dependencies stage for better caching
+FROM base AS dependencies
 
-# Install only production dependencies
-RUN npm ci --only=production --ignore-scripts
+# Install all dependencies for building
+RUN npm ci --include=dev
+
+# Build stage
+FROM dependencies AS build
 
 # Copy source code
 COPY . .
@@ -58,8 +61,40 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
-# Build TypeScript
-RUN npm run build
+# Build TypeScript for production
+RUN npm run build:prod
+
+# Staging stage (between dev and prod)
+FROM base AS staging
+
+# Install production dependencies
+RUN npm ci --only=production --ignore-scripts && \
+    npm cache clean --force
+
+# Copy built application
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=build /app/package*.json ./
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/uploads && \
+    chown -R nodejs:nodejs /app
+
+USER nodejs
+
+# Generate Prisma client in staging
+RUN npx prisma generate
+
+# Expose port
+EXPOSE 3000
+
+# Health check with shorter intervals for staging
+HEALTHCHECK --interval=20s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+# Start staging server with some debug info
+CMD ["dumb-init", "node", "dist/index.js"]
 
 # Production stage
 FROM base AS production

@@ -301,7 +301,7 @@ describe('Authentication and Authorization Integration Tests', () => {
       await authenticatedRequest(accountantToken)
         .post('/api/quotes')
         .send({
-          customerId: testContext.customers[0].id,
+          customerId: testContext.customers[0]!.id,
           validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           items: [{
             description: 'Test service',
@@ -387,7 +387,7 @@ describe('Authentication and Authorization Integration Tests', () => {
       await authenticatedRequest(viewerToken)
         .post('/api/quotes')
         .send({
-          customerId: testContext.customers[0].id,
+          customerId: testContext.customers[0]!.id,
           validUntil: new Date().toISOString(),
           items: []
         })
@@ -395,13 +395,13 @@ describe('Authentication and Authorization Integration Tests', () => {
 
       // VIEWER cannot update anything
       await authenticatedRequest(viewerToken)
-        .patch(`/api/customers/${testContext.customers[0].id}`)
+        .patch(`/api/customers/${testContext.customers[0]!.id}`)
         .send({ notes: 'Viewer attempted update' })
         .expect(403);
 
       // VIEWER cannot delete anything
       await authenticatedRequest(viewerToken)
-        .delete(`/api/customers/${testContext.customers[0].id}`)
+        .delete(`/api/customers/${testContext.customers[0]!.id}`)
         .expect(403);
 
       // VIEWER cannot access sensitive data

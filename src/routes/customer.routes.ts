@@ -14,9 +14,6 @@ const router = Router();
 // Apply authentication to all routes
 router.use(authenticate);
 
-// Apply audit logging to all routes
-router.use(auditMiddleware);
-
 /**
  * @swagger
  * /customers:
@@ -103,7 +100,7 @@ router.use(auditMiddleware);
  */
 router.post(
   '/',
-  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.EMPLOYEE),
+  authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.EMPLOYEE),
   validateCreateCustomer,
   customerController.createCustomer.bind(customerController)
 );
@@ -173,6 +170,7 @@ router.post(
  */
 router.get(
   '/:id',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.EMPLOYEE, UserRole.VIEWER, UserRole.CLIENT),
   customerController.getCustomer.bind(customerController)
 );
 
@@ -265,7 +263,7 @@ router.get(
  */
 router.put(
   '/:id',
-  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.EMPLOYEE),
+  authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.EMPLOYEE),
   validateUpdateCustomer,
   customerController.updateCustomer.bind(customerController)
 );
@@ -474,6 +472,7 @@ router.delete(
  */
 router.get(
   '/:id/stats',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT),
   customerController.getCustomerStats.bind(customerController)
 );
 

@@ -474,7 +474,8 @@ describe('Multi-Tenant Isolation Integration Tests', () => {
 
       // Verify no customer was created in tenant 2
       const tenant2Customers = await prisma.customer.findMany({
-        where: { organizationId: tenant2.organization.id }
+        where: { organizationId: tenant2.organization.id },
+        include: { person: true }
       });
 
       expect(tenant2Customers.every(c => c.person?.firstName !== 'Malicious')).toBe(true);

@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { Redis } from 'redis';
+import { createClient, RedisClientType } from 'redis';
 import { logger } from '../utils/logger';
 
 // Import all encryption services
@@ -67,14 +67,14 @@ export interface EncryptionServiceStatus {
  */
 export class EncryptionService {
   private readonly prisma: PrismaClient;
-  private readonly redis?: Redis;
+  private readonly redis?: RedisClientType;
   private readonly config: EncryptionServiceConfig;
   private initialized = false;
 
   constructor(
     prisma: PrismaClient,
     config: EncryptionServiceConfig = {},
-    redis?: Redis
+    redis?: RedisClientType
   ) {
     this.prisma = prisma;
     this.redis = redis;
@@ -662,7 +662,115 @@ export class EncryptionService {
   public getConfiguration(): EncryptionServiceConfig {
     return { ...this.config };
   }
+
+  /**
+   * Generate document-specific encryption key
+   */
+  public async generateDocumentKey(organizationId: string): Promise<string> {
+    return encryptionKeyManager.deriveOrganizationKey({
+      organizationId,
+      keyVersion: 1
+    });
+  }
+
+  /**
+   * Encrypt file contents for document storage
+   */
+  public async encryptDocumentContent(
+    content: Buffer,
+    organizationId: string,
+    documentId: string
+  ): Promise<Buffer> {
+    const encryptionKey = await this.generateDocumentKey(organizationId);
+
+    return fieldEncryptionService.encryptBuffer(content, {
+      organizationId,
+      fieldName: `document_${documentId}`,
+      encryptionKey
+    });
+  }
+
+  /**
+   * Decrypt file contents for document retrieval
+   */
+  public async decryptDocumentContent(
+    encryptedContent: Buffer,
+    organizationId: string,
+    documentId: string
+  ): Promise<Buffer> {
+    const encryptionKey = await this.generateDocumentKey(organizationId);
+
+    return fieldEncryptionService.decryptBuffer(encryptedContent, {
+      organizationId,
+      fieldName: `document_${documentId}`,
+      encryptionKey
+    });
+  }
+
+  /**
+   * Encrypt document metadata fields
+   */
+  public async encryptDocumentMetadata(
+    metadata: Record<string, any>,
+    organizationId: string
+  ): Promise<Record<string, any>> {
+    const encryptedMetadata: Record<string, any> = {};
+
+    for (const [key, value] of Object.entries(metadata)) {
+      if (typeof value === 'string' && value.length > 0) {
+        encryptedMetadata[key] = await fieldEncryptionService.encryptField(value, {
+          organizationId,
+          fieldName: `metadata_${key}`
+        });
+      } else {
+        encryptedMetadata[key] = value;
+      }
+    }
+
+    return encryptedMetadata;
+  }
+
+  /**
+   * Decrypt document metadata fields
+   */
+  public async decryptDocumentMetadata(
+    encryptedMetadata: Record<string, any>,
+    organizationId: string
+  ): Promise<Record<string, any>> {
+    const decryptedMetadata: Record<string, any> = {};
+
+    for (const [key, value] of Object.entries(encryptedMetadata)) {
+      if (typeof value === 'string' && value.includes(':')) { // Check if encrypted
+        try {
+          decryptedMetadata[key] = await fieldEncryptionService.decryptField(value, {
+            organizationId,
+            fieldName: `metadata_${key}`
+          });
+        } catch {
+          // If decryption fails, assume it's not encrypted
+          decryptedMetadata[key] = value;
+        }
+      } else {
+        decryptedMetadata[key] = value;
+      }
+    }
+
+    return decryptedMetadata;
+  }
 }
 
 // Export main service class
 export default EncryptionService;
+
+// Export singleton instance for global use
+export const encryptionService = new EncryptionService(
+  new PrismaClient(),
+  {
+    enablePerformanceOptimization: true,
+    enableAuditLogging: true,
+    enableMonitoring: true,
+    cacheStrategy: 'hybrid',
+    encryptionMode: 'standard',
+    complianceMode: 'comprehensive'
+  }
+);

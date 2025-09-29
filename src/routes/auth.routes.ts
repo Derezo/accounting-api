@@ -371,7 +371,7 @@ router.post('/reset-password-request', (req: Request, res: Response) => authCont
 router.post('/reset-password', validateResetPassword, (req: Request, res: Response) => authController.resetPassword(req, res));
 
 // Protected routes - require authentication
-router.use(authenticate);
+router.use(authenticate as any);
 
 /**
  * @swagger

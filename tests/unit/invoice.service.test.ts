@@ -107,14 +107,14 @@ describe('InvoiceService', () => {
 
       expect(invoice).toBeDefined();
       expect(invoice.customerId).toBe(invoiceData.customerId);
-      expect(invoice.depositRequired).toBe(invoiceData.depositRequired);
+      expect(Number(invoice.depositRequired)).toBe(invoiceData.depositRequired);
       expect(invoice.terms).toBe(invoiceData.terms);
       expect(invoice.notes).toBe(invoiceData.notes);
       expect(invoice.status).toBe(InvoiceStatus.DRAFT);
-      expect(invoice.subtotal).toBe(1000);
-      expect(invoice.taxAmount).toBe(130);
-      expect(invoice.total).toBe(1130);
-      expect(invoice.balance).toBe(830); // total - deposit
+      expect(Number(invoice.subtotal)).toBe(1000);
+      expect(Number(invoice.taxAmount)).toBe(130);
+      expect(Number(invoice.total)).toBe(1130);
+      expect(Number(invoice.balance)).toBe(830); // total - deposit
       expect(invoice.invoiceNumber).toMatch(/^INV-\d{6}$/);
       expect(invoice.items).toHaveLength(1);
       expect(invoice.customer).toBeDefined();
@@ -217,9 +217,9 @@ describe('InvoiceService', () => {
       );
 
       expect(invoice.items).toHaveLength(2);
-      expect(invoice.subtotal).toBe(1100); // (500*2*0.9) + 200
-      expect(invoice.taxAmount).toBe(143); // 1100 * 0.13
-      expect(invoice.total).toBe(1243);
+      expect(Number(invoice.subtotal)).toBe(1100); // (500*2*0.9) + 200
+      expect(Number(invoice.taxAmount)).toBe(143); // 1100 * 0.13
+      expect(Number(invoice.total)).toBe(1243);
     });
   });
 
@@ -239,10 +239,10 @@ describe('InvoiceService', () => {
       expect(invoice).toBeDefined();
       expect(invoice.quoteId).toBe(testQuote.id);
       expect(invoice.customerId).toBe(testQuote.customerId);
-      expect(invoice.subtotal).toBe(testQuote.subtotal);
-      expect(invoice.taxAmount).toBe(testQuote.taxAmount);
-      expect(invoice.total).toBe(testQuote.total);
-      expect(invoice.depositRequired).toBe(339); // 30% of 1130, rounded
+      expect(Number(invoice.subtotal)).toBe(Number(testQuote.subtotal));
+      expect(Number(invoice.taxAmount)).toBe(Number(testQuote.taxAmount));
+      expect(Number(invoice.total)).toBe(Number(testQuote.total));
+      expect(Number(invoice.depositRequired)).toBe(339); // 30% of 1130, rounded
       expect(invoice.items).toHaveLength(1);
       expect(invoice.quote).toBeDefined();
     });
@@ -316,7 +316,7 @@ describe('InvoiceService', () => {
       );
 
       expect(invoice.dueDate.getTime()).toBe(customDueDate.getTime());
-      expect(invoice.depositRequired).toBe(options.depositRequired);
+      expect(Number(invoice.depositRequired)).toBe(options.depositRequired);
       expect(invoice.terms).toBe(options.terms);
       expect(invoice.notes).toBe(options.notes);
     });
@@ -409,10 +409,10 @@ describe('InvoiceService', () => {
       );
 
       expect(updatedInvoice.dueDate.getTime()).toBe(newDueDate.getTime());
-      expect(updatedInvoice.depositRequired).toBe(updateData.depositRequired);
+      expect(Number(updatedInvoice.depositRequired)).toBe(updateData.depositRequired);
       expect(updatedInvoice.terms).toBe(updateData.terms);
       expect(updatedInvoice.notes).toBe(updateData.notes);
-      expect(updatedInvoice.balance).toBe(830); // 1130 - 300
+      expect(Number(updatedInvoice.balance)).toBe(830); // 1130 - 300
     });
 
     it('should update invoice items', async () => {
@@ -441,9 +441,9 @@ describe('InvoiceService', () => {
       );
 
       expect(updatedInvoice.items).toHaveLength(2);
-      expect(updatedInvoice.subtotal).toBe(1600); // (600*2) + 400
-      expect(updatedInvoice.taxAmount).toBe(208); // 1600 * 0.13
-      expect(updatedInvoice.total).toBe(1808);
+      expect(Number(updatedInvoice.subtotal)).toBe(1600); // (600*2) + 400
+      expect(Number(updatedInvoice.taxAmount)).toBe(208); // 1600 * 0.13
+      expect(Number(updatedInvoice.total)).toBe(1808);
     });
 
     it('should reject update for non-draft invoice', async () => {
@@ -737,8 +737,8 @@ describe('InvoiceService', () => {
         { userId: testUser.id }
       );
 
-      expect(updatedInvoice.amountPaid).toBe(paymentAmount);
-      expect(updatedInvoice.balance).toBe(630); // 1130 - 500
+      expect(Number(updatedInvoice.amountPaid)).toBe(paymentAmount);
+      expect(Number(updatedInvoice.balance)).toBe(630); // 1130 - 500
       expect(updatedInvoice.status).toBe(InvoiceStatus.PARTIALLY_PAID);
       expect(updatedInvoice.paidAt).toBeNull(); // Not fully paid yet
     });
@@ -753,8 +753,8 @@ describe('InvoiceService', () => {
         { userId: testUser.id }
       );
 
-      expect(updatedInvoice.amountPaid).toBe(paymentAmount);
-      expect(updatedInvoice.balance).toBe(0);
+      expect(Number(updatedInvoice.amountPaid)).toBe(paymentAmount);
+      expect(Number(updatedInvoice.balance)).toBe(0);
       expect(updatedInvoice.status).toBe(InvoiceStatus.PAID);
       expect(updatedInvoice.paidAt).toBeDefined();
     });
@@ -776,8 +776,8 @@ describe('InvoiceService', () => {
         { userId: testUser.id }
       );
 
-      expect(finalInvoice.amountPaid).toBe(1130);
-      expect(finalInvoice.balance).toBe(0);
+      expect(Number(finalInvoice.amountPaid)).toBe(1130);
+      expect(Number(finalInvoice.balance)).toBe(0);
       expect(finalInvoice.status).toBe(InvoiceStatus.PAID);
     });
 

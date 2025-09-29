@@ -507,12 +507,12 @@ export class ProjectService {
       return acc;
     }, {} as Record<number, number>);
 
-    const totalEstimatedHours = projects.reduce((sum, p) => sum + (p.estimatedHours || 0), 0);
-    const totalActualHours = projects.reduce((sum, p) => sum + (p.actualHours || 0), 0);
+    const totalEstimatedHours = projects.reduce((sum, p) => sum + (Number(p.estimatedHours) || 0), 0);
+    const totalActualHours = projects.reduce((sum, p) => sum + (Number(p.actualHours) || 0), 0);
 
     const totalEstimatedValue = projects.reduce((sum, p) => {
-      if (p.fixedPrice) return sum + p.fixedPrice;
-      if (p.hourlyRate && p.estimatedHours) return sum + (p.hourlyRate * p.estimatedHours);
+      if (p.fixedPrice) return sum + Number(p.fixedPrice);
+      if (p.hourlyRate && p.estimatedHours) return sum + (Number(p.hourlyRate) * Number(p.estimatedHours));
       return sum;
     }, 0);
 

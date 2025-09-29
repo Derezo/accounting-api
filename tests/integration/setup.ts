@@ -82,4 +82,4 @@ export function baseRequest() {
   return request(testApp);
 }
 
-export { prisma as testPrisma, testApp };
+export { prisma as testPrisma };

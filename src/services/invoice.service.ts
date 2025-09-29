@@ -1,9 +1,20 @@
-// @ts-nocheck
-import { PrismaClient, Invoice, InvoiceItem } from '@prisma/client';
+import { Invoice, InvoiceItem } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { InvoiceStatus } from '../types/enums';
 import { auditService } from './audit.service';
+import { prisma } from '../config/database';
 
-const prisma = new PrismaClient();
+export interface InvoiceStats {
+  total: number;
+  draft: number;
+  sent: number;
+  paid: number;
+  overdue: number;
+  totalValue: number;
+  paidValue: number;
+  outstandingValue: number;
+  paymentRate: number;
+}
 
 interface CreateInvoiceData {
   customerId: string;
@@ -12,7 +23,7 @@ interface CreateInvoiceData {
   dueDate: Date;
   currency?: string;
   exchangeRate?: number;
-  depositRequired: number;
+  depositRequired: Decimal | number;
   terms?: string;
   notes?: string;
   items: CreateInvoiceItemData[];
@@ -22,17 +33,17 @@ interface CreateInvoiceItemData {
   productId?: string;
   serviceId?: string;
   description: string;
-  quantity: number;
-  unitPrice: number;
-  discountPercent?: number;
-  taxRate: number;
+  quantity: Decimal | number;
+  unitPrice: Decimal | number;
+  discountPercent?: Decimal | number;
+  taxRate: Decimal | number;
 }
 
 interface UpdateInvoiceData {
   dueDate?: Date;
   currency?: string;
   exchangeRate?: number;
-  depositRequired?: number;
+  depositRequired?: Decimal | number;
   terms?: string;
   notes?: string;
   items?: CreateInvoiceItemData[];
@@ -53,11 +64,14 @@ interface InvoiceFilters {
 }
 
 export class InvoiceService {
+  private toDecimal(value: Decimal | number): Decimal {
+    return value instanceof Decimal ? value : new Decimal(value);
+  }
   async createInvoice(
     data: CreateInvoiceData,
     organizationId: string,
     auditContext: { userId: string; ipAddress?: string; userAgent?: string }
-  ): Promise<Invoice & { items: InvoiceItem[]; customer?: any; quote?: any }> {
+  ): Promise<Invoice & { items: InvoiceItem[]; customer?: unknown; quote?: unknown }> {
     // Verify customer exists and belongs to organization
     const customer = await prisma.customer.findFirst({
       where: { id: data.customerId, organizationId, deletedAt: null }
@@ -100,17 +114,18 @@ export class InvoiceService {
 
     // Validate deposit requirement
     const { subtotal, taxAmount, total } = this.calculateTotals(data.items);
+    const depositRequired = this.toDecimal(data.depositRequired);
 
-    if (data.depositRequired < 0) {
+    if (depositRequired.lt(0)) {
       throw new Error('Deposit required cannot be negative');
     }
 
-    if (data.depositRequired > total) {
+    if (depositRequired.gt(total)) {
       throw new Error('Deposit required cannot exceed total invoice amount');
     }
 
     const invoiceNumber = await this.generateInvoiceNumber(organizationId);
-    const balance = total - (data.depositRequired || 0);
+    const balance = total.minus(depositRequired);
 
     const invoice = await prisma.$transaction(async (tx) => {
       // Create invoice
@@ -128,7 +143,7 @@ export class InvoiceService {
           subtotal,
           taxAmount,
           total,
-          depositRequired: data.depositRequired,
+          depositRequired,
           amountPaid: 0,
           balance,
           terms: data.terms,
@@ -215,7 +230,7 @@ export class InvoiceService {
       terms?: string;
       notes?: string;
     }
-  ): Promise<Invoice & { items: InvoiceItem[]; customer?: any; quote?: any }> {
+  ): Promise<Invoice & { items: InvoiceItem[]; customer?: unknown; quote?: unknown }> {
     // Get the quote with items
     const quote = await prisma.quote.findFirst({
       where: {
@@ -249,8 +264,8 @@ export class InvoiceService {
     }));
 
     // Calculate default deposit (30% of total)
-    const defaultDepositPercentage = 0.3;
-    const defaultDeposit = Math.round(quote.total * defaultDepositPercentage * 100) / 100;
+    const defaultDepositPercentage = new Decimal(0.3);
+    const defaultDeposit = quote.total.mul(defaultDepositPercentage);
 
     // Get customer payment terms for due date
     const paymentTerms = quote.customer.paymentTerms || 15;
@@ -261,7 +276,7 @@ export class InvoiceService {
       customerId: quote.customerId,
       quoteId: quote.id,
       dueDate: options?.dueDate || defaultDueDate,
-      depositRequired: options?.depositRequired ?? defaultDeposit,
+      depositRequired: options?.depositRequired ? new Decimal(options.depositRequired) : defaultDeposit,
       terms: options?.terms || quote.terms || undefined,
       notes: options?.notes || quote.notes || undefined,
       items: invoiceItems
@@ -274,7 +289,7 @@ export class InvoiceService {
     id: string,
     organizationId: string,
     auditContext: { userId: string; ipAddress?: string; userAgent?: string }
-  ): Promise<(Invoice & { items: InvoiceItem[]; customer?: any; quote?: any }) | null> {
+  ): Promise<(Invoice & { items: InvoiceItem[]; customer?: unknown; quote?: unknown }) | null> {
     const invoice = await prisma.invoice.findFirst({
       where: {
         id,
@@ -337,7 +352,19 @@ export class InvoiceService {
       throw new Error('Only draft invoices can be updated');
     }
 
-    let updatedData: any = {};
+    let updatedData: {
+      dueDate?: Date;
+      currency?: string;
+      exchangeRate?: number;
+      terms?: string;
+      notes?: string;
+      subtotal?: Decimal;
+      taxAmount?: Decimal;
+      total?: Decimal;
+      depositRequired?: Decimal;
+      balance?: Decimal;
+      updatedAt?: Date;
+    } = {};
 
     // Update basic fields
     if (data.dueDate !== undefined) updatedData.dueDate = data.dueDate;
@@ -356,27 +383,29 @@ export class InvoiceService {
 
       // Validate deposit requirement
       if (data.depositRequired !== undefined) {
-        if (data.depositRequired < 0) {
+        const depositRequired = this.toDecimal(data.depositRequired);
+        if (depositRequired.lt(0)) {
           throw new Error('Deposit required cannot be negative');
         }
-        if (data.depositRequired > total) {
+        if (depositRequired.gt(total)) {
           throw new Error('Deposit required cannot exceed total invoice amount');
         }
-        updatedData.depositRequired = data.depositRequired;
-        updatedData.balance = total - data.depositRequired;
+        updatedData.depositRequired = depositRequired;
+        updatedData.balance = total.minus(depositRequired);
       } else {
-        updatedData.balance = total - existingInvoice.depositRequired;
+        updatedData.balance = total.minus(existingInvoice.depositRequired);
       }
     } else if (data.depositRequired !== undefined) {
       // Only deposit is being updated
-      if (data.depositRequired < 0) {
+      const depositRequired = this.toDecimal(data.depositRequired);
+      if (depositRequired.lt(0)) {
         throw new Error('Deposit required cannot be negative');
       }
-      if (data.depositRequired > existingInvoice.total) {
+      if (depositRequired.gt(existingInvoice.total)) {
         throw new Error('Deposit required cannot exceed total invoice amount');
       }
-      updatedData.depositRequired = data.depositRequired;
-      updatedData.balance = existingInvoice.total - data.depositRequired;
+      updatedData.depositRequired = depositRequired;
+      updatedData.balance = existingInvoice.total.minus(depositRequired);
     }
 
     updatedData.updatedAt = new Date();
@@ -448,7 +477,7 @@ export class InvoiceService {
   async listInvoices(
     filters: InvoiceFilters,
     organizationId: string
-  ): Promise<{ invoices: (Invoice & { items: InvoiceItem[]; customer?: any })[]; total: number }> {
+  ): Promise<{ invoices: (Invoice & { items: InvoiceItem[]; customer?: unknown })[]; total: number }> {
     const where: any = { organizationId, deletedAt: null };
 
     if (filters.customerId) {
@@ -658,7 +687,7 @@ export class InvoiceService {
       return invoice;
     }
 
-    if (invoice.amountPaid > 0) {
+    if (invoice.amountPaid.gt(0)) {
       throw new Error('Cannot cancel invoice with payments. Please process a refund instead.');
     }
 
@@ -713,17 +742,17 @@ export class InvoiceService {
       throw new Error('Payment amount must be positive');
     }
 
-    const newAmountPaid = invoice.amountPaid + paymentAmount;
-    if (newAmountPaid > invoice.total) {
+    const newAmountPaid = invoice.amountPaid.plus(paymentAmount);
+    if (newAmountPaid.gt(invoice.total)) {
       throw new Error('Payment amount exceeds remaining balance');
     }
 
-    const newBalance = invoice.total - newAmountPaid;
+    const newBalance = invoice.total.minus(newAmountPaid);
     let newStatus = invoice.status;
 
-    if (newBalance === 0) {
+    if (newBalance.eq(0)) {
       newStatus = InvoiceStatus.PAID;
-    } else if (newAmountPaid > 0) {
+    } else if (newAmountPaid.gt(0)) {
       newStatus = InvoiceStatus.PARTIALLY_PAID;
     }
 
@@ -757,7 +786,7 @@ export class InvoiceService {
   async getInvoiceStats(
     organizationId: string,
     customerId?: string
-  ): Promise<any> {
+  ): Promise<InvoiceStats> {
     const where: any = { organizationId, deletedAt: null };
     if (customerId) {
       where.customerId = customerId;
@@ -814,52 +843,54 @@ export class InvoiceService {
       sent: sentInvoices,
       paid: paidInvoices,
       overdue: overdueInvoices,
-      totalValue: totalValue._sum.total || 0,
-      paidValue: paidValue._sum.total || 0,
-      outstandingValue: outstandingValue._sum.balance || 0,
-      overdueValue: overdueValue._sum.balance || 0,
-      paymentRate: totalInvoices > 0 ? (paidInvoices / totalInvoices) * 100 : 0,
-      overdueRate: totalInvoices > 0 ? (overdueInvoices / totalInvoices) * 100 : 0
+      totalValue: totalValue._sum.total?.toNumber() || 0,
+      paidValue: paidValue._sum.total?.toNumber() || 0,
+      outstandingValue: outstandingValue._sum.balance?.toNumber() || 0,
+      paymentRate: totalInvoices > 0 ? (paidInvoices / totalInvoices) * 100 : 0
     };
   }
 
-  private calculateTotals(items: CreateInvoiceItemData[]): { subtotal: number; taxAmount: number; total: number } {
-    let subtotal = 0;
-    let taxAmount = 0;
+  private calculateTotals(items: CreateInvoiceItemData[]): { subtotal: Decimal; taxAmount: Decimal; total: Decimal } {
+    let subtotal = new Decimal(0);
+    let taxAmount = new Decimal(0);
 
     for (const item of items) {
       const itemCalculations = this.calculateItemTotals(item);
-      subtotal += itemCalculations.subtotal;
-      taxAmount += itemCalculations.taxAmount;
+      subtotal = subtotal.plus(itemCalculations.subtotal);
+      taxAmount = taxAmount.plus(itemCalculations.taxAmount);
     }
 
-    const total = subtotal + taxAmount;
+    const total = subtotal.plus(taxAmount);
 
     return {
-      subtotal: Math.round(subtotal * 100) / 100,
-      taxAmount: Math.round(taxAmount * 100) / 100,
-      total: Math.round(total * 100) / 100
+      subtotal,
+      taxAmount,
+      total
     };
   }
 
   private calculateItemTotals(item: CreateInvoiceItemData): {
-    subtotal: number;
-    discountAmount: number;
-    taxAmount: number;
-    total: number;
+    subtotal: Decimal;
+    discountAmount: Decimal;
+    taxAmount: Decimal;
+    total: Decimal;
   } {
-    const lineTotal = item.quantity * item.unitPrice;
-    const discountPercent = item.discountPercent || 0;
-    const discountAmount = (lineTotal * discountPercent) / 100;
-    const subtotal = lineTotal - discountAmount;
-    const taxAmount = (subtotal * item.taxRate) / 100;
-    const total = subtotal + taxAmount;
+    const quantity = this.toDecimal(item.quantity);
+    const unitPrice = this.toDecimal(item.unitPrice);
+    const discountPercent = this.toDecimal(item.discountPercent || 0);
+    const taxRate = this.toDecimal(item.taxRate);
+
+    const lineTotal = quantity.mul(unitPrice);
+    const discountAmount = lineTotal.mul(discountPercent).div(100);
+    const subtotal = lineTotal.minus(discountAmount);
+    const taxAmount = subtotal.mul(taxRate).div(100);
+    const total = subtotal.plus(taxAmount);
 
     return {
-      subtotal: Math.round(subtotal * 100) / 100,
-      discountAmount: Math.round(discountAmount * 100) / 100,
-      taxAmount: Math.round(taxAmount * 100) / 100,
-      total: Math.round(total * 100) / 100
+      subtotal,
+      discountAmount,
+      taxAmount,
+      total
     };
   }
 

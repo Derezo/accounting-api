@@ -45,7 +45,7 @@ const logger = winston.createLogger({
         winston.format.json(),
         winston.format((info) => {
           // Only log encryption-related entries to this file
-          return info.message && (
+          return info.message && typeof info.message === 'string' && (
             info.message.includes('encrypt') ||
             info.message.includes('decrypt') ||
             info.message.includes('key') ||

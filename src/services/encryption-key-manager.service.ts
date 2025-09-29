@@ -351,7 +351,7 @@ export class EncryptionKeyManagerService {
     const iv = this.generateIV();
     const cipher = crypto.createCipheriv(this.ALGORITHM, this.masterKey, iv);
 
-    let encrypted = cipher.update(key.key, null, 'hex');
+    let encrypted = cipher.update(key.key, undefined, 'hex');
     encrypted += cipher.final('hex');
 
     const authTag = cipher.getAuthTag();
@@ -413,5 +413,5 @@ export class EncryptionKeyManagerService {
   }
 }
 
-// Singleton instance
+// Export singleton instance
 export const encryptionKeyManager = new EncryptionKeyManagerService();

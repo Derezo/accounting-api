@@ -1,518 +1,900 @@
-# Enhanced Payment System Documentation
+# Payment System Documentation
 
-## Overview
+**Comprehensive payment processing system for Lifestream Dynamics IT consultancy services**
 
-This document describes the comprehensive payment system implemented for the accounting API, featuring e-Transfer integration, manual payment recording, advanced analytics, and bank-level security measures.
+This document outlines the complete payment management system supporting multiple payment methods, automated processing, customer portal integration, and administrative controls for premium IT consultancy services.
 
-## Table of Contents
+---
 
-1. [System Architecture](#system-architecture)
-2. [Payment Methods](#payment-methods)
-3. [E-Transfer Integration](#e-transfer-integration)
-4. [Manual Payment Recording](#manual-payment-recording)
-5. [Enhanced Features](#enhanced-features)
-6. [Security & Compliance](#security--compliance)
-7. [Analytics & Reporting](#analytics--reporting)
-8. [API Endpoints](#api-endpoints)
-9. [Configuration](#configuration)
-10. [Testing](#testing)
+## 💰 Payment System Overview
 
-## System Architecture
+### Business Model Integration
 
-The payment system is built on a microservices architecture with the following core components:
+The payment system supports the Lifestream Dynamics conversion lifecycle with deposit-based project initiation:
 
-### Services
-- **PaymentService**: Core payment processing and Stripe integration
-- **ETransferService**: Canadian e-Transfer functionality
-- **ManualPaymentService**: Cash, cheque, and bank transfer processing
-- **PaymentAnalyticsService**: Advanced reporting and analytics
-- **PaymentSecurityService**: Security, fraud detection, and compliance
-- **EmailService**: Payment notifications and receipts
+1. **Quote Accepted** → Invoice Generated with Deposit Requirements
+2. **Deposit Payment** → Work Authorization and Project Initiation
+3. **Project Completion** → Final Payment Processing
+4. **Ongoing Relationships** → Retainer and Subscription Support
 
-### Key Features
-- Multi-tenant architecture with organization isolation
-- Comprehensive audit logging for all operations
-- Real-time fraud detection and alerts
-- Automated compliance checking (PCI DSS, PIPEDA, FINTRAC, CRA)
-- Advanced payment analytics and forecasting
-- Bank-level security with encryption and access controls
+### Supported Payment Methods
 
-## Payment Methods
+#### 1. Credit Card Processing (Automated)
 
-The system supports the following payment methods:
+- **Platform:** Stripe integration with secure tokenization
+- **Supported Cards:** Visa, Mastercard, American Express, Discover
+- **Digital Wallets:** Apple Pay, Google Pay, Shop Pay
+- **3D Secure:** Automatic fraud protection and authentication
+- **International:** Multi-currency support for global customers
+- **Subscriptions:** Recurring billing for retainer agreements
 
-### Supported Methods
-- **STRIPE_CARD**: Credit/debit card payments via Stripe
-- **INTERAC_ETRANSFER**: Canadian e-Transfer payments
-- **CASH**: Cash payments with receipt tracking
-- **BANK_TRANSFER**: Wire transfers and ACH payments
-- **CHEQUE**: Cheque payments with clearing status tracking
-- **OTHER**: Custom payment methods
+#### 2. Interac e-Transfer (Semi-Automated)
 
-### Payment Statuses
-- **PENDING**: Payment initiated but not processed
-- **PROCESSING**: Payment being processed
-- **COMPLETED**: Payment successfully processed
-- **FAILED**: Payment failed or rejected
-- **CANCELLED**: Payment cancelled
-- **REFUNDED**: Payment refunded
+- **Target Market:** Canadian customers preferred payment method
+- **Process:** Email-based payment request with automatic confirmation
+- **Reference Tracking:** Unique reference numbers for payment matching
+- **Notification System:** Automatic alerts for received transfers
+- **Reconciliation:** Automated matching with invoice records
 
-## E-Transfer Integration
+#### 3. Cash Payments (Manual Entry)
 
-### Features
-- Canadian banking standard compliance
-- Automatic reference number generation
-- Security question/answer encryption
-- Email notifications to recipients
-- Auto-deposit and manual confirmation flows
-- Expiry handling and automatic cancellation
-- Fee calculation and processing
+- **Use Cases:** Local customers, in-person consultations
+- **Recording:** Admin manual entry with receipt generation
+- **Documentation:** Reference numbers and receipt tracking
+- **Audit Trail:** Complete logging of cash transactions
 
-### E-Transfer Workflow
+#### 4. Bank Transfers (Enterprise)
 
-```mermaid
-sequenceDiagram
-    participant Client
-    participant API
-    participant Bank
-    participant Recipient
+- **Target Market:** Enterprise customers and large projects
+- **Process:** Wire transfer instructions and confirmation
+- **International Support:** Multi-currency and international wire transfers
+- **Documentation:** Bank reference tracking and confirmation
 
-    Client->>API: Create e-Transfer
-    API->>API: Generate reference number
-    API->>API: Encrypt security answer
-    API->>Bank: Initiate e-Transfer
-    API->>Recipient: Send notification email
-    Recipient->>Bank: Deposit e-Transfer
-    Bank->>API: Confirmation webhook
-    API->>Client: Update payment status
-```
+### Excluded Features (By Design)
 
-### Example E-Transfer Creation
+- ❌ Refund processing through customer portal (admin-managed only)
+- ❌ Payment plans/installments (handled through custom agreements)
+- ❌ Cryptocurrency payments (business decision)
+- ❌ Buy now, pay later integrations (maintains premium positioning)
 
-```typescript
-const etransfer = await etransferService.createETransfer({
-  customerId: 'customer-123',
-  invoiceId: 'invoice-456',
-  amount: 500.00,
-  currency: 'CAD',
-  recipientEmail: 'customer@example.com',
-  recipientName: 'John Doe',
-  securityQuestion: 'What is your pet\'s name?',
-  securityAnswer: 'Fluffy',
-  message: 'Payment for services rendered',
-  autoDeposit: false,
-  expiryHours: 72
-}, organizationId, auditContext);
-```
+---
 
-## Manual Payment Recording
+## 🗄 Database Architecture
 
-### Cash Payments
-- Receipt document upload support
-- Multi-currency handling with exchange rates
-- Automatic receipt generation
-- Batch processing capabilities
+### Core Payment Tables
 
-### Cheque Payments
-- Cheque number tracking
-- Clearing status management (CLEARED, BOUNCED, CANCELLED)
-- Bank reconciliation features
-- NSF (Non-Sufficient Funds) handling
+#### Payments Table
 
-### Bank Transfers
-- Wire transfer reference tracking
-- SWIFT code support
-- International transfer handling
-- Bank statement reconciliation
+```sql
+CREATE TABLE payments (
+  id                        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  invoice_id                UUID NOT NULL REFERENCES invoices(id),
+  payment_method            payment_method_enum NOT NULL,
+  amount                    DECIMAL(12,2) NOT NULL,
+  currency                  VARCHAR(3) DEFAULT 'CAD',
+  payment_date              TIMESTAMP WITH TIME ZONE NOT NULL,
 
-### Example Manual Payment
+  -- Payment References
+  reference_number          VARCHAR(255), -- E-transfer ref, cash receipt, etc.
+  stripe_payment_intent_id  VARCHAR(255), -- Stripe payment intent ID
+  stripe_customer_id        VARCHAR(255), -- Stripe customer ID
+  stripe_charge_id          VARCHAR(255), -- Stripe charge ID
+  bank_reference            VARCHAR(255), -- Wire transfer reference
 
-```typescript
-const payment = await manualPaymentService.createManualPayment({
-  customerId: 'customer-123',
-  invoiceId: 'invoice-456',
-  amount: 1000.00,
-  currency: 'CAD',
-  paymentMethod: PaymentMethod.CHEQUE,
-  chequeNumber: 'CHQ-001234',
-  paymentDate: new Date(),
-  referenceNumber: 'REF-789',
-  receiptDocuments: ['https://s3.bucket/receipt.pdf'],
-  adminNotes: 'Cheque received at main office'
-}, organizationId, auditContext);
-```
+  -- Payment Status
+  payment_status            payment_status_enum DEFAULT 'pending',
+  failure_reason            TEXT,
+  retry_count               INTEGER DEFAULT 0,
 
-## Enhanced Features
+  -- Processing Information
+  admin_user_id             UUID REFERENCES users(id), -- Who recorded/processed
+  processor_fee             DECIMAL(8,2), -- Processing fees (Stripe, etc.)
+  net_amount                DECIMAL(12,2), -- Amount after fees
 
-### Payment Plans
-Create installment-based payment schedules with automatic tracking:
+  -- Metadata and Notes
+  customer_notes            TEXT, -- Customer-provided notes
+  admin_notes               TEXT, -- Admin-only notes
+  metadata                  JSONB, -- Additional payment-specific data
 
-```typescript
-const paymentPlan = await manualPaymentService.createPaymentPlan({
-  customerId: 'customer-123',
-  totalAmount: 5000.00,
-  installments: [
-    { amount: 1250.00, dueDate: new Date('2024-01-15') },
-    { amount: 1250.00, dueDate: new Date('2024-02-15') },
-    { amount: 1250.00, dueDate: new Date('2024-03-15') },
-    { amount: 1250.00, dueDate: new Date('2024-04-15') }
-  ],
-  setupFee: 50.00,
-  interestRate: 0.02
-}, organizationId, auditContext);
-```
+  -- Timestamps
+  processed_at              TIMESTAMP WITH TIME ZONE,
+  created_at                TIMESTAMP DEFAULT NOW(),
+  updated_at                TIMESTAMP DEFAULT NOW(),
 
-### Partial Payment Allocation
-Allocate single payments across multiple invoices:
+  -- Constraints
+  CONSTRAINT positive_amount CHECK (amount > 0),
+  CONSTRAINT valid_currency CHECK (currency IN ('CAD', 'USD', 'EUR', 'GBP'))
+);
 
-```typescript
-const allocation = await manualPaymentService.allocatePartialPayment({
-  paymentId: 'payment-123',
-  allocations: [
-    { invoiceId: 'invoice-001', amount: 300.00 },
-    { invoiceId: 'invoice-002', amount: 200.00 }
-  ]
-}, organizationId, auditContext);
-```
+CREATE TYPE payment_method_enum AS ENUM (
+  'credit_card', 'interac_etransfer', 'cash', 'bank_transfer', 'retainer_credit'
+);
 
-### Batch Payment Processing
-Process multiple payments simultaneously:
-
-```typescript
-const batchResult = await manualPaymentService.processBatchPayments({
-  payments: [
-    { customerId: 'customer-1', amount: 100.00, paymentMethod: PaymentMethod.CASH },
-    { customerId: 'customer-2', amount: 200.00, paymentMethod: PaymentMethod.CASH }
-  ],
-  batchReference: 'BATCH-20240115',
-  batchNotes: 'Daily cash deposits'
-}, organizationId, auditContext);
-```
-
-### Bank Reconciliation
-Match payments with bank statements:
-
-```typescript
-const reconciliation = await manualPaymentService.reconcilePayments({
-  bankStatementReference: 'STMT-20240115',
-  bankStatementDate: new Date(),
-  bankAmount: 1500.00,
-  paymentIds: ['payment-1', 'payment-2', 'payment-3'],
-  reconciliationNotes: 'Monthly reconciliation'
-}, organizationId, auditContext);
-```
-
-## Security & Compliance
-
-### Encryption
-- AES-256-GCM encryption for sensitive data
-- Organization-specific encryption keys
-- PBKDF2 key derivation with 100,000 iterations
-- Secure key storage and rotation
-
-### Fraud Detection
-Real-time detection of suspicious activities:
-- Duplicate transaction detection
-- Unusual payment amounts
-- Velocity limit violations
-- Geographic anomalies
-- Suspicious payment patterns
-
-### Compliance Checks
-Automated compliance monitoring:
-
-#### PCI DSS Compliance
-- Credit card data protection
-- Secure data storage validation
-- Encryption verification
-
-#### PIPEDA Compliance (Canada)
-- Personal information protection
-- Data retention policy validation
-- Privacy compliance monitoring
-
-#### FINTRAC Compliance (Canada)
-- Large cash transaction monitoring (>$10,000 CAD)
-- Anti-money laundering checks
-- Suspicious transaction reporting
-
-#### CRA Compliance (Canada)
-- Tax information validation
-- GST/HST compliance checking
-- Required documentation verification
-
-### Transaction Limits
-Configurable limits for fraud prevention:
-- Per-transaction limits
-- Daily/weekly/monthly limits
-- Payment method specific limits
-- Customer tier-based limits
-
-## Analytics & Reporting
-
-### Payment Trends
-Analyze payment patterns over time:
-
-```typescript
-const trends = await paymentAnalyticsService.getPaymentTrends(
-  organizationId,
-  {
-    startDate: new Date('2024-01-01'),
-    endDate: new Date('2024-12-31'),
-    paymentMethod: PaymentMethod.INTERAC_ETRANSFER
-  },
-  'MONTH'
+CREATE TYPE payment_status_enum AS ENUM (
+  'pending', 'processing', 'succeeded', 'failed', 'cancelled', 'refunded'
 );
 ```
 
-### Customer Payment Behavior
-Understand customer payment patterns:
+#### Enhanced Invoices Table
 
-```typescript
-const behavior = await paymentAnalyticsService.getCustomerPaymentBehavior(
-  organizationId,
-  { startDate: new Date('2024-01-01') },
-  50 // Top 50 customers
+```sql
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS payment_terms VARCHAR(50) DEFAULT 'net_15';
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS deposit_percentage DECIMAL(5,2) DEFAULT 50.00;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS deposit_amount DECIMAL(12,2);
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS total_amount DECIMAL(12,2) NOT NULL;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS paid_amount DECIMAL(12,2) DEFAULT 0.00;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS balance_remaining DECIMAL(12,2)
+  GENERATED ALWAYS AS (total_amount - paid_amount) STORED;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS payment_status invoice_payment_status_enum DEFAULT 'unpaid';
+
+CREATE TYPE invoice_payment_status_enum AS ENUM (
+  'unpaid', 'deposit_paid', 'partially_paid', 'paid', 'overpaid', 'refunded'
 );
 ```
 
-### Payment Forecasting
-Predict future payment volumes:
+#### Payment Methods Table (Customer Preferences)
 
-```typescript
-const forecast = await paymentAnalyticsService.getPaymentForecast(
-  organizationId,
-  6, // 6 periods
-  'MONTH'
+```sql
+CREATE TABLE customer_payment_methods (
+  id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id            UUID NOT NULL REFERENCES customers(id),
+  payment_method_type    payment_method_enum NOT NULL,
+
+  -- Stripe Payment Methods
+  stripe_payment_method_id VARCHAR(255),
+  card_brand              VARCHAR(20),
+  card_last_four          VARCHAR(4),
+  card_exp_month          INTEGER,
+  card_exp_year           INTEGER,
+
+  -- E-transfer Information
+  etransfer_email         VARCHAR(255),
+  etransfer_preferred     BOOLEAN DEFAULT FALSE,
+
+  -- Bank Transfer Information
+  bank_name               VARCHAR(255),
+  account_nickname        VARCHAR(100),
+
+  -- Settings
+  is_default              BOOLEAN DEFAULT FALSE,
+  is_active               BOOLEAN DEFAULT TRUE,
+
+  created_at              TIMESTAMP DEFAULT NOW(),
+  updated_at              TIMESTAMP DEFAULT NOW()
 );
 ```
 
-### Cash Flow Projection
-Project future cash flows:
+### Database Indexes and Constraints
+
+```sql
+-- Payment table indexes
+CREATE INDEX idx_payments_invoice_id ON payments(invoice_id);
+CREATE INDEX idx_payments_customer_lookup ON payments(invoice_id, payment_status);
+CREATE INDEX idx_payments_date_range ON payments(payment_date, payment_method);
+CREATE INDEX idx_payments_stripe_intent ON payments(stripe_payment_intent_id) WHERE stripe_payment_intent_id IS NOT NULL;
+CREATE INDEX idx_payments_status_method ON payments(payment_status, payment_method);
+
+-- Invoice payment status index
+CREATE INDEX idx_invoices_payment_status ON invoices(payment_status, balance_remaining);
+CREATE INDEX idx_invoices_overdue ON invoices(due_date) WHERE payment_status IN ('unpaid', 'partially_paid');
+
+-- Customer payment methods indexes
+CREATE INDEX idx_customer_payment_methods_customer ON customer_payment_methods(customer_id, is_active);
+CREATE INDEX idx_customer_payment_methods_default ON customer_payment_methods(customer_id) WHERE is_default = TRUE;
+```
+
+---
+
+## 💳 Stripe Integration
+
+### Core Stripe Features
+
+#### Payment Intent Creation
 
 ```typescript
-const projection = await paymentAnalyticsService.getCashFlowProjection(
-  organizationId,
-  90 // 90 days
-);
-```
+interface CreatePaymentIntentRequest {
+  invoiceId: string;
+  amount?: number; // Optional for partial payments
+  currency?: string; // Default to CAD
+  paymentMethods?: string[]; // Allowed payment methods
+  savePaymentMethod?: boolean; // For future payments
+}
 
-### Fraud Alerts
-Monitor for suspicious activities:
+const createPaymentIntent = async (request: CreatePaymentIntentRequest) => {
+  const invoice = await getInvoice(request.invoiceId);
+  const customer = await getCustomer(invoice.customerId);
 
-```typescript
-const alerts = await paymentAnalyticsService.detectFraudAlerts(
-  organizationId,
-  30 // Last 30 days
-);
-```
+  // Ensure Stripe customer exists
+  const stripeCustomer = await ensureStripeCustomer(customer);
 
-## API Endpoints
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: Math.round((request.amount || invoice.balanceRemaining) * 100), // Convert to cents
+    currency: request.currency || "cad",
+    customer: stripeCustomer.id,
+    payment_method_types: request.paymentMethods || [
+      "card",
+      "interac",
+      "apple_pay",
+      "google_pay",
+    ],
+    setup_future_usage: request.savePaymentMethod ? "on_session" : undefined,
+    metadata: {
+      invoice_id: invoice.id,
+      customer_id: customer.id,
+      business: "lifestream_dynamics",
+    },
+    description: `Lifestream Dynamics - Invoice ${invoice.invoiceNumber}`,
+    statement_descriptor: "LD CONSULTING",
+    receipt_email: customer.email,
+  });
 
-### E-Transfer Endpoints
-```
-POST   /api/v1/etransfers                    # Create e-transfer
-GET    /api/v1/etransfers                    # List e-transfers
-GET    /api/v1/etransfers/:number            # Get e-transfer
-PUT    /api/v1/etransfers/:number/confirm    # Confirm deposit
-PUT    /api/v1/etransfers/:number/cancel     # Cancel e-transfer
-GET    /api/v1/etransfers/stats/summary      # E-transfer statistics
-POST   /api/v1/etransfers/maintenance/check-expired  # Check expired
-```
-
-### Manual Payment Endpoints
-```
-POST   /api/v1/manual-payments               # Create manual payment
-POST   /api/v1/manual-payments/batch         # Batch processing
-POST   /api/v1/manual-payments/reconcile     # Bank reconciliation
-POST   /api/v1/manual-payments/payment-plan  # Create payment plan
-POST   /api/v1/manual-payments/allocate      # Allocate partial payment
-PUT    /api/v1/manual-payments/cheque/:id/status  # Update cheque status
-```
-
-### Analytics Endpoints
-```
-GET    /api/v1/payment-analytics/trends           # Payment trends
-GET    /api/v1/payment-analytics/methods          # Method analytics
-GET    /api/v1/payment-analytics/customer-behavior # Customer behavior
-GET    /api/v1/payment-analytics/forecast         # Payment forecast
-GET    /api/v1/payment-analytics/cash-flow        # Cash flow projection
-GET    /api/v1/payment-analytics/aging            # Payment aging
-GET    /api/v1/payment-analytics/fraud-alerts     # Fraud alerts
-```
-
-### Core Payment Endpoints
-```
-POST   /api/v1/payments                      # Create payment
-POST   /api/v1/payments/stripe               # Create Stripe payment
-GET    /api/v1/payments                      # List payments
-GET    /api/v1/payments/:id                  # Get payment
-PUT    /api/v1/payments/:id/status           # Update status
-POST   /api/v1/payments/:id/refund           # Refund payment
-GET    /api/v1/payments/stats/summary        # Payment statistics
-POST   /api/v1/payments/webhook/stripe       # Stripe webhook
-```
-
-## Configuration
-
-### Environment Variables
-
-```bash
-# Database
-DATABASE_URL="file:./dev.db"
-
-# Encryption
-ENCRYPTION_KEY="your-32-character-encryption-key"
-
-# Stripe (Optional)
-STRIPE_SECRET_KEY="sk_test_..."
-STRIPE_PUBLISHABLE_KEY="pk_test_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
-
-# Email (Optional)
-SMTP_HOST="smtp.example.com"
-SMTP_PORT="587"
-SMTP_USER="noreply@example.com"
-SMTP_PASSWORD="password"
-EMAIL_FROM="noreply@example.com"
-
-# Application
-DEFAULT_CURRENCY="CAD"
-DEFAULT_TAX_RATE="0.13"
-PAYMENT_TERMS_DAYS="15"
-
-# Security
-JWT_SECRET="your-jwt-secret"
-JWT_REFRESH_SECRET="your-refresh-secret"
-```
-
-### Payment Method Configuration
-
-```typescript
-// Configure e-transfer settings
-const etransferConfig = {
-  defaultExpiryHours: 72,
-  maxAmount: 3000.00,
-  minAmount: 0.01,
-  feeTiers: [
-    { maxAmount: 100, fee: 1.00 },
-    { maxAmount: 1000, fee: 1.50 },
-    { maxAmount: Infinity, fee: 2.00 }
-  ]
+  return paymentIntent;
 };
+```
 
-// Configure transaction limits
-const transactionLimits = {
-  daily: {
-    cash: { maxAmount: 10000, maxCount: 5 },
-    etransfer: { maxAmount: 5000, maxCount: 10 }
+#### Webhook Event Handling
+
+```typescript
+const webhookHandlers = {
+  "payment_intent.succeeded": async (event) => {
+    const paymentIntent = event.data.object;
+
+    await createPaymentRecord({
+      invoiceId: paymentIntent.metadata.invoice_id,
+      amount: paymentIntent.amount_received / 100,
+      stripePaymentIntentId: paymentIntent.id,
+      stripeChargeId: paymentIntent.charges.data[0]?.id,
+      paymentMethod: "credit_card",
+      paymentStatus: "succeeded",
+      processorFee:
+        paymentIntent.charges.data[0]?.application_fee_amount / 100 || 0,
+      metadata: paymentIntent,
+    });
+
+    await updateInvoicePaymentStatus(paymentIntent.metadata.invoice_id);
+    await sendPaymentConfirmation(paymentIntent.metadata.customer_id);
+    await notifyAdminPaymentReceived(paymentIntent);
   },
-  transaction: {
-    single: { maxAmount: 50000 }
+
+  "payment_intent.payment_failed": async (event) => {
+    const paymentIntent = event.data.object;
+
+    await logFailedPayment({
+      invoiceId: paymentIntent.metadata.invoice_id,
+      stripePaymentIntentId: paymentIntent.id,
+      failureReason: paymentIntent.last_payment_error?.message,
+      amount: paymentIntent.amount / 100,
+    });
+
+    await notifyCustomerPaymentFailed(paymentIntent);
+    await notifyAdminPaymentFailed(paymentIntent);
+  },
+
+  "customer.subscription.created": async (event) => {
+    // Handle retainer subscription setup
+    const subscription = event.data.object;
+    await setupRetainerSubscription(subscription);
+  },
+};
+```
+
+#### Customer Portal Integration
+
+```typescript
+const createCustomerPortalSession = async (
+  customerId: string,
+  returnUrl: string
+) => {
+  const stripeCustomer = await getStripeCustomer(customerId);
+
+  const session = await stripe.billingPortal.sessions.create({
+    customer: stripeCustomer.id,
+    return_url: returnUrl,
+    configuration: {
+      business_profile: {
+        privacy_policy_url: "https://lifestreamdynamics.com/privacy",
+        terms_of_service_url: "https://lifestreamdynamics.com/terms",
+      },
+      features: {
+        payment_method_update: {
+          enabled: true,
+        },
+        invoice_history: {
+          enabled: true,
+        },
+        customer_update: {
+          enabled: true,
+          allowed_updates: ["email", "address"],
+        },
+      },
+    },
+  });
+
+  return session;
+};
+```
+
+---
+
+## 🏦 Interac e-Transfer Integration
+
+### Automated E-Transfer Processing
+
+#### Email Template Generation
+
+```typescript
+interface ETransferRequest {
+  invoiceId: string;
+  customerEmail: string;
+  amount: number;
+  dueDate: Date;
+  referenceNumber: string;
+}
+
+const generateETransferInstructions = (request: ETransferRequest) => {
+  const securityQuestion = "What is the invoice number?";
+  const securityAnswer = request.referenceNumber;
+
+  return {
+    recipientEmail: "payments@digitalartifacts.ca",
+    amount: request.amount,
+    currency: "CAD",
+    securityQuestion,
+    securityAnswer,
+    message: `Payment for Lifestream Dynamics invoice ${
+      request.referenceNumber
+    }.
+              Amount: $${request.amount.toFixed(2)} CAD.
+              Due: ${request.dueDate.toLocaleDateString("en-CA")}.`,
+
+    emailTemplate: {
+      subject: `Payment Instructions - Invoice ${request.referenceNumber}`,
+      body: generateETransferEmailBody(
+        request,
+        securityQuestion,
+        securityAnswer
+      ),
+    },
+  };
+};
+```
+
+#### Notification Processing
+
+```typescript
+// Email parsing for incoming e-transfer notifications
+const processETransferNotification = async (emailContent: string) => {
+  const transferInfo = parseETransferEmail(emailContent);
+
+  if (transferInfo.isValid) {
+    // Match against pending payments
+    const matchingPayment = await findPendingPayment({
+      amount: transferInfo.amount,
+      reference: transferInfo.reference,
+      method: "interac_etransfer",
+    });
+
+    if (matchingPayment) {
+      await confirmETransferPayment({
+        paymentId: matchingPayment.id,
+        transferId: transferInfo.transferId,
+        depositedAt: transferInfo.timestamp,
+      });
+
+      await sendPaymentConfirmation(matchingPayment.customerId);
+    } else {
+      // Manual review required
+      await notifyAdminUnmatchedTransfer(transferInfo);
+    }
   }
 };
 ```
 
-## Testing
+---
 
-### Unit Tests
-Comprehensive test coverage for all services:
+## 🏢 Customer Payment Portal
 
-```bash
-# Run all payment tests
-npm test -- payment
+### Customer Dashboard Integration
 
-# Run specific service tests
-npm test -- etransfer.service.test.ts
-npm test -- manual-payment.service.test.ts
-npm test -- payment-security.service.test.ts
-```
-
-### Integration Tests
-End-to-end testing of payment workflows:
-
-```bash
-# Run integration tests
-npm run test:integration
-```
-
-### Test Coverage
-- Services: 95%+ code coverage
-- Controllers: 90%+ code coverage
-- Security functions: 100% coverage
-- Compliance checks: 100% coverage
-
-### Test Data
-Use the provided test fixtures for consistent testing:
+#### Payment History Interface
 
 ```typescript
-// Test customer
-const testCustomer = {
-  id: 'customer-test-123',
-  organizationId: 'org-test-123',
-  person: {
-    firstName: 'Test',
-    lastName: 'Customer',
-    email: 'test@example.com'
-  }
-};
+interface PaymentHistoryComponent {
+  // Payment list with filtering
+  payments: {
+    id: string;
+    invoiceNumber: string;
+    amount: number;
+    paymentMethod: PaymentMethod;
+    status: PaymentStatus;
+    date: Date;
+    receiptUrl?: string;
+  }[];
 
-// Test payment data
-const testPaymentData = {
-  customerId: testCustomer.id,
-  amount: 100.00,
-  currency: 'CAD',
-  paymentMethod: PaymentMethod.CASH
+  // Filtering options
+  filters: {
+    dateRange: { start: Date; end: Date };
+    paymentMethod?: PaymentMethod;
+    status?: PaymentStatus;
+    invoiceId?: string;
+  };
+
+  // Actions
+  downloadReceipt: (paymentId: string) => void;
+  viewInvoice: (invoiceId: string) => void;
+  requestRefund: (paymentId: string) => void; // Admin approval required
+}
+```
+
+#### Outstanding Balance Widget
+
+```typescript
+interface OutstandingBalanceWidget {
+  totalOutstanding: number;
+  overdueAmount: number;
+  upcomingPayments: {
+    invoiceId: string;
+    invoiceNumber: string;
+    amount: number;
+    dueDate: Date;
+    isOverdue: boolean;
+  }[];
+
+  quickPayActions: {
+    payAll: () => void;
+    payOverdue: () => void;
+    setupAutoPay: () => void;
+    viewPaymentMethods: () => void;
+  };
+}
+```
+
+#### Payment Method Management
+
+```typescript
+interface PaymentMethodManager {
+  savedMethods: {
+    id: string;
+    type: PaymentMethod;
+    displayName: string; // "Visa ending in 1234"
+    isDefault: boolean;
+    expiresAt?: Date;
+  }[];
+
+  actions: {
+    addPaymentMethod: () => void;
+    setDefaultMethod: (methodId: string) => void;
+    removeMethod: (methodId: string) => void;
+    updateBillingInfo: (methodId: string) => void;
+  };
+}
+```
+
+### One-Click Payment Processing
+
+#### Invoice Pay Now Button
+
+```typescript
+const PayInvoiceButton = ({ invoice }: { invoice: Invoice }) => {
+  const [processing, setProcessing] = useState(false);
+
+  const handlePayment = async (paymentMethodId?: string) => {
+    setProcessing(true);
+
+    try {
+      // Create payment intent
+      const { clientSecret } = await createPaymentIntent({
+        invoiceId: invoice.id,
+        amount: invoice.balanceRemaining,
+      });
+
+      // Process with Stripe
+      const result = await stripe.confirmPayment({
+        clientSecret,
+        confirmParams: {
+          payment_method: paymentMethodId,
+          return_url: `${window.location.origin}/dashboard/invoices/${invoice.id}?payment=success`,
+        },
+      });
+
+      if (result.error) {
+        showError(result.error.message);
+      }
+    } catch (error) {
+      showError("Payment failed. Please try again.");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div className="payment-options">
+      <Button
+        onClick={() => handlePayment()}
+        loading={processing}
+        disabled={invoice.balanceRemaining <= 0}
+      >
+        Pay ${invoice.balanceRemaining.toFixed(2)}
+      </Button>
+
+      <PaymentMethodSelector onSelect={handlePayment} showSaveOption={true} />
+    </div>
+  );
 };
 ```
 
-## Best Practices
+---
 
-### Security
-1. Always encrypt sensitive data before storage
-2. Use audit context for all operations
-3. Implement proper access controls (RBAC)
-4. Regular compliance checks
-5. Monitor for suspicious activities
+## ⚙️ Administrative Payment Management
 
-### Performance
-1. Use database indexing for payment queries
-2. Implement caching for frequently accessed data
-3. Batch process large operations
-4. Use pagination for list endpoints
+### Admin Payment Interface
 
-### Error Handling
-1. Provide meaningful error messages
-2. Log all errors with context
-3. Implement retry mechanisms for external APIs
-4. Handle edge cases gracefully
+#### Manual Payment Entry
 
-### Monitoring
-1. Track payment success rates
-2. Monitor processing times
-3. Alert on failed payments
-4. Regular reconciliation checks
+```typescript
+interface AdminPaymentForm {
+  invoiceSelection: {
+    searchable: true;
+    showBalance: true;
+    customerFilter: true;
+  };
 
-## Support and Maintenance
+  paymentDetails: {
+    amount: number;
+    paymentMethod: PaymentMethod;
+    paymentDate: Date;
+    referenceNumber?: string;
+    notes?: string;
+  };
 
-### Maintenance Tasks
-- Daily: Check expired e-transfers
-- Weekly: Run compliance checks
-- Monthly: Generate reconciliation reports
-- Quarterly: Security audit reviews
+  validation: {
+    amountValidation: "positive_amount" | "not_exceed_balance";
+    referenceRequired: PaymentMethod[];
+    dateRestrictions: {
+      maxPastDays: 90;
+      futurePayments: false;
+    };
+  };
+}
+```
 
-### Monitoring Dashboards
-- Payment volume and success rates
-- E-transfer statistics
-- Fraud alert summary
-- Compliance status overview
+#### Bulk Payment Operations
 
-### Troubleshooting
-Common issues and solutions:
+```typescript
+interface BulkPaymentManager {
+  batchProcessing: {
+    csvImport: (file: File) => Promise<PaymentBatch>;
+    validateBatch: (batch: PaymentBatch) => ValidationResult[];
+    processBatch: (batch: PaymentBatch) => Promise<BatchResult>;
+  };
 
-1. **E-transfer not deposited**: Check expiry date and recipient email
-2. **Payment reconciliation mismatch**: Verify amounts and bank references
-3. **Compliance violations**: Review and update data handling procedures
-4. **Fraud alerts**: Investigate suspicious patterns and update rules
+  reconciliation: {
+    bankStatementImport: (file: File) => Promise<BankTransaction[]>;
+    autoMatch: (transactions: BankTransaction[]) => MatchResult[];
+    manualMatch: (transactionId: string, paymentId: string) => void;
+  };
+}
+```
 
-For additional support, refer to the API documentation or contact the development team.
+### Payment Reporting & Analytics
+
+#### Financial Dashboard
+
+```typescript
+interface PaymentAnalytics {
+  revenueMetrics: {
+    totalRevenue: number;
+    monthlyRevenue: number[];
+    averagePaymentTime: number; // days
+    collectionRate: number; // percentage
+  };
+
+  paymentMethodBreakdown: {
+    creditCard: { volume: number; percentage: number; fees: number };
+    etransfer: { volume: number; percentage: number; fees: number };
+    cash: { volume: number; percentage: number; fees: number };
+    bankTransfer: { volume: number; percentage: number; fees: number };
+  };
+
+  outstandingBalances: {
+    current: number;
+    overdue: number;
+    aging: {
+      "0-30": number;
+      "31-60": number;
+      "61-90": number;
+      "90+": number;
+    };
+  };
+}
+```
+
+#### Automated Reporting
+
+```typescript
+const generatePaymentReports = {
+  daily: async () => ({
+    paymentsReceived: PaymentSummary,
+    outstandingInvoices: InvoiceSummary,
+    failedPayments: FailedPaymentReport,
+  }),
+
+  weekly: async () => ({
+    revenueAnalysis: RevenueReport,
+    customerPaymentBehavior: CustomerAnalytics,
+    paymentMethodPerformance: MethodAnalytics,
+  }),
+
+  monthly: async () => ({
+    comprehensiveFinancials: FinancialReport,
+    taxReporting: TaxReport,
+    customerLifetimeValue: LTVAnalysis,
+  }),
+};
+```
+
+---
+
+## 🔒 Security & Compliance
+
+### PCI DSS Compliance
+
+#### Data Protection Standards
+
+- **Card Data Storage:** Zero card data stored locally (Stripe tokenization)
+- **Transmission Security:** TLS 1.3 encryption for all payment communications
+- **Access Controls:** Role-based access with payment-specific permissions
+- **Audit Logging:** Comprehensive logging of all payment activities
+- **Regular Testing:** Quarterly security assessments and penetration testing
+
+#### Stripe Security Features
+
+```typescript
+const stripeSecurityConfig = {
+  // Webhook signature verification
+  webhookSecurity: {
+    endpointSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    signatureVerification: true,
+    timestampTolerance: 300, // 5 minutes
+  },
+
+  // Payment intent security
+  paymentIntentSecurity: {
+    confirmationMethod: "automatic",
+    captureMethod: "automatic",
+    setupFutureUsage: "off_session", // For saved payment methods
+    useStripeSdk: true,
+  },
+
+  // Fraud prevention
+  fraudPrevention: {
+    radarEnabled: true,
+    riskLevel: "elevated",
+    declineOnRiskLevel: ["highest"],
+    requireCVC: true,
+    requirePostalCode: true,
+  },
+};
+```
+
+### Financial Compliance
+
+#### Tax Reporting
+
+```typescript
+interface TaxComplianceSystem {
+  hsttax: {
+    rate: 0.13; // 13% HST for Ontario
+    applicableServices: "all";
+    exemptions: string[]; // Track tax-exempt customers
+  };
+
+  reporting: {
+    t4a: boolean; // For contractors over $500
+    gst: boolean; // GST/HST reporting
+    provincial: boolean; // Provincial tax requirements
+  };
+
+  documentation: {
+    receiptGeneration: "automatic";
+    recordRetention: "7_years";
+    auditTrail: "comprehensive";
+  };
+}
+```
+
+#### Anti-Money Laundering (AML)
+
+- **Transaction Monitoring:** Automated flagging of unusual payment patterns
+- **Customer Verification:** Enhanced due diligence for large transactions
+- **Suspicious Activity Reporting:** Automated compliance reporting
+- **Record Keeping:** Comprehensive transaction records for regulatory requirements
+
+---
+
+## 🔄 Integration Workflows
+
+### CRM Integration
+
+#### Payment Status Synchronization
+
+```typescript
+const paymentToCRMSync = {
+  paymentReceived: async (payment: Payment) => {
+    await updateCustomerRecord({
+      customerId: payment.customerId,
+      lastPaymentDate: payment.paymentDate,
+      totalPaid: await calculateTotalPaid(payment.customerId),
+      paymentStatus: "current",
+    });
+
+    await createActivity({
+      customerId: payment.customerId,
+      type: "payment_received",
+      amount: payment.amount,
+      paymentMethod: payment.paymentMethod,
+      invoiceId: payment.invoiceId,
+    });
+  },
+
+  paymentFailed: async (failedPayment: FailedPayment) => {
+    await updateCustomerStatus({
+      customerId: failedPayment.customerId,
+      paymentStatus: "payment_failed",
+      lastFailedPayment: failedPayment.attemptDate,
+    });
+
+    await createFollowUpTask({
+      customerId: failedPayment.customerId,
+      type: "payment_follow_up",
+      dueDate: addDays(new Date(), 1),
+      priority: "high",
+    });
+  },
+};
+```
+
+### Project Management Integration
+
+#### Work Authorization Triggers
+
+```typescript
+const workAuthorizationWorkflow = {
+  depositReceived: async (payment: Payment) => {
+    const invoice = await getInvoice(payment.invoiceId);
+
+    if (isDepositPayment(payment, invoice)) {
+      // Authorize work to begin
+      await authorizeProjectWork({
+        projectId: invoice.projectId,
+        authorizedBy: "deposit_payment",
+        paymentReference: payment.id,
+        authorizedAt: payment.processedAt,
+      });
+
+      // Notify project team
+      await notifyProjectTeam({
+        projectId: invoice.projectId,
+        message: "Deposit received - work authorized to begin",
+        priority: "high",
+      });
+
+      // Update project timeline
+      await activateProjectTimeline(invoice.projectId);
+    }
+  },
+
+  finalPaymentReceived: async (payment: Payment) => {
+    const invoice = await getInvoice(payment.invoiceId);
+
+    if (isInvoiceFullyPaid(invoice)) {
+      await completeProjectBilling({
+        projectId: invoice.projectId,
+        finalPaymentDate: payment.paymentDate,
+        totalPaid: invoice.totalAmount,
+      });
+
+      await triggerProjectClosureWorkflow(invoice.projectId);
+    }
+  },
+};
+```
+
+---
+
+## 📊 Performance Monitoring
+
+### Key Performance Indicators
+
+#### Payment Processing Metrics
+
+```typescript
+interface PaymentKPIs {
+  processingMetrics: {
+    averageProcessingTime: number; // milliseconds
+    successRate: number; // percentage
+    failureRate: number; // percentage
+    retrySuccessRate: number; // percentage
+  };
+
+  businessMetrics: {
+    averagePaymentValue: number;
+    paymentFrequency: number; // payments per customer per month
+    collectionPeriod: number; // average days to payment
+    disputeRate: number; // percentage of payments disputed
+  };
+
+  customerExperience: {
+    checkoutAbandonmentRate: number;
+    customerSatisfactionScore: number;
+    supportTicketsPerPayment: number;
+    paymentMethodPreference: Record<PaymentMethod, number>;
+  };
+}
+```
+
+#### Real-Time Monitoring
+
+```typescript
+const paymentMonitoring = {
+  healthChecks: {
+    stripeConnection: () => checkStripeAPIHealth(),
+    databaseConnection: () => checkPaymentDBHealth(),
+    webhookEndpoints: () => verifyWebhookEndpoints(),
+    emailDelivery: () => checkEmailDeliveryStatus(),
+  },
+
+  alerting: {
+    failureThreshold: 5, // Alert after 5 consecutive failures
+    responseTimeThreshold: 5000, // Alert if processing > 5 seconds
+    volumeAnomalyDetection: true, // Unusual payment volume patterns
+    securityAlerts: true, // Suspicious payment activities
+  },
+
+  dashboards: {
+    realtimePayments: "live_payment_stream",
+    errorRates: "error_rate_monitoring",
+    performanceMetrics: "payment_performance_dashboard",
+  },
+};
+```
+
+---
+
+## 🚀 Future Enhancements
+
+### Phase 2 Features
+
+#### Advanced Payment Features
+
+- **Subscription Billing** - Automated recurring payments for retainer customers
+- **Payment Scheduling** - Allow customers to schedule future payments
+- **Multi-Currency Support** - Full international payment processing
+- **Payment Plans** - Flexible installment options for large projects
+- **Automated Collections** - AI-driven collection workflows
+
+#### Integration Enhancements
+
+- **QuickBooks Sync** - Real-time accounting software integration
+- **Banking APIs** - Direct bank integration for faster reconciliation
+- **ERP Integration** - Enterprise resource planning system connectivity
+- **Mobile Payments** - Dedicated mobile app payment processing
+- **Blockchain Payments** - Cryptocurrency payment acceptance
+
+#### Analytics & Intelligence
+
+- **Predictive Analytics** - Payment behavior prediction and optimization
+- **Fraud Detection ML** - Machine learning-based fraud prevention
+- **Customer Lifetime Value** - Advanced CLV calculations and optimization
+- **Payment Optimization** - AI-driven payment method recommendations
+- **Churn Prevention** - Early warning system for payment issues
+
+---
+
+**Document Version:** 1.0
+**Last Updated:** 2025-09-26
+**Next Review:** 2025-12-26
+**Technical Owner:** Development Team
+**Business Owner:** Finance Team
+
+

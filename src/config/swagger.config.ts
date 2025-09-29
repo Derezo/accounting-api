@@ -1,292 +1,484 @@
-import swaggerJSDoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
-import { Application } from 'express';
-import path from 'path';
-import fs from 'fs';
-import { config } from './config';
+import { Options } from 'swagger-jsdoc';
+import { version } from '../../package.json';
 
-// JSDoc-based configuration for auto-discovery
-const jsdocOptions: swaggerJSDoc.Options = {
-  definition: {
-    openapi: '3.0.3',
-    info: {
-      title: 'Accounting API',
-      version: '1.0.0',
-      description: `
-Bank-level secure REST API for universal accounting and financial operations.
+const swaggerDefinition = {
+  openapi: '3.0.0',
+  info: {
+    title: 'Lifestream Dynamics Accounting API',
+    version,
+    description: `
+# Universal Accounting API
+
+A comprehensive REST API for accounting, financial management, and business operations designed for small to medium businesses.
 
 ## Features
-- JWT authentication with refresh tokens
-- Role-based access control (6 roles)
-- Multi-tenant architecture with organization isolation
-- Comprehensive validation with express-validator
-- Audit logging for all operations
-- Stripe payment integration
-- File upload capabilities
-- Complex filtering and pagination
 
-## Security
-This API implements bank-level security measures including:
-- End-to-end encryption
-- Rate limiting
-- CORS protection
-- Helmet security headers
-- Input validation and sanitization
-- Audit trail for all operations
+- **Double-Entry Bookkeeping**: Complete journal entry system with automatic balance validation
+- **Multi-Tenant SaaS**: Organization-level data isolation with bank-level security
+- **Canadian Tax Compliance**: GST/HST/PST calculation and reporting
+- **Financial Statements**: Balance Sheet, Income Statement, Cash Flow generation
+- **Document Management**: Secure document storage with encryption
+- **Audit Logging**: Comprehensive change tracking and compliance reporting
 
 ## Authentication
-The API uses JWT tokens for authentication. Include the Bearer token in the Authorization header:
+
+All API endpoints (except health checks and auth) require authentication via JWT bearer tokens:
+
 \`\`\`
 Authorization: Bearer <your-jwt-token>
 \`\`\`
 
 ## Rate Limiting
-API requests are rate-limited. See response headers for current limits:
-- \`X-RateLimit-Limit\`: Request limit per window
-- \`X-RateLimit-Remaining\`: Remaining requests in window
-- \`X-RateLimit-Reset\`: Time when window resets
-      `,
-      contact: {
-        name: 'Lifestream Dynamics',
-        email: 'support@lifestreamdynamics.com'
+
+- **Standard**: 1000 requests per hour per organization
+- **Burst**: 100 requests per minute
+- **Documentation**: Unlimited (health, auth endpoints)
+
+## Error Handling
+
+All errors follow RFC 7807 Problem Details format:
+
+\`\`\`json
+{
+  "error": "Brief error description",
+  "message": "Detailed error message",
+  "code": "ERROR_CODE",
+  "details": {
+    "field": "validation details"
+  }
+}
+\`\`\`
+
+## Data Format
+
+- **Dates**: ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)
+- **Decimals**: Two decimal places for currency amounts
+- **IDs**: CUID format (e.g., "cmg123abc...")
+- **Pagination**: Cursor-based with \`limit\` and \`cursor\` parameters
+    `,
+    contact: {
+      name: 'Lifestream Dynamics Support',
+      email: 'api-support@lifestreamdynamics.com',
+      url: 'https://lifestreamdynamics.com/support'
+    },
+    license: {
+      name: 'Proprietary',
+      url: 'https://lifestreamdynamics.com/license'
+    },
+    termsOfService: 'https://lifestreamdynamics.com/terms'
+  },
+  servers: [
+    {
+      url: 'http://localhost:3000',
+      description: 'Development Server'
+    },
+    {
+      url: 'https://api-staging.lifestreamdynamics.com',
+      description: 'Staging Server'
+    },
+    {
+      url: 'https://api.lifestreamdynamics.com',
+      description: 'Production Server'
+    }
+  ],
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'JWT authorization header using the Bearer scheme'
       },
-      license: {
-        name: 'Proprietary'
+      apiKeyAuth: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-API-Key',
+        description: 'API key for service-to-service authentication'
       }
     },
-    servers: [
-      {
-        url: `http://localhost:${config.PORT}/api/${config.API_VERSION}`,
-        description: 'Development server'
-      },
-      {
-        url: `https://api.accounting.com/api/${config.API_VERSION}`,
-        description: 'Production server'
-      }
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT'
-        }
-      },
-      schemas: {
-        Error: {
-          type: 'object',
-          properties: {
-            error: {
-              type: 'string',
-              description: 'Error type'
-            },
-            message: {
-              type: 'string',
-              description: 'Error message'
-            },
-            details: {
-              type: 'object',
-              description: 'Additional error details'
-            }
+    schemas: {
+      // Common response schemas
+      SuccessResponse: {
+        type: 'object',
+        properties: {
+          success: {
+            type: 'boolean',
+            example: true
+          },
+          data: {
+            type: 'object',
+            description: 'Response data'
           }
         },
-        Timestamp: {
-          type: 'string',
-          format: 'date-time',
-          description: 'ISO 8601 timestamp'
+        required: ['success', 'data']
+      },
+      ErrorResponse: {
+        type: 'object',
+        properties: {
+          error: {
+            type: 'string',
+            description: 'Brief error description'
+          },
+          message: {
+            type: 'string',
+            description: 'Detailed error message'
+          },
+          code: {
+            type: 'string',
+            description: 'Machine-readable error code'
+          },
+          details: {
+            type: 'object',
+            description: 'Additional error details'
+          }
+        },
+        required: ['error']
+      },
+
+      // Accounting schemas
+      JournalTransaction: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'Transaction identifier',
+            example: 'txn_cmg123abc'
+          },
+          transactionNumber: {
+            type: 'string',
+            description: 'Human-readable transaction number',
+            example: 'TXN-20240115-0001'
+          },
+          date: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Transaction date',
+            example: '2024-01-15T00:00:00.000Z'
+          },
+          description: {
+            type: 'string',
+            description: 'Transaction description',
+            example: 'Office supplies purchase'
+          },
+          totalDebits: {
+            type: 'number',
+            format: 'decimal',
+            description: 'Total debit amount',
+            example: 500.00
+          },
+          totalCredits: {
+            type: 'number',
+            format: 'decimal',
+            description: 'Total credit amount',
+            example: 500.00
+          },
+          entries: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/JournalEntry' }
+          },
+          createdAt: {
+            type: 'string',
+            format: 'date-time',
+            example: '2024-01-15T10:30:00.000Z'
+          }
+        }
+      },
+
+      JournalEntry: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            example: 'entry_cmg456def'
+          },
+          accountId: {
+            type: 'string',
+            description: 'Account identifier',
+            example: 'acc_cmg789ghi'
+          },
+          type: {
+            type: 'string',
+            enum: ['DEBIT', 'CREDIT'],
+            description: 'Entry type',
+            example: 'DEBIT'
+          },
+          amount: {
+            type: 'number',
+            format: 'decimal',
+            description: 'Entry amount (always positive)',
+            example: 500.00
+          },
+          description: {
+            type: 'string',
+            description: 'Entry description',
+            example: 'Office supplies expense'
+          },
+          account: {
+            $ref: '#/components/schemas/Account'
+          }
+        }
+      },
+
+      Account: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            example: 'acc_cmg123abc'
+          },
+          accountNumber: {
+            type: 'string',
+            description: 'Unique account number',
+            example: '1000'
+          },
+          name: {
+            type: 'string',
+            description: 'Account name',
+            example: 'Cash'
+          },
+          type: {
+            type: 'string',
+            enum: ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE'],
+            description: 'Account type',
+            example: 'ASSET'
+          },
+          balance: {
+            type: 'number',
+            format: 'decimal',
+            description: 'Current account balance',
+            example: 15000.00
+          },
+          isActive: {
+            type: 'boolean',
+            description: 'Whether account is active',
+            example: true
+          },
+          parentId: {
+            type: 'string',
+            nullable: true,
+            description: 'Parent account ID for hierarchical structure',
+            example: null
+          },
+          description: {
+            type: 'string',
+            nullable: true,
+            description: 'Account description',
+            example: 'Primary cash account for operations'
+          }
+        }
+      },
+
+      TrialBalance: {
+        type: 'object',
+        properties: {
+          entries: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                accountId: { type: 'string', example: 'acc_123' },
+                accountNumber: { type: 'string', example: '1000' },
+                accountName: { type: 'string', example: 'Cash' },
+                accountType: { type: 'string', example: 'ASSET' },
+                debitBalance: { type: 'number', example: 15000.00 },
+                creditBalance: { type: 'number', example: 0.00 },
+                balance: { type: 'number', example: 15000.00 }
+              }
+            }
+          },
+          totalDebits: {
+            type: 'number',
+            description: 'Total of all debit balances',
+            example: 15000.00
+          },
+          totalCredits: {
+            type: 'number',
+            description: 'Total of all credit balances',
+            example: 15000.00
+          },
+          isBalanced: {
+            type: 'boolean',
+            description: 'Whether debits equal credits',
+            example: true
+          },
+          asOfDate: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Date of trial balance calculation',
+            example: '2024-01-31T00:00:00.000Z'
+          }
+        }
+      },
+
+      AccountingEquationValidation: {
+        type: 'object',
+        properties: {
+          isValid: {
+            type: 'boolean',
+            description: 'Whether the accounting equation balances',
+            example: true
+          },
+          assets: {
+            type: 'number',
+            description: 'Total asset value',
+            example: 58500.00
+          },
+          liabilities: {
+            type: 'number',
+            description: 'Total liability value',
+            example: 4000.00
+          },
+          equity: {
+            type: 'number',
+            description: 'Total equity value (including retained earnings)',
+            example: 54500.00
+          },
+          difference: {
+            type: 'number',
+            description: 'Difference between assets and (liabilities + equity)',
+            example: 0.00
+          }
         }
       }
     },
-    tags: [
-      {
-        name: 'Health',
-        description: 'Health check endpoints'
+
+    responses: {
+      Unauthorized: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            example: {
+              error: 'Authentication required',
+              message: 'Valid JWT token must be provided',
+              code: 'AUTH_REQUIRED'
+            }
+          }
+        }
       },
-      {
-        name: 'Authentication',
-        description: 'User authentication and authorization'
+      Forbidden: {
+        description: 'Insufficient permissions',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            example: {
+              error: 'Access forbidden',
+              message: 'Insufficient permissions for this operation',
+              code: 'ACCESS_FORBIDDEN'
+            }
+          }
+        }
       },
-      {
-        name: 'Organizations',
-        description: 'Organization management'
+      NotFound: {
+        description: 'Resource not found',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            example: {
+              error: 'Resource not found',
+              message: 'The requested resource could not be found',
+              code: 'NOT_FOUND'
+            }
+          }
+        }
       },
-      {
-        name: 'Customers',
-        description: 'Customer management'
+      ValidationError: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            example: {
+              error: 'Validation failed',
+              message: 'Request validation failed',
+              code: 'VALIDATION_ERROR',
+              details: {
+                field: 'Field-specific validation message'
+              }
+            }
+          }
+        }
       },
-      {
-        name: 'Quotes',
-        description: 'Quote management'
-      },
-      {
-        name: 'Appointments',
-        description: 'Appointment scheduling'
-      },
-      {
-        name: 'Invoices',
-        description: 'Invoice management'
-      },
-      {
-        name: 'Payments',
-        description: 'Payment processing'
-      },
-      {
-        name: 'Projects',
-        description: 'Project management'
-      },
-      {
-        name: 'E-Transfers',
-        description: 'Electronic transfer management'
-      },
-      {
-        name: 'Manual Payments',
-        description: 'Manual payment processing'
-      },
-      {
-        name: 'Payment Analytics',
-        description: 'Payment analytics and reporting'
+      ServerError: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            example: {
+              error: 'Internal server error',
+              message: 'An unexpected error occurred',
+              code: 'INTERNAL_ERROR'
+            }
+          }
+        }
       }
-    ]
+    }
   },
-  apis: [
-    './src/routes/*.ts',
-    './src/controllers/*.ts',
-    './src/app.ts'
+  security: [
+    {
+      bearerAuth: []
+    }
+  ],
+  tags: [
+    {
+      name: 'Authentication',
+      description: 'User authentication and authorization'
+    },
+    {
+      name: 'Organizations',
+      description: 'Organization management'
+    },
+    {
+      name: 'Accounting',
+      description: 'Double-entry bookkeeping and financial transactions'
+    },
+    {
+      name: 'Journal Entries',
+      description: 'Journal entry management and transaction creation'
+    },
+    {
+      name: 'Accounts',
+      description: 'Chart of accounts management'
+    },
+    {
+      name: 'Reports',
+      description: 'Financial reporting and analysis'
+    },
+    {
+      name: 'Documents',
+      description: 'Document management and file storage'
+    },
+    {
+      name: 'Customers',
+      description: 'Customer relationship management'
+    },
+    {
+      name: 'Payments',
+      description: 'Payment processing and reconciliation'
+    },
+    {
+      name: 'Tax',
+      description: 'Tax calculation and compliance (Canadian focus)'
+    },
+    {
+      name: 'Audit',
+      description: 'Audit logging and compliance tracking'
+    },
+    {
+      name: 'Health',
+      description: 'API health and monitoring'
+    }
   ]
 };
 
-// Load the existing OpenAPI specification as fallback
-const openApiSpecPath = path.join(process.cwd(), 'docs', 'openapi.yaml');
-let staticOpenApiSpec: any = {};
-
-try {
-  if (fs.existsSync(openApiSpecPath)) {
-    const yaml = require('js-yaml');
-    const fileContents = fs.readFileSync(openApiSpecPath, 'utf8');
-    staticOpenApiSpec = yaml.load(fileContents);
-  }
-} catch (error) {
-  console.warn('Could not load static OpenAPI specification:', error);
-}
-
-// Generate JSDoc specification
-const jsdocSpec = swaggerJSDoc(jsdocOptions);
-
-// Merge static and JSDoc specifications (JSDoc takes precedence for route definitions)
-const mergedSpec = {
-  ...staticOpenApiSpec,
-  ...jsdocSpec,
-  paths: {
-    ...((staticOpenApiSpec as any)?.paths || {}),
-    ...jsdocSpec.paths
-  },
-  components: {
-    ...((staticOpenApiSpec as any)?.components || {}),
-    ...jsdocSpec.components
-  }
+const options: Options = {
+  definition: swaggerDefinition,
+  apis: [
+    './src/routes/*.ts',
+    './src/controllers/*.ts',
+    './src/types/*.ts',
+    './src/models/*.ts'
+  ]
 };
 
-// Swagger UI options
-const swaggerOptions = {
-  explorer: true,
-  swaggerOptions: {
-    url: '/api-docs/openapi.json',
-    persistAuthorization: true,
-    displayRequestDuration: true,
-    filter: true,
-    showExtensions: true,
-    showCommonExtensions: true,
-    docExpansion: 'list',
-    defaultModelsExpandDepth: 2,
-    defaultModelExpandDepth: 2,
-    tryItOutEnabled: true,
-  },
-  customCss: `
-    .swagger-ui .topbar { display: none; }
-    .swagger-ui .info { margin: 20px 0; }
-    .swagger-ui .info .title { color: #2c3e50; font-size: 32px; }
-    .swagger-ui .info .description { font-size: 14px; line-height: 1.6; }
-    .swagger-ui .scheme-container {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 15px;
-      border-radius: 8px;
-      margin: 20px 0;
-    }
-    .swagger-ui .btn.authorize {
-      background-color: #28a745;
-      border-color: #28a745;
-    }
-    .swagger-ui .btn.authorize:hover {
-      background-color: #218838;
-      border-color: #1e7e34;
-    }
-    .swagger-ui .opblock.opblock-get .opblock-summary-method {
-      background: #28a745;
-    }
-    .swagger-ui .opblock.opblock-post .opblock-summary-method {
-      background: #007bff;
-    }
-    .swagger-ui .opblock.opblock-put .opblock-summary-method {
-      background: #ffc107;
-    }
-    .swagger-ui .opblock.opblock-delete .opblock-summary-method {
-      background: #dc3545;
-    }
-    .swagger-ui .parameter__name.required:after {
-      color: #dc3545;
-      content: " *";
-      font-weight: bold;
-    }
-    .swagger-ui .model-title {
-      color: #2c3e50;
-      font-weight: 600;
-    }
-    .swagger-ui .response-col_description__inner p {
-      margin: 0;
-      font-size: 14px;
-    }
-  `,
-  customSiteTitle: 'Accounting API Documentation',
-  customfavIcon: '/favicon.ico',
-};
-
-export const setupSwagger = (app: Application): void => {
-  // Serve OpenAPI specification as JSON
-  app.get('/api-docs/openapi.json', (_req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(mergedSpec);
-  });
-
-  // Swagger UI setup
-  app.use('/api-docs', swaggerUi.serve);
-  app.get('/api-docs', swaggerUi.setup(mergedSpec, swaggerOptions));
-
-  // Alternative documentation endpoints
-  app.get('/docs', (_req, res) => {
-    res.redirect('/api-docs');
-  });
-
-  // Health check for documentation
-  app.get('/api-docs/health', (_req, res) => {
-    res.json({
-      status: 'healthy',
-      documentation: {
-        swagger: '/api-docs',
-        openapi: '/api-docs/openapi.json',
-        redoc: process.env.NODE_ENV === 'development' ? '/redoc' : null,
-      },
-      endpoints: {
-        static: Object.keys(((staticOpenApiSpec as any)?.paths) || {}).length,
-        jsdoc: Object.keys(jsdocSpec.paths || {}).length,
-        merged: Object.keys(mergedSpec.paths || {}).length
-      },
-      timestamp: new Date().toISOString(),
-    });
-  });
-
-  console.log(`📚 Swagger UI available at: http://localhost:${config.PORT}/api-docs`);
-  console.log(`📋 OpenAPI spec available at: http://localhost:${config.PORT}/api-docs/openapi.json`);
-  console.log(`🔍 Documented endpoints: ${Object.keys(mergedSpec.paths || {}).length}`);
-};
-
-export { mergedSpec as openApiSpec };
+export default options;
+export { swaggerDefinition };

@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { Redis } from 'redis';
+import { createClient, RedisClientType } from 'redis';
 import NodeCache from 'node-cache';
 import { performance } from 'perf_hooks';
 import { logger } from '../utils/logger';

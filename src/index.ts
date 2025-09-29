@@ -1,31 +1,21 @@
 import app from './app';
 import { config } from './config/config';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
+import { logger } from './utils/logger';
+import { prisma } from './config/database';
 async function startServer(): Promise<void> {
   try {
     // Test database connection
     await prisma.$connect();
-    console.log('✅ Database connected successfully');
+    logger.info('Database connected successfully');
 
     // Start server
     const server = app.listen(config.PORT, () => {
-      console.log(`
-╔════════════════════════════════════════════════════════╗
-║                                                        ║
-║     Accounting API Server                             ║
-║     Bank-Level Secure REST API                        ║
-║                                                        ║
-║     Environment: ${config.NODE_ENV.padEnd(37)}║
-║     Port: ${String(config.PORT).padEnd(44)}║
-║     API Version: ${config.API_VERSION.padEnd(37)}║
-║                                                        ║
-║     Ready to accept connections...                    ║
-║                                                        ║
-╚════════════════════════════════════════════════════════╝
-      `);
+      logger.info('Accounting API Server started', {
+        environment: config.NODE_ENV,
+        port: config.PORT,
+        apiVersion: config.API_VERSION,
+        message: 'Bank-Level Secure REST API ready to accept connections'
+      });
     });
 
     // Handle server errors

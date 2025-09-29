@@ -51,8 +51,22 @@ model Organization {
   projects         Project[]
   appointments     Appointment[]
   addresses        Address[]
+  documents        Document[]
   auditLogs        AuditLog[]
   apiKeys          ApiKey[]
+  taxRecords       TaxRecord[]
+  bankAccounts     BankAccount[]
+  bankTransactions BankTransaction[]
+  securityEvents   SecurityEvent[]
+  recurringInvoices RecurringInvoice[]
+  customerPaymentMethods CustomerPaymentMethod[]
+  contractorPayments ContractorPayment[]
+  notifications    Notification[]
+  webhooks         Webhook[]
+  invoiceTemplates InvoiceTemplate[]
+  invoiceStyles    InvoiceStyle[]
+  branding         OrganizationBranding?
+  generatedPDFs    GeneratedPDF[]
 
   @@map("organizations")
   @@index([domain])
@@ -78,6 +92,10 @@ model User {
   avatar           String?
   phone            String?
 
+  // CLIENT role support - links user to customer record
+  customerId       String?          @unique
+  customer         Customer?        @relation("UserCustomer", fields: [customerId], references: [id])
+
   // Security
   lastLoginAt      DateTime?
   lastLoginIp      String?
@@ -94,13 +112,22 @@ model User {
   // Relationships
   organization     Organization     @relation(fields: [organizationId], references: [id])
   sessions         Session[]
+  uploadedDocuments Document[]
   auditLogs        AuditLog[]
   createdQuotes    Quote[]          @relation("QuoteCreator")
   assignedProjects Project[]        @relation("ProjectAssignee")
+  securityEvents   SecurityEvent[]
+  notifications    Notification[]
+  createdCustomers Customer[]       @relation("CustomerCreator")
+  createdInvoices  Invoice[]        @relation("InvoiceCreator")
+  createdPayments  Payment[]        @relation("PaymentCreator")
+  createdProjects  Project[]        @relation("ProjectCreator")
+  createdAppointments Appointment[] @relation("AppointmentCreator")
 
   @@map("users")
   @@index([organizationId])
   @@index([email])
+  @@index([customerId])
 }
 
 model Session {
@@ -216,11 +243,16 @@ model Customer {
   // Customer Details
   tier             String           @default("PERSONAL") // CustomerTier
   status           String           @default("PROSPECT") // CustomerStatus
-  creditLimit      Float?
+  creditLimit      Decimal?
   paymentTerms     Int              @default(15) // Days
   taxExempt        Boolean          @default(false)
   preferredCurrency String          @default("CAD")
   notes            String?
+
+  // Audit fields
+  createdBy        String?
+  updatedBy        String?
+  deletedBy        String?
 
   // Timestamps
   createdAt        DateTime         @default(now())
@@ -231,15 +263,20 @@ model Customer {
   organization     Organization     @relation(fields: [organizationId], references: [id])
   person           Person?          @relation(fields: [personId], references: [id])
   business         Business?        @relation(fields: [businessId], references: [id])
+  creator          User?            @relation("CustomerCreator", fields: [createdBy], references: [id])
   addresses        CustomerAddress[]
   quotes           Quote[]
   invoices         Invoice[]
   payments         Payment[]
   projects         Project[]
   appointments     Appointment[]
+  recurringInvoices RecurringInvoice[]
+  paymentMethods   CustomerPaymentMethod[]
+  linkedUser       User?            @relation("UserCustomer")
 
   @@map("customers")
   @@index([organizationId])
+  @@index([createdBy])
   @@index([status])
   @@unique([organizationId, customerNumber])
 }
@@ -288,8 +325,8 @@ model Employee {
   department       String?
   hireDate         DateTime
   terminationDate  DateTime?
-  salary           Float?           // Encrypted
-  hourlyRate       Float?
+  salary           Decimal?         // Encrypted
+  hourlyRate       Decimal?
   isActive         Boolean          @default(true)
 
   // Timestamps
@@ -314,7 +351,7 @@ model Contractor {
 
   // Contractor Details
   businessNumber   String?
-  hourlyRate       Float
+  hourlyRate       Decimal
   specialization   String
   t4aRequired      Boolean          @default(true)
   isActive         Boolean          @default(true)
@@ -328,6 +365,7 @@ model Contractor {
   organization     Organization     @relation(fields: [organizationId], references: [id])
   person           Person           @relation(fields: [personId], references: [id])
   expenses         Expense[]
+  contractorPayments ContractorPayment[]
 
   @@map("contractors")
   @@index([organizationId])
@@ -344,7 +382,7 @@ model Address {
   line1            String
   line2            String?
   city             String
-  stateProvince    String
+  stateProvinceId  String?
   postalCode       String
   countryId        String
 
@@ -359,6 +397,7 @@ model Address {
   // Relationships
   organization     Organization     @relation(fields: [organizationId], references: [id])
   country          Country          @relation(fields: [countryId], references: [id])
+  stateProvince    StateProvince?   @relation(fields: [stateProvinceId], references: [id])
   customerAddresses CustomerAddress[]
   vendorAddresses  VendorAddress[]
   locations        Location[]
@@ -435,8 +474,8 @@ model Product {
   name             String
   description      String?
   categoryId       String
-  unitPrice        Float
-  cost             Float?
+  unitPrice        Decimal
+  cost             Decimal?
   taxable          Boolean          @default(true)
   isActive         Boolean          @default(true)
 
@@ -469,8 +508,8 @@ model Service {
   name             String
   description      String?
   categoryId       String
-  hourlyRate       Float
-  minimumHours     Float            @default(0.25)
+  hourlyRate       Decimal
+  minimumHours     Decimal          @default(0.25)
   taxable          Boolean          @default(true)
   isActive         Boolean          @default(true)
 
@@ -504,12 +543,12 @@ model Quote {
   status           String           @default("DRAFT") // QuoteStatus
   validUntil       DateTime
   currency         String           @default("CAD")
-  exchangeRate     Float            @default(1.0)
+  exchangeRate     Decimal          @default(1.0)
 
   // Amounts (stored for performance, calculated from items)
-  subtotal         Float
-  taxAmount        Float
-  total            Float
+  subtotal         Decimal
+  taxAmount        Decimal
+  total            Decimal
 
   // Content
   description      String?
@@ -522,6 +561,11 @@ model Quote {
   acceptedAt       DateTime?
   rejectedAt       DateTime?
   rejectionReason  String?
+  expiresAt        DateTime?        // Expiration date for quote validation
+
+  // Audit fields
+  updatedBy        String?
+  deletedBy        String?
 
   // Timestamps
   createdAt        DateTime         @default(now())
@@ -538,6 +582,7 @@ model Quote {
   @@map("quotes")
   @@index([organizationId])
   @@index([customerId])
+  @@index([createdById])
   @@index([status])
   @@unique([organizationId, quoteNumber])
 }
@@ -550,16 +595,16 @@ model QuoteItem {
 
   // Item Details
   description      String
-  quantity         Float
-  unitPrice        Float
-  discountPercent  Float            @default(0)
-  taxRate          Float
+  quantity         Decimal
+  unitPrice        Decimal
+  discountPercent  Decimal          @default(0)
+  taxRate          Decimal
 
   // Calculated (stored for performance)
-  subtotal         Float
-  discountAmount   Float
-  taxAmount        Float
-  total            Float
+  subtotal         Decimal
+  discountAmount   Decimal
+  taxAmount        Decimal
+  total            Decimal
 
   // Ordering
   sortOrder        Int
@@ -589,15 +634,15 @@ model Invoice {
   issueDate        DateTime         @default(now())
   dueDate          DateTime
   currency         String           @default("CAD")
-  exchangeRate     Float            @default(1.0)
+  exchangeRate     Decimal          @default(1.0)
 
   // Amounts (stored for performance)
-  subtotal         Float
-  taxAmount        Float
-  total            Float
-  depositRequired  Float
-  amountPaid       Float            @default(0)
-  balance          Float
+  subtotal         Decimal
+  taxAmount        Decimal
+  total            Decimal
+  depositRequired  Decimal
+  amountPaid       Decimal          @default(0)
+  balance          Decimal
 
   // Content
   terms            String?
@@ -608,6 +653,11 @@ model Invoice {
   viewedAt         DateTime?
   paidAt           DateTime?
 
+  // Audit fields
+  createdBy        String?
+  updatedBy        String?
+  deletedBy        String?
+
   // Timestamps
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
@@ -617,12 +667,16 @@ model Invoice {
   organization     Organization     @relation(fields: [organizationId], references: [id])
   customer         Customer         @relation(fields: [customerId], references: [id])
   quote            Quote?           @relation(fields: [quoteId], references: [id])
+  creator          User?            @relation("InvoiceCreator", fields: [createdBy], references: [id])
   items            InvoiceItem[]
   payments         Payment[]
+  generatedPDFs    GeneratedPDF[]
+  project          Project?
 
   @@map("invoices")
   @@index([organizationId])
   @@index([customerId])
+  @@index([createdBy])
   @@index([status])
   @@unique([organizationId, invoiceNumber])
 }
@@ -635,16 +689,16 @@ model InvoiceItem {
 
   // Item Details
   description      String
-  quantity         Float
-  unitPrice        Float
-  discountPercent  Float            @default(0)
-  taxRate          Float
+  quantity         Decimal
+  unitPrice        Decimal
+  discountPercent  Decimal          @default(0)
+  taxRate          Decimal
 
   // Calculated
-  subtotal         Float
-  discountAmount   Float
-  taxAmount        Float
-  total            Float
+  subtotal         Decimal
+  discountAmount   Decimal
+  taxAmount        Decimal
+  total            Decimal
 
   // Ordering
   sortOrder        Int
@@ -673,7 +727,7 @@ model Payment {
 
   // Payment Details
   paymentMethod    String           // PaymentMethod
-  amount           Float
+  amount           Decimal
   currency         String           @default("CAD")
   paymentDate      DateTime
 
@@ -688,13 +742,18 @@ model Payment {
   failureReason    String?
 
   // Processing
-  processorFee     Float?
-  netAmount        Float?
+  processorFee     Decimal?
+  netAmount        Decimal?
 
   // Notes
   customerNotes    String?
   adminNotes       String?
   metadata         String?          // JSON stored as string
+
+  // Audit fields
+  createdBy        String?
+  updatedBy        String?
+  deletedBy        String?
 
   // Timestamps
   processedAt      DateTime?
@@ -706,6 +765,9 @@ model Payment {
   organization     Organization     @relation(fields: [organizationId], references: [id])
   customer         Customer         @relation(fields: [customerId], references: [id])
   invoice          Invoice?         @relation(fields: [invoiceId], references: [id])
+  creator          User?            @relation("PaymentCreator", fields: [createdBy], references: [id])
+  bankTransactions BankTransaction[]
+  stripePayment    StripePayment?
 
   @@map("payments")
   @@index([organizationId])
@@ -731,7 +793,7 @@ model Account {
   isSystemAccount  Boolean          @default(false)
 
   // Balance (calculated, cached for performance)
-  balance          Float            @default(0)
+  balance          Decimal @default(0)
 
   // Timestamps
   createdAt        DateTime         @default(now())
@@ -757,7 +819,7 @@ model JournalEntry {
 
   // Entry Details
   type             String           // TransactionType
-  amount           Float
+  amount           Decimal
   description      String
   referenceType    String?          // INVOICE, PAYMENT, EXPENSE, etc.
   referenceId      String?
@@ -783,8 +845,8 @@ model Transaction {
   description      String
 
   // Transaction must balance (debits = credits)
-  totalDebits      Float
-  totalCredits     Float
+  totalDebits      Decimal
+  totalCredits     Decimal
 
   // Timestamps
   createdAt        DateTime         @default(now())
@@ -811,8 +873,8 @@ model Expense {
 
   // Expense Details
   category         String           // ExpenseCategory
-  amount           Float
-  taxAmount        Float            @default(0)
+  amount           Decimal
+  taxAmount        Decimal @default(0)
   currency         String           @default("CAD")
   expenseDate      DateTime
 
@@ -864,10 +926,20 @@ model Project {
   actualEndDate    DateTime?
 
   // Budget
-  estimatedHours   Float?
-  actualHours      Float?
-  hourlyRate       Float?
-  fixedPrice       Float?
+  estimatedHours   Decimal?
+  actualHours      Decimal?
+  hourlyRate       Decimal?
+  fixedPrice       Decimal?
+
+  // Deposit tracking
+  depositPaid      Boolean          @default(false)
+  depositPaidAt    DateTime?
+  invoiceId        String?          @unique
+
+  // Audit fields
+  createdBy        String?
+  updatedBy        String?
+  deletedBy        String?
 
   // Timestamps
   createdAt        DateTime         @default(now())
@@ -879,12 +951,16 @@ model Project {
   organization     Organization     @relation(fields: [organizationId], references: [id])
   customer         Customer         @relation(fields: [customerId], references: [id])
   assignedTo       User?            @relation("ProjectAssignee", fields: [assignedToId], references: [id])
+  creator          User?            @relation("ProjectCreator", fields: [createdBy], references: [id])
+  invoice          Invoice?         @relation(fields: [invoiceId], references: [id])
   appointments     Appointment[]
 
   @@map("projects")
   @@index([organizationId])
   @@index([customerId])
+  @@index([createdBy])
   @@index([status])
+  @@index([depositPaid])
   @@unique([organizationId, projectNumber])
 }
 
@@ -912,19 +988,27 @@ model Appointment {
   reminderSent     Boolean          @default(false)
   reminderSentAt   DateTime?
 
+  // Audit fields
+  createdBy        String?
+  updatedBy        String?
+  deletedBy        String?
+
   // Timestamps
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
 
   // Relationships
   organization     Organization     @relation(fields: [organizationId], references: [id])
   customer         Customer         @relation(fields: [customerId], references: [id])
   project          Project?         @relation(fields: [projectId], references: [id])
   location         Location?        @relation(fields: [locationId], references: [id])
+  creator          User?            @relation("AppointmentCreator", fields: [createdBy], references: [id])
 
   @@map("appointments")
   @@index([organizationId])
   @@index([customerId])
+  @@index([createdBy])
   @@index([startTime])
 }
 
@@ -940,6 +1024,7 @@ model Country {
 
   // Relationships
   addresses        Address[]
+  stateProvinces   StateProvince[]
 
   @@map("countries")
 }
@@ -951,6 +1036,10 @@ model Currency {
   symbol           String
   decimalPlaces    Int              @default(2)
 
+  // Relationships
+  fromExchangeRates ExchangeRate[]  @relation("FromCurrency")
+  toExchangeRates   ExchangeRate[]  @relation("ToCurrency")
+
   @@map("currencies")
 }
 
@@ -958,7 +1047,7 @@ model TaxRate {
   id               String           @id @default(cuid())
   code             String           @unique
   name             String
-  rate             Float
+  rate             Decimal
   countryCode      String
   stateProvince    String?
   isDefault        Boolean          @default(false)
@@ -999,6 +1088,73 @@ model ServiceCategory {
   @@map("service_categories")
 }
 
+// ==================== DOCUMENT MANAGEMENT ====================
+
+model Document {
+  id               String           @id @default(cuid())
+  organizationId   String
+  uploadedById     String
+
+  // File Information
+  filename         String           // Original filename
+  originalName     String           // Original filename from upload
+  mimeType         String           // MIME type (e.g., application/pdf, image/jpeg)
+  size             Int              // File size in bytes
+  path             String           // Storage path/URL
+  hash             String           // SHA-256 hash for integrity
+
+  // Document Metadata
+  title            String?          // User-friendly title
+  description      String?          // Document description
+  category         String           // DocumentCategory enum
+  tags             String?          // JSON array of tags
+
+  // Entity Associations (polymorphic relationships)
+  entityType       String?          // Customer, Invoice, Quote, Payment, etc.
+  entityId         String?          // ID of the associated entity
+
+  // File Processing
+  isProcessed      Boolean          @default(false)
+  processingStatus String           @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  processingError  String?          // Error message if processing failed
+  thumbnailPath    String?          // Path to generated thumbnail
+  ocrText          String?          // Extracted text from OCR (if applicable)
+
+  // Security & Access
+  isPublic         Boolean          @default(false)
+  isEncrypted      Boolean          @default(false)
+  encryptionKey    String?          // Document-specific encryption key
+  accessLevel      String           @default("PRIVATE") // PUBLIC, PRIVATE, RESTRICTED
+
+  // Versioning
+  version          Int              @default(1)
+  parentId         String?          // Parent document for versioning
+  isLatestVersion  Boolean          @default(true)
+
+  // Retention & Compliance
+  retentionDate    DateTime?        // When document can be deleted
+  isArchived       Boolean          @default(false)
+  archivedAt       DateTime?
+
+  // Timestamps
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+
+  // Relationships
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  uploadedBy       User             @relation(fields: [uploadedById], references: [id])
+  parent           Document?        @relation("DocumentVersions", fields: [parentId], references: [id])
+  versions         Document[]       @relation("DocumentVersions")
+
+  @@map("documents")
+  @@index([organizationId])
+  @@index([entityType, entityId])
+  @@index([category])
+  @@index([createdAt])
+  @@index([hash])
+}
+
 // ==================== AUDIT & COMPLIANCE ====================
 
 model AuditLog {
@@ -1028,4 +1184,514 @@ model AuditLog {
   @@index([organizationId])
   @@index([entityType, entityId])
   @@index([timestamp])
+}
+
+// ==================== CRITICAL FINANCIAL INFRASTRUCTURE ====================
+
+model StateProvince {
+  id               String           @id @default(cuid())
+  countryId        String
+  code             String           // Province/State code (e.g., "ON", "CA")
+  name             String
+  taxRate          Decimal?         // Provincial tax rate
+  isActive         Boolean          @default(true)
+
+  // Relationships
+  country          Country          @relation(fields: [countryId], references: [id])
+  addresses        Address[]
+  taxRecords       TaxRecord[]
+
+  @@unique([countryId, code])
+  @@map("state_provinces")
+  @@index([countryId])
+  @@index([isActive])
+}
+
+model ExchangeRate {
+  id               String           @id @default(cuid())
+  fromCurrencyCode String
+  toCurrencyCode   String
+  rate             Decimal          // High precision for exchange rates
+  effectiveDate    DateTime         @default(now())
+  source           String?          // Rate source (e.g., "Bank of Canada")
+
+  // Relationships
+  fromCurrency     Currency         @relation("FromCurrency", fields: [fromCurrencyCode], references: [code])
+  toCurrency       Currency         @relation("ToCurrency", fields: [toCurrencyCode], references: [code])
+
+  @@unique([fromCurrencyCode, toCurrencyCode, effectiveDate])
+  @@map("exchange_rates")
+  @@index([effectiveDate])
+}
+
+model TaxRecord {
+  id               String           @id @default(cuid())
+  organizationId   String
+  taxYear          Int
+  taxPeriod        String           // "Q1", "Q2", "Q3", "Q4", "ANNUAL"
+  jurisdiction     String           // "FEDERAL", "PROVINCIAL", "MUNICIPAL"
+  stateProvinceId  String?
+
+  // Tax Details
+  taxType          String           // "INCOME", "GST", "HST", "PST", "PROPERTY"
+  grossIncome      Decimal
+  taxableIncome    Decimal
+  taxOwed          Decimal
+  taxPaid          Decimal
+  taxBalance       Decimal
+
+  // Filing Information
+  filedDate        DateTime?
+  dueDate          DateTime
+  status           String           @default("PENDING") // PENDING, FILED, PAID, OVERDUE
+
+  // Documents
+  returnDocument   String?          // Path to tax return
+  supportingDocs   String?          // JSON array of document paths
+
+  // Timestamps
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relationships
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  stateProvince    StateProvince?   @relation(fields: [stateProvinceId], references: [id])
+
+  @@map("tax_records")
+  @@index([organizationId])
+  @@index([taxYear, taxPeriod])
+  @@index([dueDate])
+  @@index([status])
+}
+
+model BankAccount {
+  id               String           @id @default(cuid())
+  organizationId   String
+  accountName      String
+  accountNumber    String           // Encrypted
+  routingNumber    String?          // Encrypted
+  bankName         String
+  accountType      String           // "CHECKING", "SAVINGS", "CREDIT"
+  currency         String           @default("CAD")
+
+  // Balance tracking
+  currentBalance   Decimal
+  availableBalance Decimal
+  lastReconciled   DateTime?
+
+  // Account status
+  isActive         Boolean          @default(true)
+  isDefault        Boolean          @default(false)
+
+  // Timestamps
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+
+  // Relationships
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  transactions     BankTransaction[]
+
+  @@map("bank_accounts")
+  @@index([organizationId])
+  @@index([isActive])
+  @@unique([organizationId, accountNumber])
+}
+
+model BankTransaction {
+  id               String           @id @default(cuid())
+  organizationId   String
+  bankAccountId    String
+
+  // Transaction Details
+  transactionDate  DateTime
+  description      String
+  amount           Decimal
+  transactionType  String           // "DEBIT", "CREDIT"
+  category         String?
+  reference        String?          // Bank reference number
+
+  // Reconciliation
+  isReconciled     Boolean          @default(false)
+  reconciledDate   DateTime?
+  reconciledBy     String?          // User ID
+  matchedPaymentId String?          // Link to Payment record
+
+  // Import tracking
+  importId         String?          // Batch import identifier
+  importedAt       DateTime?
+
+  // Timestamps
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relationships
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  bankAccount      BankAccount      @relation(fields: [bankAccountId], references: [id])
+  matchedPayment   Payment?         @relation(fields: [matchedPaymentId], references: [id])
+
+  @@map("bank_transactions")
+  @@index([organizationId])
+  @@index([bankAccountId])
+  @@index([transactionDate])
+  @@index([isReconciled])
+  @@unique([bankAccountId, reference])
+}
+
+model SecurityEvent {
+  id               String           @id @default(cuid())
+  organizationId   String?          // Null for system-wide events
+  userId           String?
+
+  // Event Details
+  eventType        String           // "LOGIN_FAILED", "SUSPICIOUS_ACTIVITY", "ACCOUNT_LOCKED", etc.
+  severity         String           // "LOW", "MEDIUM", "HIGH", "CRITICAL"
+  description      String
+  source           String?          // "WEB", "API", "MOBILE"
+
+  // Context
+  ipAddress        String?
+  userAgent        String?
+  location         String?          // Geo-location
+  requestId        String?
+  sessionId        String?
+
+  // Additional Data
+  metadata         String?          // JSON stored as string
+
+  // Resolution
+  resolved         Boolean          @default(false)
+  resolvedAt       DateTime?
+  resolvedBy       String?          // User ID
+  resolution       String?          // Description of resolution
+
+  // Timestamp (immutable)
+  timestamp        DateTime         @default(now())
+
+  // Relationships
+  organization     Organization?    @relation(fields: [organizationId], references: [id])
+  user             User?            @relation(fields: [userId], references: [id])
+
+  @@map("security_events")
+  @@index([organizationId])
+  @@index([eventType])
+  @@index([severity])
+  @@index([timestamp])
+  @@index([resolved])
+}
+
+// ==================== ENHANCED BUSINESS OPERATIONS ====================
+
+model StripePayment {
+  id               String           @id @default(cuid())
+  paymentId        String           @unique
+  stripeChargeId   String?          @unique
+  stripeIntentId   String?          @unique
+  customerId       String?          // Stripe customer ID
+  amount           Decimal
+  currency         String           @default("cad")
+  status           String
+  metadata         String?          // JSON stored as string
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relationships
+  payment          Payment          @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@map("stripe_payments")
+  @@index([stripeChargeId])
+  @@index([stripeIntentId])
+}
+
+model RecurringInvoice {
+  id               String           @id @default(cuid())
+  organizationId   String
+  customerId       String
+  templateId       String           // Reference to invoice template
+  frequency        String           // "MONTHLY", "QUARTERLY", "YEARLY"
+  nextIssueDate    DateTime
+  lastIssueDate    DateTime?
+  endDate          DateTime?
+  isActive         Boolean          @default(true)
+  autoSend         Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relationships
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  customer         Customer         @relation(fields: [customerId], references: [id])
+
+  @@map("recurring_invoices")
+  @@index([organizationId])
+  @@index([customerId])
+  @@index([nextIssueDate])
+}
+
+model CustomerPaymentMethod {
+  id               String           @id @default(cuid())
+  organizationId   String
+  customerId       String
+  type             String           // "CARD", "BANK_ACCOUNT", "PAYPAL"
+  isDefault        Boolean          @default(false)
+  stripeMethodId   String?          @unique
+  last4            String?
+  brand            String?
+  expiryMonth      Int?
+  expiryYear       Int?
+  isActive         Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relationships
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  customer         Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("customer_payment_methods")
+  @@index([organizationId])
+  @@index([customerId])
+  @@index([stripeMethodId])
+}
+
+model ContractorPayment {
+  id               String           @id @default(cuid())
+  organizationId   String
+  contractorId     String
+  amount           Decimal
+  description      String
+  periodStart      DateTime
+  periodEnd        DateTime
+  status           String           @default("PENDING") // PaymentStatus
+  paidAt           DateTime?
+  reference        String?
+  t4aIssued        Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relationships
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  contractor       Contractor       @relation(fields: [contractorId], references: [id])
+
+  @@map("contractor_payments")
+  @@index([organizationId])
+  @@index([contractorId])
+  @@index([status])
+}
+
+model Notification {
+  id               String           @id @default(cuid())
+  organizationId   String?
+  userId           String?
+  email            String?
+  type             String           // "INVOICE_DUE", "PAYMENT_RECEIVED", "QUOTE_EXPIRED"
+  title            String
+  message          String
+  data             String?          // JSON stored as string
+  status           String           @default("PENDING") // "PENDING", "SENT", "FAILED"
+  sentAt           DateTime?
+  readAt           DateTime?
+  createdAt        DateTime         @default(now())
+
+  // Relationships
+  organization     Organization?    @relation(fields: [organizationId], references: [id])
+  user             User?            @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+  @@index([organizationId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Webhook {
+  id               String           @id @default(cuid())
+  organizationId   String
+  url              String
+  events           String           // JSON array of event types
+  secret           String
+  isActive         Boolean          @default(true)
+  lastTriggered    DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relationships
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  deliveries       WebhookDelivery[]
+
+  @@map("webhooks")
+  @@index([organizationId])
+  @@index([isActive])
+}
+
+model WebhookDelivery {
+  id               String           @id @default(cuid())
+  webhookId        String
+  eventType        String
+  payload          String           // JSON stored as string
+  status           String           @default("PENDING") // "PENDING", "SUCCESS", "FAILED"
+  responseCode     Int?
+  responseBody     String?
+  attempts         Int              @default(0)
+  nextRetryAt      DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relationships
+  webhook          Webhook          @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@map("webhook_deliveries")
+  @@index([webhookId])
+  @@index([status])
+  @@index([nextRetryAt])
+}
+
+// ==================== INVOICE TEMPLATES & CUSTOMIZATION ====================
+
+model InvoiceTemplate {
+  id               String           @id @default(cuid())
+  organizationId   String
+  name             String
+  description      String?
+  templateType     String           @default("STANDARD") // STANDARD, MINIMAL, MODERN, CUSTOM
+
+  // Template Content
+  htmlTemplate     String           // Handlebars template
+  isDefault        Boolean          @default(false)
+  isSystem         Boolean          @default(false) // System-provided templates
+
+  // Template Metadata
+  version          String           @default("1.0")
+  tags             String?          // JSON array of tags
+  previewUrl       String?          // Preview image URL
+
+  // Timestamps
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+
+  // Relationships
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  invoiceStyles    InvoiceStyle[]
+  generatedPDFs    GeneratedPDF[]
+
+  @@map("invoice_templates")
+  @@index([organizationId])
+  @@index([templateType])
+  @@index([isDefault])
+  @@unique([organizationId, name])
+}
+
+model InvoiceStyle {
+  id               String           @id @default(cuid())
+  organizationId   String
+  templateId       String?          // Nullable for global styles
+  name             String
+  description      String?
+
+  // Style Configuration
+  cssContent       String           // CSS styles
+  colorScheme      String           // JSON color configuration
+  fontFamily       String           @default("Arial, sans-serif")
+  isDefault        Boolean          @default(false)
+  isSystem         Boolean          @default(false) // System-provided styles
+
+  // Template Metadata
+  version          String           @default("1.0")
+  tags             String?          // JSON array of tags
+  previewUrl       String?          // Preview image URL
+
+  // Timestamps
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+
+  // Relationships
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  template         InvoiceTemplate? @relation(fields: [templateId], references: [id])
+  generatedPDFs    GeneratedPDF[]
+
+  @@map("invoice_styles")
+  @@index([organizationId])
+  @@index([templateId])
+  @@index([isDefault])
+  @@unique([organizationId, name])
+}
+
+model OrganizationBranding {
+  id               String           @id @default(cuid())
+  organizationId   String           @unique
+
+  // Logo Configuration
+  logoUrl          String?          // URL to uploaded logo
+  logoWidth        Int?             // Logo display width in pixels
+  logoHeight       Int?             // Logo display height in pixels
+  showLogo         Boolean          @default(true)
+  showOrgName      Boolean          @default(true)
+
+  // Color Scheme
+  primaryColor     String           @default("#000000")
+  secondaryColor   String           @default("#666666")
+  accentColor      String           @default("#0066cc")
+  backgroundColor  String           @default("#ffffff")
+  textColor        String           @default("#000000")
+
+  // Invoice Display Settings
+  displaySettings  String           // JSON: { dateFormat, currency, layout, etc. }
+  customCss        String?          // Additional custom CSS
+
+  // Tax Settings
+  taxesEnabled     Boolean          @default(true)
+  defaultTaxExempt Boolean          @default(false)
+  taxDisplaySettings String?        // JSON tax configuration
+
+  // Template Selection
+  defaultTemplateId String?
+  defaultStyleId   String?
+
+  // Timestamps
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relationships
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+
+  @@map("organization_branding")
+}
+
+model GeneratedPDF {
+  id               String           @id @default(cuid())
+  organizationId   String
+  invoiceId        String
+  templateId       String?
+  styleId          String?
+
+  // PDF Information
+  filename         String           // Generated PDF filename
+  fileSize         Int              // File size in bytes
+  filePath         String           // Storage path/URL
+  fileHash         String           // SHA-256 hash for integrity
+
+  // Generation Context
+  templateVersion  String           @default("1.0")
+  generatedBy      String           // User ID who generated
+  generationParams String?          // JSON generation parameters
+
+  // Status
+  status           String           @default("GENERATED") // GENERATED, FAILED, PROCESSING
+  errorMessage     String?
+
+  // Timestamps
+  createdAt        DateTime         @default(now())
+  expiresAt        DateTime?        // Optional expiration for cleanup
+
+  // Relationships
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  invoice          Invoice          @relation(fields: [invoiceId], references: [id])
+  template         InvoiceTemplate? @relation(fields: [templateId], references: [id])
+  style            InvoiceStyle?    @relation(fields: [styleId], references: [id])
+
+  @@map("generated_pdfs")
+  @@index([organizationId])
+  @@index([invoiceId])
+  @@index([createdAt])
+  @@index([status])
+  @@unique([invoiceId, templateId, styleId]) // One PDF per template/style combo
 }

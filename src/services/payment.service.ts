@@ -1,11 +1,12 @@
-import { PrismaClient, Payment, Invoice, Customer } from '@prisma/client';
+import { Payment, Invoice, Customer } from '@prisma/client';
+import Decimal from 'decimal.js';
 import Stripe from 'stripe';
 import { config } from '../config/config';
 import { auditService } from './audit.service';
 import { invoiceService } from './invoice.service';
 import { PaymentMethod, PaymentStatus } from '../types/enums';
-
-const prisma = new PrismaClient();
+import { prisma } from '../config/database';
+import { logger } from '../utils/logger';
 
 let stripe: Stripe | null = null;
 if (config.STRIPE_SECRET_KEY) {
@@ -17,7 +18,7 @@ if (config.STRIPE_SECRET_KEY) {
 export interface CreatePaymentData {
   customerId: string;
   invoiceId?: string;
-  amount: number;
+  amount: Decimal | string | number; // Accept multiple types for conversion
   currency?: string;
   paymentMethod: PaymentMethod;
   paymentDate?: Date;
@@ -108,10 +109,12 @@ export class PaymentService {
         throw new Error('Invoice not found or does not belong to customer');
       }
 
-      // Verify payment amount doesn't exceed remaining balance
-      const remainingBalance = invoice.balance;
-      if (data.amount > remainingBalance) {
-        throw new Error(`Payment amount (${data.amount}) exceeds remaining balance (${remainingBalance})`);
+      // Verify payment amount doesn't exceed remaining balance using proper Decimal comparison
+      const remainingBalance = new Decimal(invoice.balance.toString());
+      const paymentAmount = new Decimal(data.amount.toString());
+
+      if (paymentAmount.greaterThan(remainingBalance)) {
+        throw new Error(`Payment amount (${paymentAmount.toString()}) exceeds remaining balance (${remainingBalance.toString()})`);
       }
     }
 
@@ -119,8 +122,11 @@ export class PaymentService {
     const paymentDate = data.paymentDate || new Date();
     const currency = data.currency || config.DEFAULT_CURRENCY;
 
+    // Convert amount to Decimal for financial precision
+    const paymentAmount = new Decimal(data.amount.toString());
+
     // Calculate net amount (assuming no processor fee for manual payments)
-    const netAmount = data.amount;
+    const netAmount = paymentAmount;
 
     const payment = await prisma.payment.create({
       data: {
@@ -129,13 +135,13 @@ export class PaymentService {
         customerId: data.customerId,
         invoiceId: data.invoiceId,
         paymentMethod: data.paymentMethod,
-        amount: data.amount,
+        amount: paymentAmount,
         currency,
         paymentDate,
         referenceNumber: data.referenceNumber,
         status: data.paymentMethod === PaymentMethod.STRIPE_CARD ? PaymentStatus.PENDING : PaymentStatus.COMPLETED,
-        processorFee: 0,
-        netAmount,
+        processorFee: new Decimal(0),
+        netAmount: netAmount,
         customerNotes: data.customerNotes,
         adminNotes: data.adminNotes,
         metadata: data.metadata ? JSON.stringify(data.metadata) : null,
@@ -156,7 +162,7 @@ export class PaymentService {
     if (payment.status === PaymentStatus.COMPLETED && payment.invoiceId) {
       await invoiceService.recordPayment(
         payment.invoiceId,
-        payment.amount,
+        payment.amount.toNumber(),
         organizationId,
         { userId: auditContext.userId || 'system', ipAddress: auditContext.ipAddress, userAgent: auditContext.userAgent }
       );
@@ -210,12 +216,15 @@ export class PaymentService {
     }
 
     // Verify payment amount doesn't exceed remaining balance
-    if (data.amount > invoice.balance) {
+    if (data.amount > invoice.balance.toNumber()) {
       throw new Error(`Payment amount (${data.amount}) exceeds remaining balance (${invoice.balance})`);
     }
 
     const currency = (data.currency || config.DEFAULT_CURRENCY).toLowerCase();
-    const amountInCents = Math.round(data.amount * 100);
+
+    // Use Decimal for precise currency conversion to cents (critical for financial accuracy)
+    const amount = new Decimal(data.amount.toString());
+    const amountInCents = amount.mul(100).round().toNumber();
 
     // Create Stripe PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
@@ -307,7 +316,7 @@ export class PaymentService {
         await this.handleChargeSucceeded(event.data.object as Stripe.Charge);
         break;
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        logger.warn('Unhandled Stripe webhook event type', { eventType: event.type });
     }
   }
 
@@ -323,7 +332,7 @@ export class PaymentService {
 
     // Calculate processor fees - simplified for now
     const processorFee = 0;
-    const netAmount = payment.amount - processorFee;
+    const netAmount = payment.amount.toNumber() - processorFee;
 
     // Update payment status
     await prisma.payment.update({
@@ -341,7 +350,7 @@ export class PaymentService {
     if (payment.invoiceId) {
       await invoiceService.recordPayment(
         payment.invoiceId,
-        payment.amount,
+        payment.amount.toNumber(),
         payment.organizationId,
         { userId: 'system' }
       );
@@ -404,7 +413,7 @@ export class PaymentService {
 
   private async handleChargeSucceeded(charge: Stripe.Charge): Promise<void> {
     // Additional processing for successful charges if needed
-    console.log(`Charge succeeded: ${charge.id}`);
+    logger.info('Stripe charge succeeded', { chargeId: charge.id, amount: charge.amount });
   }
 
   async getPayment(
@@ -461,7 +470,7 @@ export class PaymentService {
     if (status === PaymentStatus.COMPLETED && payment.invoiceId && oldStatus !== PaymentStatus.COMPLETED) {
       await invoiceService.recordPayment(
         payment.invoiceId,
-        payment.amount,
+        payment.amount.toNumber(),
         organizationId,
         { userId: auditContext.userId || 'system', ipAddress: auditContext.ipAddress, userAgent: auditContext.userAgent }
       );
@@ -522,12 +531,7 @@ export class PaymentService {
       prisma.payment.findMany({
         where,
         include: {
-          customer: {
-            include: {
-              person: true,
-              business: true
-            }
-          },
+          customer: true,
           invoice: true
         },
         orderBy: { paymentDate: 'desc' },
@@ -569,7 +573,7 @@ export class PaymentService {
     if (payment.stripeChargeId && stripe) {
       const refund = await stripe.refunds.create({
         charge: payment.stripeChargeId,
-        amount: Math.round(amount * 100), // Convert to cents
+        amount: new Decimal(amount.toString()).mul(100).round().toNumber(), // Precise conversion to cents
         reason: 'requested_by_customer',
         metadata: {
           organizationId,
@@ -674,7 +678,7 @@ export class PaymentService {
       })
     ]);
 
-    const totalAmount = payments.reduce((sum, p) => sum + (p.status === PaymentStatus.COMPLETED ? p.amount : 0), 0);
+    const totalAmount = payments.reduce((sum, p) => sum + (p.status === PaymentStatus.COMPLETED ? p.amount.toNumber() : 0), 0);
     const completedPayments = payments.filter(p => p.status === PaymentStatus.COMPLETED);
 
     const paymentsByMethod = payments.reduce((acc, p) => {
@@ -689,7 +693,7 @@ export class PaymentService {
 
     const pendingAmount = payments
       .filter(p => p.status === PaymentStatus.PENDING)
-      .reduce((sum, p) => sum + p.amount, 0);
+      .reduce((sum, p) => sum + p.amount.toNumber(), 0);
 
     return {
       totalPayments: completedPayments.length,

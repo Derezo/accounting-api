@@ -130,8 +130,8 @@ router.post(
 // Apply authentication to all other routes
 router.use(authenticate);
 
-// Apply audit logging to all authenticated routes
-router.use(auditMiddleware);
+// Note: Audit middleware should be applied per-route, not globally
+// The auditMiddleware export returns an object with create/update/delete/view methods
 
 /**
  * @swagger
@@ -650,6 +650,7 @@ router.post(
  */
 router.get(
   '/:id',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.EMPLOYEE, UserRole.VIEWER),
   validatePaymentId,
   paymentController.getPayment.bind(paymentController)
 );
@@ -1112,6 +1113,7 @@ router.put(
  */
 router.get(
   '/',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.EMPLOYEE, UserRole.VIEWER),
   validateListPayments,
   paymentController.listPayments.bind(paymentController)
 );
@@ -1748,6 +1750,7 @@ router.post(
  */
 router.get(
   '/stats/summary',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT),
   validateGetPaymentStats,
   paymentController.getPaymentStats.bind(paymentController)
 );

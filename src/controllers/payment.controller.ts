@@ -5,6 +5,131 @@ import { PaymentMethod, PaymentStatus } from '../types/enums';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 
 export class PaymentController {
+  /**
+   * @swagger
+   * /organizations/{organizationId}/payments:
+   *   post:
+   *     tags: [Payments]
+   *     summary: Create a new payment
+   *     description: |
+   *       Create a new payment record for invoices with support for multiple payment methods
+   *       including credit cards (Stripe), e-Transfer, cash, and bank transfers with automatic reconciliation.
+   *     parameters:
+   *       - $ref: '#/components/parameters/OrganizationId'
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [invoiceId, amount, method]
+   *             properties:
+   *               invoiceId:
+   *                 type: string
+   *                 format: uuid
+   *                 description: Invoice ID for payment
+   *                 example: "550e8400-e29b-41d4-a716-446655440000"
+   *               amount:
+   *                 type: number
+   *                 format: decimal
+   *                 minimum: 0.01
+   *                 description: Payment amount
+   *                 example: 1500.00
+   *               method:
+   *                 $ref: '#/components/schemas/PaymentMethod'
+   *               reference:
+   *                 type: string
+   *                 description: Payment reference (transaction ID, check number, etc.)
+   *                 example: "CHK-123456"
+   *               notes:
+   *                 type: string
+   *                 description: Payment notes
+   *                 example: "Partial payment - balance due in 30 days"
+   *               receivedDate:
+   *                 type: string
+   *                 format: date
+   *                 description: Date payment was received (defaults to today)
+   *                 example: "2024-01-15"
+   *           examples:
+   *             CashPayment:
+   *               summary: Cash payment example
+   *               value:
+   *                 invoiceId: "550e8400-e29b-41d4-a716-446655440000"
+   *                 amount: 1500.00
+   *                 method: "CASH"
+   *                 reference: "CASH-001"
+   *                 notes: "Payment received in person"
+   *             ETransferPayment:
+   *               summary: e-Transfer payment example
+   *               value:
+   *                 invoiceId: "550e8400-e29b-41d4-a716-446655440000"
+   *                 amount: 2500.00
+   *                 method: "E_TRANSFER"
+   *                 reference: "ET-987654321"
+   *                 notes: "Auto-deposited e-Transfer"
+   *     responses:
+   *       '201':
+   *         description: Payment created successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "Payment created successfully"
+   *                 payment:
+   *                   $ref: '#/components/schemas/Payment'
+   *             example:
+   *               message: "Payment created successfully"
+   *               payment:
+   *                 id: "123e4567-e89b-12d3-a456-426614174000"
+   *                 amount: 1500.00
+   *                 method: "CASH"
+   *                 status: "COMPLETED"
+   *                 reference: "CASH-001"
+   *                 receivedDate: "2024-01-15"
+   *       '400':
+   *         $ref: '#/components/responses/ValidationError'
+   *       '401':
+   *         $ref: '#/components/responses/AuthenticationError'
+   *       '403':
+   *         $ref: '#/components/responses/AuthorizationError'
+   *       '404':
+   *         description: Invoice not found
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/NotFoundError'
+   *       '409':
+   *         description: Payment validation failed
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 error:
+   *                   type: string
+   *                   example: "Payment amount exceeds outstanding balance"
+   *                 code:
+   *                   type: string
+   *                   example: "PAYMENT_EXCEEDS_BALANCE"
+   *                 details:
+   *                   type: object
+   *                   properties:
+   *                     requestedAmount:
+   *                       type: number
+   *                       example: 2000.00
+   *                     outstandingBalance:
+   *                       type: number
+   *                       example: 1500.00
+   *       '429':
+   *         $ref: '#/components/responses/RateLimitError'
+   *       '500':
+   *         $ref: '#/components/responses/InternalServerError'
+   */
   async createPayment(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const errors = validationResult(req);
@@ -201,40 +326,29 @@ export class PaymentController {
       }
 
       const organizationId = req.user!.organizationId;
-      const {
-        customerId,
-        invoiceId,
-        status,
-        paymentMethod,
-        startDate,
-        endDate,
-        minAmount,
-        maxAmount,
-        page = 1,
-        limit = 50
-      } = req.query;
-
-      const filter: any = {};
-      if (customerId) filter.customerId = customerId as string;
-      if (invoiceId) filter.invoiceId = invoiceId as string;
-      if (status) filter.status = status as PaymentStatus;
-      if (paymentMethod) filter.paymentMethod = paymentMethod as PaymentMethod;
-      if (startDate) filter.startDate = new Date(startDate as string);
-      if (endDate) filter.endDate = new Date(endDate as string);
-      if (minAmount) filter.minAmount = parseFloat(minAmount as string);
-      if (maxAmount) filter.maxAmount = parseFloat(maxAmount as string);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
 
       const result = await paymentService.listPayments(
         organizationId,
-        filter,
-        parseInt(page as string, 10),
-        parseInt(limit as string, 10)
+        {
+          customerId: req.query.customerId as string,
+          invoiceId: req.query.invoiceId as string,
+          status: req.query.status as PaymentStatus | undefined,
+          paymentMethod: req.query.paymentMethod as PaymentMethod | undefined,
+          startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
+          endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined,
+          minAmount: req.query.minAmount ? parseFloat(req.query.minAmount as string) : undefined,
+          maxAmount: req.query.maxAmount ? parseFloat(req.query.maxAmount as string) : undefined
+        },
+        page,
+        limit
       );
 
       res.json(result);
     } catch (error) {
       res.status(500).json({
-        error: 'Failed to list payments',
+        error: 'Failed to retrieve payments',
         message: error instanceof Error ? error.message : 'Unknown error'
       });
     }
@@ -322,10 +436,12 @@ export const validateCreatePayment = [
     .isUUID()
     .withMessage('Customer ID must be a valid UUID'),
 
+  // Invoice ID validation
   body('invoiceId')
-    .optional()
-    .isUUID()
-    .withMessage('Invoice ID must be a valid UUID'),
+    .notEmpty()
+    .withMessage('Invoice ID is required')
+    .isLength({ min: 1 })
+    .withMessage('Invoice ID must be a valid string'),
 
   body('amount')
     .isFloat({ min: 0.01 })

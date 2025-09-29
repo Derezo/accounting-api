@@ -10,6 +10,7 @@ import {
   TestContext
 } from './test-utils';
 import { PaymentMethod, PaymentStatus, InvoiceStatus } from '../../src/types/enums';
+import Decimal from 'decimal.js';
 
 describe('Payment Integration Tests', () => {
   let testContext: TestContext;
@@ -28,21 +29,21 @@ describe('Payment Integration Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id
+        customer!.id
       );
 
       // Step 2: Create payment intent (simulated Stripe response)
       const paymentIntentResponse = await authenticatedRequest(adminToken)
         .post('/api/payments/stripe/create-payment-intent')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: invoice.total,
           currency: 'cad',
           description: `Payment for invoice ${invoice.invoiceNumber}`,
           metadata: {
             invoiceId: invoice.id,
-            customerId: customer.id,
+            customerId: customer!.id,
             organizationId: organization.id
           }
         })
@@ -50,7 +51,7 @@ describe('Payment Integration Tests', () => {
 
       const paymentIntent = paymentIntentResponse.body;
       expect(paymentIntent.client_secret).toBeTruthy();
-      expect(paymentIntent.amount).toBe(Math.round(invoice.total * 100)); // Stripe uses cents
+      expect(paymentIntent.amount).toBe(Math.round(invoice.total.toNumber() * 100)); // Stripe uses cents
 
       // Step 3: Simulate successful payment confirmation webhook
       const webhookPayload = createStripeWebhookEvent('payment_intent.succeeded', {
@@ -98,7 +99,7 @@ describe('Payment Integration Tests', () => {
 
       const updatedInvoice = updatedInvoiceResponse.body;
       expect(updatedInvoice.status).toBe(InvoiceStatus.PAID);
-      expect(updatedInvoice.amountPaid).toBe(invoice.total);
+      expect(updatedInvoice.amountPaid.toNumber()).toBe(invoice.total.toNumber());
       expect(updatedInvoice.balance).toBe(0);
       expect(updatedInvoice.paidAt).toBeTruthy();
 
@@ -113,14 +114,14 @@ describe('Payment Integration Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id
+        customer!.id
       );
 
       // Create payment intent
       const paymentIntentResponse = await authenticatedRequest(adminToken)
         .post('/api/payments/stripe/create-payment-intent')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: invoice.total,
           currency: 'cad'
@@ -180,16 +181,16 @@ describe('Payment Integration Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id
+        customer!.id
       );
 
-      const partialAmount = invoice.total * 0.5; // 50% payment
+      const partialAmount = invoice.total.mul(0.5); // 50% payment
 
       // Create partial payment intent
       const paymentIntentResponse = await authenticatedRequest(adminToken)
         .post('/api/payments/stripe/create-payment-intent')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: partialAmount,
           currency: 'cad',
@@ -202,7 +203,7 @@ describe('Payment Integration Tests', () => {
       // Simulate successful partial payment
       const webhookPayload = createStripeWebhookEvent('payment_intent.succeeded', {
         id: paymentIntent.id,
-        amount: Math.round(partialAmount * 100),
+        amount: Math.round(partialAmount.toNumber() * 100),
         currency: 'cad',
         status: 'succeeded',
         metadata: paymentIntent.metadata
@@ -221,8 +222,8 @@ describe('Payment Integration Tests', () => {
 
       const updatedInvoice = invoiceResponse.body;
       expect(updatedInvoice.status).toBe(InvoiceStatus.PARTIALLY_PAID);
-      expect(updatedInvoice.amountPaid).toBe(partialAmount);
-      expect(updatedInvoice.balance).toBe(invoice.total - partialAmount);
+      expect(updatedInvoice.amountPaid.toNumber()).toBe(partialAmount.toNumber());
+      expect(updatedInvoice.balance.toNumber()).toBe(invoice.total.minus(partialAmount).toNumber());
 
       console.log('✅ Stripe partial payment test completed');
     });
@@ -236,7 +237,7 @@ describe('Payment Integration Tests', () => {
       const payment = await createTestPayment(
         prisma,
         organization.id,
-        customer.id,
+        customer!.id,
         undefined,
         1000.00
       );
@@ -259,7 +260,7 @@ describe('Payment Integration Tests', () => {
       // Simulate Stripe refund webhook
       const refundWebhookPayload = createStripeWebhookEvent('charge.refunded', {
         id: payment.stripeChargeId || 'ch_test_123',
-        amount: Math.round(payment.amount * 100),
+        amount: Math.round(payment.amount.toNumber() * 100),
         amount_refunded: Math.round(300.00 * 100),
         refunded: true,
         refunds: {
@@ -298,14 +299,14 @@ describe('Payment Integration Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id
+        customer!.id
       );
 
       // Step 1: Customer initiates e-transfer
       const etransferResponse = await authenticatedRequest(adminToken)
         .post('/api/payments/etransfer/initiate')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: invoice.total,
           customerEmail: 'customer@example.com',
@@ -370,14 +371,14 @@ describe('Payment Integration Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id
+        customer!.id
       );
 
       // Initiate e-transfer
       const etransferResponse = await authenticatedRequest(adminToken)
         .post('/api/payments/etransfer/initiate')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: invoice.total,
           customerEmail: 'customer@timeout.com',
@@ -430,14 +431,14 @@ describe('Payment Integration Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id
+        customer!.id
       );
 
       // Record cash payment
       const cashPaymentResponse = await authenticatedRequest(adminToken)
         .post('/api/payments/manual/cash')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: invoice.total,
           receivedDate: new Date().toISOString(),
@@ -471,14 +472,14 @@ describe('Payment Integration Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id
+        customer!.id
       );
 
       // Record cheque payment
       const chequePaymentResponse = await authenticatedRequest(adminToken)
         .post('/api/payments/manual/cheque')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: invoice.total,
           receivedDate: new Date().toISOString(),
@@ -523,14 +524,14 @@ describe('Payment Integration Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id
+        customer!.id
       );
 
       // Record cheque payment
       const chequePaymentResponse = await authenticatedRequest(adminToken)
         .post('/api/payments/manual/cheque')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: invoice.total,
           receivedDate: new Date().toISOString(),
@@ -582,18 +583,18 @@ describe('Payment Integration Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id
+        customer!.id
       );
 
       const totalAmount = invoice.total;
-      const payment1Amount = totalAmount * 0.3; // 30%
-      const payment2Amount = totalAmount * 0.7; // 70%
+      const payment1Amount = totalAmount.mul(0.3); // 30%
+      const payment2Amount = totalAmount.mul(0.7); // 70%
 
       // First payment (cash deposit)
       const payment1Response = await authenticatedRequest(adminToken)
         .post('/api/payments/manual/cash')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: payment1Amount,
           receivedDate: new Date().toISOString(),
@@ -608,14 +609,14 @@ describe('Payment Integration Tests', () => {
         .expect(200);
 
       expect(invoiceResponse.body.status).toBe(InvoiceStatus.PARTIALLY_PAID);
-      expect(invoiceResponse.body.amountPaid).toBe(payment1Amount);
-      expect(invoiceResponse.body.balance).toBe(totalAmount - payment1Amount);
+      expect(invoiceResponse.body.amountPaid.toNumber()).toBe(payment1Amount.toNumber());
+      expect(invoiceResponse.body.balance.toNumber()).toBe(totalAmount.minus(payment1Amount).toNumber());
 
       // Second payment (final payment via e-transfer)
       const payment2Response = await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: payment2Amount,
           paymentMethod: PaymentMethod.INTERAC_ETRANSFER,
@@ -630,7 +631,7 @@ describe('Payment Integration Tests', () => {
         .expect(200);
 
       expect(invoiceResponse.body.status).toBe(InvoiceStatus.PAID);
-      expect(invoiceResponse.body.amountPaid).toBe(totalAmount);
+      expect(invoiceResponse.body.amountPaid.toNumber()).toBe(totalAmount.toNumber());
       expect(invoiceResponse.body.balance).toBe(0);
       expect(invoiceResponse.body.paidAt).toBeTruthy();
 
@@ -653,16 +654,16 @@ describe('Payment Integration Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id
+        customer!.id
       );
 
-      const overpaymentAmount = invoice.total + 150.00; // $150 overpayment
+      const overpaymentAmount = invoice.total.plus(150.00); // $150 overpayment
 
       // Record overpayment
       const overpaymentResponse = await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: overpaymentAmount,
           paymentMethod: PaymentMethod.STRIPE_CARD,
@@ -679,8 +680,8 @@ describe('Payment Integration Tests', () => {
         .expect(200);
 
       expect(invoiceResponse.body.status).toBe(InvoiceStatus.PAID);
-      expect(invoiceResponse.body.amountPaid).toBe(overpaymentAmount);
-      expect(invoiceResponse.body.balance).toBe(invoice.total - overpaymentAmount); // Negative balance
+      expect(invoiceResponse.body.amountPaid.toNumber()).toBe(overpaymentAmount.toNumber());
+      expect(invoiceResponse.body.balance.toNumber()).toBe(invoice.total.minus(overpaymentAmount).toNumber()); // Negative balance
 
       // Process refund for overpayment
       const refundResponse = await authenticatedRequest(adminToken)
@@ -709,16 +710,16 @@ describe('Payment Integration Tests', () => {
       const adminToken = authTokens.admin;
 
       // Create multiple payments across different methods
-      const testPayments = [];
+      const testPayments: any[] = [];
 
       for (let i = 0; i < 5; i++) {
         const customer = await createTestCustomer(prisma, organization.id, 'PERSON');
-        const invoice = await createTestInvoice(prisma, organization.id, customer.id);
+        const invoice = await createTestInvoice(prisma, organization.id, customer!.id);
 
         const payment = await createTestPayment(
           prisma,
           organization.id,
-          customer.id,
+          customer!.id,
           invoice.id,
           1000 + (i * 500) // Varying amounts
         );
@@ -760,14 +761,14 @@ describe('Payment Integration Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id
+        customer!.id
       );
 
       // Test negative amount (should fail)
       await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: -100.00,
           paymentMethod: PaymentMethod.CASH
@@ -778,7 +779,7 @@ describe('Payment Integration Tests', () => {
       await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: 0,
           paymentMethod: PaymentMethod.CASH
@@ -789,7 +790,7 @@ describe('Payment Integration Tests', () => {
       await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: 50000.00, // Large amount
           paymentMethod: PaymentMethod.BANK_TRANSFER,
@@ -833,11 +834,11 @@ describe('Payment Integration Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id
+        customer!.id
       );
 
       const paymentData = {
-        customerId: customer.id,
+        customerId: customer!.id,
         invoiceId: invoice.id,
         amount: invoice.total,
         paymentMethod: PaymentMethod.STRIPE_CARD,
@@ -883,13 +884,13 @@ describe('Payment Integration Tests', () => {
       for (const method of paymentMethods) {
         for (let i = 0; i < 3; i++) {
           const customer = await createTestCustomer(prisma, organization.id, 'PERSON');
-          const invoice = await createTestInvoice(prisma, organization.id, customer.id);
+          const invoice = await createTestInvoice(prisma, organization.id, customer!.id);
 
           await prisma.payment.create({
             data: {
               organizationId: organization.id,
               paymentNumber: `PAY-${method}-${i}`,
-              customerId: customer.id,
+              customerId: customer!.id,
               invoiceId: invoice.id,
               paymentMethod: method,
               amount: 1000 + (i * 200),

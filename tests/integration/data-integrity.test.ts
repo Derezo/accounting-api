@@ -29,7 +29,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const quoteResponse = await authenticatedRequest(adminToken)
         .post('/api/quotes')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           items: [
             {
@@ -116,7 +116,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id
+        customer!.id
       );
 
       const paymentAmount = invoice.total / 3; // Each payment is 1/3 of total
@@ -126,7 +126,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
         authenticatedRequest(adminToken)
           .post('/api/payments')
           .send({
-            customerId: customer.id,
+            customerId: customer!.id,
             invoiceId: invoice.id,
             amount: paymentAmount,
             paymentMethod: 'STRIPE_CARD',
@@ -136,7 +136,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
         authenticatedRequest(adminToken)
           .post('/api/payments')
           .send({
-            customerId: customer.id,
+            customerId: customer!.id,
             invoiceId: invoice.id,
             amount: paymentAmount,
             paymentMethod: 'INTERAC_ETRANSFER',
@@ -146,7 +146,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
         authenticatedRequest(adminToken)
           .post('/api/payments')
           .send({
-            customerId: customer.id,
+            customerId: customer!.id,
             invoiceId: invoice.id,
             amount: paymentAmount,
             paymentMethod: 'CASH',
@@ -193,7 +193,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       await authenticatedRequest(adminToken)
         .post('/api/invoices')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           quoteId: 'non-existent-quote-id',
           dueDate: new Date().toISOString()
         })
@@ -203,7 +203,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: 'non-existent-invoice-id',
           amount: 100.00,
           paymentMethod: 'CASH'
@@ -214,12 +214,12 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const quote = await createTestQuote(
         prisma,
         organization.id,
-        customer.id,
+        customer!.id,
         testContext.users.admin.id
       );
 
       await authenticatedRequest(adminToken)
-        .delete(`/api/customers/${customer.id}`)
+        .delete(`/api/customers/${customer!.id}`)
         .expect(409); // Conflict due to existing quotes
 
       // Test 5: Can delete customer after removing dependent records
@@ -227,7 +227,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       await prisma.quote.delete({ where: { id: quote.id } });
 
       await authenticatedRequest(adminToken)
-        .delete(`/api/customers/${customer.id}`)
+        .delete(`/api/customers/${customer!.id}`)
         .expect(200);
 
       console.log('✅ Referential integrity test completed');
@@ -242,25 +242,25 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const quote = await createTestQuote(
         prisma,
         organization.id,
-        customer.id,
+        customer!.id,
         testContext.users.admin.id
       );
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id,
+        customer!.id,
         quote.id
       );
       const payment = await createTestPayment(
         prisma,
         organization.id,
-        customer.id,
+        customer!.id,
         invoice.id
       );
       const project = await createTestProject(
         prisma,
         organization.id,
-        customer.id,
+        customer!.id,
         testContext.users.admin.id
       );
 
@@ -273,13 +273,13 @@ describe('Data Integrity and Consistency Integration Tests', () => {
 
       // Soft delete customer (should maintain referential integrity)
       await authenticatedRequest(adminToken)
-        .patch(`/api/customers/${customer.id}`)
+        .patch(`/api/customers/${customer!.id}`)
         .send({ deletedAt: new Date().toISOString() })
         .expect(200);
 
       // Verify soft delete doesn't break references
       const softDeletedCustomer = await prisma.customer.findUnique({
-        where: { id: customer.id },
+        where: { id: customer!.id },
         include: {
           quotes: true,
           invoices: true,
@@ -308,7 +308,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       await authenticatedRequest(adminToken)
         .post('/api/quotes')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           validUntil: new Date().toISOString(),
           subtotal: 1000.00, // Incorrect total
           taxAmount: 130.00,
@@ -328,13 +328,13 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id
+        customer!.id
       );
 
       await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: invoice.total + 1000.00, // Exceeds invoice total
           paymentMethod: 'CASH'
@@ -346,7 +346,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
         .post('/api/projects')
         .send({
           name: 'Invalid Date Project',
-          customerId: customer.id,
+          customerId: customer!.id,
           startDate: new Date('2024-12-01').toISOString(),
           endDate: new Date('2024-11-01').toISOString(), // End before start
           estimatedHours: 40
@@ -357,7 +357,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const expiredQuote = await createTestQuote(
         prisma,
         organization.id,
-        customer.id,
+        customer!.id,
         testContext.users.admin.id
       );
 
@@ -383,7 +383,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const quoteResponse = await authenticatedRequest(adminToken)
         .post('/api/quotes')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           items: [
             {
@@ -436,7 +436,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const quoteResponse = await authenticatedRequest(adminToken)
         .post('/api/quotes')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           items: [
             {
@@ -465,7 +465,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const invoiceResponse = await authenticatedRequest(adminToken)
         .post('/api/invoices')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           quoteId: quote.id,
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
         })
@@ -477,7 +477,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: invoice.total,
           paymentMethod: 'STRIPE_CARD',
@@ -537,11 +537,11 @@ describe('Data Integrity and Consistency Integration Tests', () => {
 
       // Update customer with trackable changes
       const originalCustomer = await prisma.customer.findUnique({
-        where: { id: customer.id }
+        where: { id: customer!.id }
       });
 
       const updateResponse = await authenticatedRequest(adminToken)
-        .patch(`/api/customers/${customer.id}`)
+        .patch(`/api/customers/${customer!.id}`)
         .send({
           paymentTerms: 45, // Change from original
           notes: 'Updated payment terms for better cash flow',
@@ -556,7 +556,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
           userId: users.admin.id,
           action: 'UPDATE',
           entityType: 'Customer',
-          entityId: customer.id
+          entityId: customer!.id
         },
         orderBy: { timestamp: 'desc' }
       });
@@ -587,7 +587,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const quote = await createTestQuote(
         prisma,
         organization.id,
-        customer.id,
+        customer!.id,
         testContext.users.admin.id
       );
 
@@ -600,7 +600,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const invoiceResponse = await authenticatedRequest(adminToken)
         .post('/api/invoices')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           quoteId: quote.id,
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
         })
@@ -649,7 +649,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer.id
+        customer!.id
       );
 
       const payment1Amount = invoice.total * 0.4; // 40%
@@ -659,7 +659,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const payment1Response = await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: payment1Amount,
           paymentMethod: 'CASH',
@@ -680,7 +680,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const payment2Response = await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: payment2Amount,
           paymentMethod: 'STRIPE_CARD',
@@ -720,7 +720,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const quote = await createTestQuote(
         prisma,
         organization.id,
-        customer.id,
+        customer!.id,
         testContext.users.admin.id
       );
 
@@ -732,7 +732,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       const invoiceResponse = await authenticatedRequest(adminToken)
         .post('/api/invoices')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           quoteId: quote.id,
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
         })
@@ -745,7 +745,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
         .post('/api/projects')
         .send({
           name: 'Integration Test Project',
-          customerId: customer.id,
+          customerId: customer!.id,
           assignedToId: testContext.users.admin.id,
           estimatedHours: 40,
           hourlyRate: 150.00
@@ -759,7 +759,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: partialAmount,
           paymentMethod: 'STRIPE_CARD',
@@ -777,7 +777,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
       await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer.id,
+          customerId: customer!.id,
           invoiceId: invoice.id,
           amount: remainingAmount,
           paymentMethod: 'INTERAC_ETRANSFER',
@@ -856,7 +856,7 @@ describe('Data Integrity and Consistency Integration Tests', () => {
           await createTestQuote(
             prisma,
             organization.id,
-            customer.id,
+            customer!.id,
             testContext.users.admin.id
           );
         }

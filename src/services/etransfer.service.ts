@@ -1,13 +1,13 @@
-// @ts-nocheck
-import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
+import { Payment } from '@prisma/client';
 import { config } from '../config/config';
 import { auditService } from './audit.service';
 import { PaymentMethod, PaymentStatus } from '../types/enums';
 import { emailService } from './email.service';
 
-const prisma = new PrismaClient();
 
+
+import { prisma } from '../config/database';
 export interface CreateETransferData {
   customerId: string;
   invoiceId?: string;
@@ -85,7 +85,7 @@ export class ETransferService {
     data: CreateETransferData,
     organizationId: string,
     auditContext: { userId?: string; ipAddress?: string; userAgent?: string }
-  ): Promise<any> {
+  ): Promise<unknown> {
     // Verify customer exists and belongs to organization
     const customer = await prisma.customer.findFirst({
       where: {
@@ -273,7 +273,7 @@ export class ETransferService {
     data: ConfirmETransferDepositData,
     organizationId: string,
     auditContext: { userId?: string; ipAddress?: string; userAgent?: string }
-  ): Promise<any> {
+  ): Promise<Payment> {
     const payment = await prisma.payment.findFirst({
       where: {
         paymentNumber: data.etransferNumber,
@@ -372,7 +372,7 @@ export class ETransferService {
     reason: string,
     organizationId: string,
     auditContext: { userId?: string; ipAddress?: string; userAgent?: string }
-  ): Promise<any> {
+  ): Promise<Payment> {
     const payment = await prisma.payment.findFirst({
       where: {
         paymentNumber: etransferNumber,
@@ -426,7 +426,7 @@ export class ETransferService {
   async getETransfer(
     etransferNumber: string,
     organizationId: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     const payment = await prisma.payment.findFirst({
       where: {
         paymentNumber: etransferNumber,
@@ -473,12 +473,12 @@ export class ETransferService {
     page: number = 1,
     limit: number = 50
   ): Promise<{
-    etransfers: any[];
+    etransfers: unknown[];
     total: number;
     page: number;
     totalPages: number;
   }> {
-    const where: any = {
+    const where: Record<string, unknown> = {
       organizationId,
       paymentMethod: PaymentMethod.INTERAC_ETRANSFER,
       deletedAt: null
@@ -546,7 +546,7 @@ export class ETransferService {
     startDate?: Date,
     endDate?: Date
   ): Promise<ETransferStats> {
-    const where: any = {
+    const where: Record<string, unknown> = {
       organizationId,
       paymentMethod: PaymentMethod.INTERAC_ETRANSFER,
       deletedAt: null,
@@ -626,7 +626,7 @@ export class ETransferService {
   }
 
   async checkExpiredETransfers(organizationId?: string): Promise<number> {
-    const where: any = {
+    const where: Record<string, unknown> = {
       paymentMethod: PaymentMethod.INTERAC_ETRANSFER,
       status: {
         in: [PaymentStatus.PENDING, PaymentStatus.PROCESSING]

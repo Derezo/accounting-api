@@ -43,6 +43,146 @@ export const validateListQuotes = [
 ];
 
 export class QuoteController {
+  /**
+   * @swagger
+   * /organizations/{organizationId}/quotes:
+   *   post:
+   *     tags: [Quotes]
+   *     summary: Create a new quote
+   *     description: |
+   *       Create a new quote for a customer with line items, calculations, and business terms.
+   *       This is the first step in the 8-stage customer lifecycle pipeline for project quotes.
+   *     parameters:
+   *       - $ref: '#/components/parameters/OrganizationId'
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [customerId, description, items]
+   *             properties:
+   *               customerId:
+   *                 type: string
+   *                 format: uuid
+   *                 description: Customer ID for the quote
+   *                 example: "550e8400-e29b-41d4-a716-446655440000"
+   *               description:
+   *                 type: string
+   *                 description: Quote description/title
+   *                 example: "Website redesign and development"
+   *               validUntil:
+   *                 type: string
+   *                 format: date
+   *                 description: Quote expiration date (default 30 days)
+   *                 example: "2024-02-15"
+   *               notes:
+   *                 type: string
+   *                 description: Internal notes
+   *                 example: "Customer requested modern design"
+   *               terms:
+   *                 type: string
+   *                 description: Quote terms and conditions
+   *                 example: "25% deposit required, 15-day payment terms"
+   *               items:
+   *                 type: array
+   *                 minItems: 1
+   *                 description: Quote line items
+   *                 items:
+   *                   type: object
+   *                   required: [description, quantity, unitPrice, taxRate]
+   *                   properties:
+   *                     description:
+   *                       type: string
+   *                       description: Item description
+   *                       example: "Frontend development"
+   *                     quantity:
+   *                       type: number
+   *                       format: decimal
+   *                       minimum: 0.01
+   *                       description: Item quantity
+   *                       example: 40.0
+   *                     unitPrice:
+   *                       type: number
+   *                       format: decimal
+   *                       minimum: 0
+   *                       description: Price per unit
+   *                       example: 125.00
+   *                     taxRate:
+   *                       type: number
+   *                       format: decimal
+   *                       minimum: 0
+   *                       maximum: 100
+   *                       description: Tax rate percentage
+   *                       example: 13.0
+   *                     discountPercent:
+   *                       type: number
+   *                       format: decimal
+   *                       minimum: 0
+   *                       maximum: 100
+   *                       description: Discount percentage
+   *                       example: 5.0
+   *           examples:
+   *             WebsiteDevelopmentQuote:
+   *               summary: Website development quote
+   *               value:
+   *                 customerId: "550e8400-e29b-41d4-a716-446655440000"
+   *                 description: "E-commerce website development"
+   *                 validUntil: "2024-02-15"
+   *                 terms: "25% deposit required, 15-day payment terms"
+   *                 items:
+   *                   - description: "Frontend development"
+   *                     quantity: 40
+   *                     unitPrice: 125.00
+   *                     taxRate: 13.0
+   *                   - description: "Backend API development"
+   *                     quantity: 30
+   *                     unitPrice: 150.00
+   *                     taxRate: 13.0
+   *                     discountPercent: 10.0
+   *     responses:
+   *       '201':
+   *         description: Quote created successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "Quote created successfully"
+   *                 quote:
+   *                   $ref: '#/components/schemas/Quote'
+   *             example:
+   *               message: "Quote created successfully"
+   *               quote:
+   *                 id: "123e4567-e89b-12d3-a456-426614174000"
+   *                 quoteNumber: "QUO-2024-001"
+   *                 status: "DRAFT"
+   *                 description: "E-commerce website development"
+   *                 subtotal: 9500.00
+   *                 taxAmount: 1235.00
+   *                 total: 10735.00
+   *                 validUntil: "2024-02-15"
+   *       '400':
+   *         $ref: '#/components/responses/ValidationError'
+   *       '401':
+   *         $ref: '#/components/responses/AuthenticationError'
+   *       '403':
+   *         $ref: '#/components/responses/AuthorizationError'
+   *       '404':
+   *         description: Customer not found
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/NotFoundError'
+   *       '429':
+   *         $ref: '#/components/responses/RateLimitError'
+   *       '500':
+   *         $ref: '#/components/responses/InternalServerError'
+   */
   async createQuote(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const errors = validationResult(req);
@@ -374,9 +514,9 @@ export class QuoteController {
         return;
       }
 
-      const { acceptanceNotes } = req.body;
+      const { acceptanceNotes, autoGenerateInvoice } = req.body;
 
-      const quote = await quoteService.acceptQuote(
+      const result = await quoteService.acceptQuote(
         req.params.id!,
         req.user.organizationId,
         {
@@ -384,18 +524,60 @@ export class QuoteController {
           ipAddress: req.ip,
           userAgent: req.headers['user-agent']
         },
-        acceptanceNotes
+        acceptanceNotes,
+        autoGenerateInvoice !== false // Default to true unless explicitly set to false
       );
 
-      res.json({
+      const response: any = {
         message: 'Quote accepted successfully',
         quote: {
-          id: quote.id,
-          status: quote.status,
-          acceptedAt: quote.acceptedAt,
-          notes: quote.notes
+          id: result.quote.id,
+          status: result.quote.status,
+          acceptedAt: result.quote.acceptedAt,
+          notes: result.quote.notes
         }
-      });
+      };
+
+      // Include invoice information if automatically generated
+      if (result.invoice) {
+        response.invoice = {
+          id: result.invoice.id,
+          invoiceNumber: result.invoice.invoiceNumber,
+          status: result.invoice.status,
+          total: result.invoice.total,
+          depositRequired: result.invoice.depositRequired,
+          balance: result.invoice.balance,
+          dueDate: result.invoice.dueDate,
+          createdAt: result.invoice.createdAt
+        };
+        response.message = 'Quote accepted successfully. Invoice automatically generated.';
+      }
+
+      // Include suggested appointment times for consultation
+      if ((result as any).suggestedAppointments && (result as any).suggestedAppointments.length > 0) {
+        (response as any).suggestedAppointments = (result as any).suggestedAppointments.map((slot: any) => ({
+          date: slot.date,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          displayTime: `${slot.startTime.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          })} - ${slot.endTime.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          })}`
+        }));
+
+        if (result.invoice) {
+          response.message = 'Quote accepted successfully. Invoice automatically generated. Available consultation times suggested.';
+        } else {
+          response.message = 'Quote accepted successfully. Available consultation times suggested.';
+        }
+      }
+
+      res.json(response);
     } catch (error: any) {
       if (error.message === 'Quote not found') {
         res.status(404).json({ error: error.message });
@@ -477,6 +659,58 @@ export class QuoteController {
     } catch (error: any) {
       if (error.message === 'Quote not found') {
         res.status(404).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  }
+
+  async convertToInvoice(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const quoteId = req.params.id;
+      const { dueDate, depositRequired, terms, notes } = req.body;
+      const { organizationId, id: userId } = req.user!;
+
+      // Validate optional parameters
+      const convertOptions: any = {};
+      if (dueDate) {
+        convertOptions.dueDate = new Date(dueDate);
+      }
+      if (depositRequired !== undefined) {
+        convertOptions.depositRequired = depositRequired;
+      }
+      if (terms) {
+        convertOptions.terms = terms;
+      }
+      if (notes) {
+        convertOptions.notes = notes;
+      }
+
+      const invoice = await (quoteService as any).convertToInvoice(
+        quoteId,
+        organizationId,
+        userId,
+        convertOptions
+      );
+
+      res.json({
+        message: 'Quote converted to invoice successfully',
+        invoice: {
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          status: invoice.status,
+          quoteId: invoice.quoteId,
+          total: invoice.total,
+          dueDate: invoice.dueDate
+        }
+      });
+    } catch (error: any) {
+      if (error.message === 'Quote not found') {
+        res.status(404).json({ error: error.message });
+      } else if (error.message === 'Quote cannot be converted' ||
+                 error.message === 'Quote must be in ACCEPTED status to convert to invoice' ||
+                 error.message === 'Quote has already been converted to an invoice') {
+        res.status(400).json({ error: error.message });
       } else {
         res.status(500).json({ error: error.message });
       }

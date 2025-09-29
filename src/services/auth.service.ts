@@ -1,11 +1,12 @@
 import jwt from 'jsonwebtoken';
-import { PrismaClient, User, Session } from '@prisma/client';
+import {  User, Session } from '@prisma/client';
 import { config } from '../config/config';
 import { hashPassword, verifyPassword, generateRandomToken, verifyOTP } from '../utils/crypto';
 import { UserRole } from '../types/enums';
 
-const prisma = new PrismaClient();
 
+
+import { prisma } from '../config/database';
 interface TokenPayload {
   userId: string;
   organizationId: string;
@@ -363,8 +364,8 @@ export class AuthService {
     return prisma.session.create({
       data: {
         userId,
-        token: '',
-        refreshToken: '',
+        token: generateRandomToken(32),
+        refreshToken: generateRandomToken(32),
         ipAddress,
         userAgent,
         expiresAt

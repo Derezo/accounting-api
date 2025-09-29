@@ -1,4 +1,3 @@
-// @ts-nocheck
 import nodemailer from 'nodemailer';
 import { config } from '../config/config';
 import { ETransferNotificationData } from './etransfer.service';
@@ -499,12 +498,13 @@ If you have already made this payment, please disregard this notice.
   private htmlToText(html: string): string {
     // Simple HTML to text conversion
     return html
-      .replace(/<[^>]*>/g, '')
+      .replace(/<\/?(h[1-6]|p|div|br|li|tr)[^>]*>/gi, ' ') // Block elements to space
+      .replace(/<[^>]*>/g, '') // Remove remaining tags
       .replace(/&nbsp;/g, ' ')
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
-      .replace(/\s+/g, ' ')
+      .replace(/\s+/g, ' ') // Collapse whitespace
       .trim();
   }
 

@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  "include": ["src/**/*", "prisma/seed.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "tests/**/*",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "src/controllers/auth.controller.test.ts",
+    "prisma/seed-original.ts"
+  ]
+}

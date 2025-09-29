@@ -235,7 +235,7 @@ export class DataEncryptionMigrationService {
 
       // Process each migration plan
       for (const plan of migrationPlan) {
-        if (job.status === 'cancelled') {
+        if ((job as MigrationJob).status === 'cancelled') {
           break;
         }
 
@@ -291,7 +291,7 @@ export class DataEncryptionMigrationService {
     let offset = 0;
     const batchTimes: number[] = [];
 
-    while (offset < plan.totalRecords && job.status === 'running') {
+    while (offset < plan.totalRecords && job.status !== 'cancelled' && job.status !== 'failed') {
       const batchStart = performance.now();
 
       try {

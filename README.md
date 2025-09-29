@@ -26,12 +26,14 @@ This production-ready accounting API provides a comprehensive solution for busin
 
 ### 🚀 Quick Stats
 
-- **50+ API Endpoints** across 8 main service areas
-- **95%+ Test Coverage** with comprehensive integration tests
-- **6 Role-Based Access Levels** with granular permissions
-- **Multi-Currency Support** with real-time exchange rates
+- **143 API Endpoints** across 12 main service areas including full accounting
+- **Double-Entry Bookkeeping** with complete journal entry system
+- **Canadian Tax Compliance** (GST, HST, PST, compound QST)
+- **Financial Statements** (Balance Sheet, Income Statement, Cash Flow)
+- **8 Role-Based Access Levels** with granular permissions
+- **Multi-Currency Support** with precise financial calculations
 - **Real-Time Notifications** via email and webhooks
-- **Regulatory Compliance** - PIPEDA, FINTRAC, CRA, PCI DSS
+- **Regulatory Compliance** - PIPEDA, FINTRAC, CRA, PCI DSS, GAAP
 
 ---
 
@@ -122,6 +124,98 @@ curl -X POST http://localhost:3000/api/v1/auth/register \
 ```
 
 🎉 **You're ready!** Visit http://localhost:3000/api-docs to explore the interactive API documentation.
+
+---
+
+## 🛠️ Build and Deployment
+
+### Environment-Optimized Build Process
+
+This API supports optimized builds for different environments with proper TypeScript validation and error handling:
+
+```bash
+# Development build (includes linting and type checking)
+npm run build:dev
+
+# Production build (optimized with full validation)
+npm run build:prod
+
+# Staging build (production-like with debug features)
+npm run build:staging
+
+# Test the build process
+npm run scripts/build-test.sh
+```
+
+### Multi-Environment Docker Deployment
+
+Choose the deployment method that fits your environment:
+
+#### Development (Hot Reload)
+```bash
+# Start development environment with hot reload
+docker-compose up -d
+
+# View logs
+docker-compose logs -f api
+```
+
+#### Staging (Production-like Testing)
+```bash
+# Deploy to staging environment
+docker-compose -f docker-compose.staging.yml up -d
+
+# Available at http://localhost:3001
+```
+
+#### Production (Optimized & Secure)
+```bash
+# Deploy to production
+docker-compose -f docker-compose.production.yml up -d
+
+# Check deployment health
+curl http://localhost:3000/health
+```
+
+### Environment Configuration
+
+The API supports environment-specific configurations:
+
+| Environment | Config File | Database | Features |
+|-------------|-------------|----------|----------|
+| Development | `.env.development` | SQLite/PostgreSQL | Hot reload, debug logging, Swagger |
+| Staging | `.env.staging` | PostgreSQL | Production-like, test data, monitoring |
+| Production | `.env.production` | PostgreSQL + replicas | Optimized, security hardened, monitoring |
+
+### Quick Commands Reference
+
+```bash
+# Development
+npm run dev                # Start development server
+npm run build:dev          # Build for development
+npm run validate           # Lint + type check + test
+
+# Production
+npm run build             # Build for production
+npm run start:prod        # Start production server
+npm run validate:prod     # Production validation
+
+# Deployment
+npm run deploy:staging    # Deploy to staging
+npm run deploy:prod       # Deploy to production
+npm run clean            # Clean build artifacts
+```
+
+### Build Validation
+
+The build process includes comprehensive validation:
+- ✅ **ESLint** - Code quality and consistency
+- ✅ **TypeScript** - Type safety and compilation
+- ✅ **Separate configs** - Development vs production builds
+- ✅ **Error handling** - Standardized error responses
+- ✅ **Health checks** - Application and dependency monitoring
+
+For detailed deployment instructions, see [docs/BUILD_DEPLOY.md](./docs/BUILD_DEPLOY.md).
 
 ---
 
@@ -219,12 +313,20 @@ npm run docs:types
 |---------|----------|-------------|
 | **Authentication** | `/api/v1/auth/*` | Registration, login, refresh tokens |
 | **Organizations** | `/api/v1/organizations/*` | Multi-tenant organization management |
+| **Users** | `/api/v1/users/*` | User administration and account management |
 | **Customers** | `/api/v1/customers/*` | Customer lifecycle management |
 | **Quotes** | `/api/v1/quotes/*` | Quote creation and management |
 | **Appointments** | `/api/v1/appointments/*` | Scheduling and appointment management |
 | **Invoices** | `/api/v1/invoices/*` | Invoice generation and tracking |
 | **Payments** | `/api/v1/payments/*` | Payment processing and reconciliation |
+| **E-Transfers** | `/api/v1/etransfers/*` | Canadian e-Transfer processing |
+| **Manual Payments** | `/api/v1/manual-payments/*` | Manual payment entry and receipts |
 | **Projects** | `/api/v1/projects/*` | Project management and tracking |
+| **Accounting** | `/api/v1/accounting/*` | Double-entry bookkeeping and journal entries |
+| **Tax** | `/api/v1/tax/*` | Tax calculations and Canadian compliance |
+| **Financial Statements** | `/api/v1/financial-statements/*` | Balance sheets, income statements, cash flow |
+| **Documents** | `/api/v1/documents/*` | Document management with encryption |
+| **Audit** | `/api/v1/audit/*` | Audit logging and compliance reporting |
 
 ---
 
@@ -268,16 +370,18 @@ curl -X GET http://localhost:3000/api/v1/customers \
 
 ### Role-Based Access Control (RBAC)
 
-The system supports 6 hierarchical roles:
+The system supports 8 hierarchical roles:
 
 | Role | Permissions | Description |
 |------|-------------|-------------|
 | **SUPER_ADMIN** | Full system access | System administrators |
 | **ADMIN** | Organization-wide access | Organization administrators |
 | **MANAGER** | Department management | Department managers |
+| **ACCOUNTANT** | Financial operations | Accounting and finance staff |
 | **EMPLOYEE** | Standard operations | Regular employees |
 | **CONTRACTOR** | Limited access | External contractors |
-| **READONLY** | View-only access | Read-only users |
+| **VIEWER** | View-only access | Read-only users |
+| **GUEST** | Minimal access | Guest accounts |
 
 ---
 
@@ -355,7 +459,48 @@ Complete organization isolation with:
 - **Billing Isolation** - Separate billing and subscription management
 - **Custom Branding** - Organization-specific branding and settings
 
-### 4. Advanced Analytics
+### 4. Complete Accounting System
+
+Full double-entry bookkeeping and financial reporting:
+
+```typescript
+// Create journal transaction
+POST /api/v1/accounting/transactions
+{
+  "organizationId": "org-id",
+  "date": "2024-01-15",
+  "description": "Cash sale to customer",
+  "entries": [
+    {
+      "accountId": "cash-account-id",
+      "type": "DEBIT",
+      "amount": 1000.00,
+      "description": "Cash received from sale"
+    },
+    {
+      "accountId": "revenue-account-id",
+      "type": "CREDIT",
+      "amount": 1000.00,
+      "description": "Revenue from sale"
+    }
+  ]
+}
+
+// Generate financial statements
+GET /api/v1/financial-statements/balance-sheet?asOfDate=2024-01-31
+GET /api/v1/financial-statements/income-statement?startDate=2024-01-01&endDate=2024-01-31
+GET /api/v1/financial-statements/cash-flow?startDate=2024-01-01&endDate=2024-01-31
+
+// Calculate Canadian taxes
+POST /api/v1/tax/calculate
+{
+  "province": "ON",
+  "amount": 1000.00,
+  "taxType": "GST_HST"
+}
+```
+
+### 5. Advanced Analytics
 
 Comprehensive reporting and analytics:
 
@@ -368,6 +513,9 @@ GET /api/v1/payment-analytics/customer-behavior
 
 // Cash flow forecasting
 GET /api/v1/payment-analytics/forecast?months=6
+
+// Financial ratios analysis
+GET /api/v1/financial-statements/ratios?asOfDate=2024-01-31
 ```
 
 ---

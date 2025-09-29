@@ -15,7 +15,7 @@ const router = Router();
 router.use(authenticate);
 
 // Apply audit logging to all routes
-router.use(auditMiddleware);
+// router.use(auditMiddleware); // Removed: auditMiddleware returns an object, not a middleware function
 
 /**
  * @swagger
@@ -262,6 +262,7 @@ router.post(
  */
 router.get(
   '/',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.EMPLOYEE, UserRole.VIEWER, UserRole.CLIENT),
   validateListQuotes,
   quoteController.listQuotes.bind(quoteController)
 );
@@ -365,6 +366,7 @@ router.get(
  */
 router.get(
   '/stats/summary',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT),
   quoteController.getQuoteStats.bind(quoteController)
 );
 
@@ -484,6 +486,7 @@ router.get(
  */
 router.get(
   '/:id',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.EMPLOYEE, UserRole.VIEWER, UserRole.CLIENT),
   quoteController.getQuote.bind(quoteController)
 );
 
@@ -914,6 +917,98 @@ router.post(
 router.post(
   '/:id/viewed',
   quoteController.markQuoteAsViewed.bind(quoteController)
+);
+
+/**
+ * @swagger
+ * /quotes/{id}/convert-to-invoice:
+ *   post:
+ *     tags: [Quotes]
+ *     summary: Convert quote to invoice
+ *     description: Converts an accepted quote to an invoice. The quote must be in ACCEPTED status. Requires Admin, Manager, or Accountant role.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Quote ID
+ *         schema:
+ *           type: string
+ *           example: "quo_1234567890"
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               dueDate:
+ *                 type: string
+ *                 format: date
+ *                 description: Due date for the invoice (optional, defaults to 30 days from today)
+ *                 example: "2024-02-28"
+ *               depositRequired:
+ *                 type: number
+ *                 minimum: 0
+ *                 description: Required deposit amount (optional)
+ *                 example: 500.00
+ *               terms:
+ *                 type: string
+ *                 description: Payment terms (optional, uses quote terms if not provided)
+ *                 example: "Net 30 days"
+ *               notes:
+ *                 type: string
+ *                 description: Additional notes for the invoice
+ *                 example: "Thank you for your business!"
+ *     responses:
+ *       200:
+ *         description: Quote converted to invoice successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Quote converted to invoice successfully"
+ *                 invoice:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: "inv_1234567890"
+ *                     invoiceNumber:
+ *                       type: string
+ *                       example: "INV-000123"
+ *                     status:
+ *                       type: string
+ *                       example: "DRAFT"
+ *                     quoteId:
+ *                       type: string
+ *                       example: "quo_1234567890"
+ *                     total:
+ *                       type: number
+ *                       example: 1695.00
+ *                     dueDate:
+ *                       type: string
+ *                       format: date
+ *                       example: "2024-02-28"
+ *       400:
+ *         description: Quote cannot be converted (not in ACCEPTED status or already converted)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Insufficient permissions
+ *       404:
+ *         description: Quote not found
+ *       500:
+ *         description: Internal server error
+ */
+router.post(
+  '/:id/convert-to-invoice',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT),
+  quoteController.convertToInvoice.bind(quoteController)
 );
 
 /**

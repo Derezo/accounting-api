@@ -1,0 +1,312 @@
+{
+  "metadata": {
+    "generated": "2025-09-29",
+    "description": "Comprehensive Role-Based Access Control Matrix for Accounting API",
+    "totalEndpoints": 143,
+    "roleHierarchy": ["SUPER_ADMIN", "ADMIN", "MANAGER", "ACCOUNTANT", "EMPLOYEE", "VIEWER", "CLIENT"]
+  },
+  "roles": {
+    "SUPER_ADMIN": {
+      "description": "System super administrator with universal access",
+      "inherits": ["ADMIN"],
+      "permissions": ["*"],
+      "restrictions": []
+    },
+    "ADMIN": {
+      "description": "Organization administrator",
+      "inherits": ["MANAGER"],
+      "permissions": [
+        "users:*",
+        "organization:*",
+        "audit:export"
+      ],
+      "restrictions": []
+    },
+    "MANAGER": {
+      "description": "Management level with delete and approval permissions",
+      "inherits": ["ACCOUNTANT"],
+      "permissions": [
+        "*:delete",
+        "*:approve",
+        "*:reject",
+        "*:archive",
+        "audit:view"
+      ],
+      "restrictions": []
+    },
+    "ACCOUNTANT": {
+      "description": "Financial operations and accounting",
+      "inherits": ["EMPLOYEE"],
+      "permissions": [
+        "accounting:*",
+        "financial-statements:*",
+        "tax:*",
+        "manual-payments:*",
+        "payments:create",
+        "payments:update",
+        "projects:*"
+      ],
+      "restrictions": []
+    },
+    "EMPLOYEE": {
+      "description": "Standard employee with operational access",
+      "inherits": ["VIEWER"],
+      "permissions": [
+        "appointments:*",
+        "customers:create",
+        "customers:update",
+        "documents:upload",
+        "documents:update",
+        "etransfers:create",
+        "invoices:*",
+        "quotes:*"
+      ],
+      "restrictions": []
+    },
+    "VIEWER": {
+      "description": "Read-only access to most data",
+      "inherits": [],
+      "permissions": [
+        "*:read",
+        "statistics:*",
+        "reports:*",
+        "auth:profile"
+      ],
+      "restrictions": [
+        "*:create",
+        "*:update",
+        "*:delete"
+      ]
+    },
+    "CLIENT": {
+      "description": "External client with limited access",
+      "inherits": [],
+      "permissions": [
+        "auth:profile",
+        "invoices:view-own",
+        "quotes:view-own",
+        "payments:view-own"
+      ],
+      "restrictions": [
+        "*:admin",
+        "*:create",
+        "*:update",
+        "*:delete"
+      ]
+    }
+  },
+  "endpoints": {
+    "public": [
+      "POST /auth/register",
+      "POST /auth/login",
+      "POST /auth/refresh",
+      "POST /auth/forgot-password",
+      "POST /auth/reset-password",
+      "POST /auth/verify-email"
+    ],
+    "authenticated": [
+      "POST /auth/logout",
+      "GET /auth/me",
+      "PUT /auth/me",
+      "POST /auth/change-password"
+    ],
+    "super-admin-only": [],
+    "admin-only": [
+      "GET /audit/logs/export"
+    ],
+    "admin-manager": [
+      "DELETE /accounts/:id",
+      "DELETE /journal-entries/:id",
+      "GET /audit/logs",
+      "GET /audit/logs/:id",
+      "GET /audit/logs/stats/summary",
+      "DELETE /customers/:id",
+      "DELETE /documents/:id",
+      "PUT /etransfers/:etransferNumber/confirm",
+      "PUT /etransfers/:etransferNumber/cancel",
+      "POST /etransfers/maintenance/check-expired",
+      "POST /invoices/:id/cancel",
+      "POST /manual-payments/:id/approve",
+      "POST /manual-payments/:id/reject",
+      "DELETE /manual-payments/:id",
+      "POST /payments/:id/process",
+      "POST /payments/:id/refund",
+      "DELETE /projects/:id",
+      "POST /projects/:id/archive",
+      "POST /quotes/:id/expire",
+      "DELETE /tax/rates/:id"
+    ],
+    "admin-manager-accountant": [
+      "POST /accounts",
+      "PUT /accounts/:id",
+      "POST /journal-entries",
+      "PUT /journal-entries/:id",
+      "POST /manual-payments",
+      "PUT /manual-payments/:id",
+      "POST /payments",
+      "PUT /payments/:id",
+      "POST /projects",
+      "PUT /projects/:id",
+      "POST /projects/:id/complete",
+      "POST /quotes/:id/accept",
+      "POST /quotes/:id/reject",
+      "POST /tax/rates",
+      "PUT /tax/rates/:id",
+      "GET /tax/compliance-report",
+      "GET /tax/gst-hst-report"
+    ],
+    "admin-manager-accountant-employee": [
+      "POST /appointments",
+      "PUT /appointments/:id",
+      "POST /appointments/:id/confirm",
+      "POST /appointments/:id/complete",
+      "POST /appointments/:id/cancel",
+      "POST /appointments/:id/reschedule",
+      "POST /customers",
+      "PUT /customers/:id",
+      "POST /documents/upload",
+      "PUT /documents/:id",
+      "POST /etransfers",
+      "POST /invoices",
+      "POST /invoices/from-quote",
+      "PUT /invoices/:id",
+      "POST /invoices/:id/send",
+      "POST /invoices/:id/payment",
+      "POST /quotes",
+      "PUT /quotes/:id",
+      "POST /quotes/:id/send"
+    ],
+    "all-authenticated": [
+      "GET /accounts",
+      "GET /accounts/:id",
+      "GET /appointments/:id",
+      "GET /appointments/stats/summary",
+      "GET /appointments",
+      "GET /customers",
+      "GET /customers/:id",
+      "GET /customers/stats/summary",
+      "GET /documents",
+      "GET /documents/:id",
+      "GET /documents/:id/download",
+      "GET /etransfers/stats/summary",
+      "GET /etransfers",
+      "GET /etransfers/:etransferNumber",
+      "GET /financial-statements/balance-sheet",
+      "GET /financial-statements/income-statement",
+      "GET /financial-statements/cash-flow",
+      "GET /financial-statements/trial-balance",
+      "GET /financial-statements/comparative-statements",
+      "GET /invoices",
+      "GET /invoices/stats/summary",
+      "GET /invoices/:id",
+      "POST /invoices/:id/viewed",
+      "GET /manual-payments",
+      "GET /manual-payments/:id",
+      "GET /organization/current",
+      "GET /organization/settings/tax-rates",
+      "GET /organization/stats/dashboard",
+      "GET /payments",
+      "GET /payments/:id",
+      "GET /payments/analytics/summary",
+      "GET /payment-analytics/dashboard",
+      "GET /payment-analytics/trends",
+      "GET /payment-analytics/revenue-breakdown",
+      "GET /payment-analytics/customer-analytics",
+      "GET /projects",
+      "GET /projects/:id",
+      "GET /projects/stats/summary",
+      "GET /quotes",
+      "GET /quotes/:id",
+      "GET /quotes/stats/summary",
+      "POST /tax/calculate",
+      "GET /tax/rates"
+    ],
+    "organization-admin": [
+      "POST /users",
+      "PUT /users/:userId",
+      "DELETE /users/:userId",
+      "POST /users/invite",
+      "POST /users/:userId/resend-invite",
+      "POST /users/:userId/activate",
+      "POST /users/:userId/deactivate",
+      "PUT /organization/current",
+      "POST /organization/settings/tax-rates",
+      "PUT /organization/settings/tax-rates/:id"
+    ],
+    "organization-management": [
+      "GET /users",
+      "GET /users/:userId",
+      "GET /users/:userId/status"
+    ]
+  },
+  "testScenarios": {
+    "authorizationTests": [
+      {
+        "name": "SUPER_ADMIN has universal access",
+        "role": "SUPER_ADMIN",
+        "shouldSucceed": ["*"],
+        "shouldFail": []
+      },
+      {
+        "name": "ADMIN cannot access SUPER_ADMIN endpoints",
+        "role": "ADMIN",
+        "shouldSucceed": ["admin-only", "admin-manager", "admin-manager-accountant", "admin-manager-accountant-employee", "all-authenticated", "organization-admin", "organization-management"],
+        "shouldFail": []
+      },
+      {
+        "name": "MANAGER restricted from admin functions",
+        "role": "MANAGER",
+        "shouldSucceed": ["admin-manager", "admin-manager-accountant", "admin-manager-accountant-employee", "all-authenticated", "organization-management"],
+        "shouldFail": ["admin-only", "organization-admin"]
+      },
+      {
+        "name": "ACCOUNTANT limited to financial operations",
+        "role": "ACCOUNTANT",
+        "shouldSucceed": ["admin-manager-accountant", "admin-manager-accountant-employee", "all-authenticated"],
+        "shouldFail": ["admin-only", "admin-manager", "organization-admin", "organization-management"]
+      },
+      {
+        "name": "EMPLOYEE operational access only",
+        "role": "EMPLOYEE",
+        "shouldSucceed": ["admin-manager-accountant-employee", "all-authenticated"],
+        "shouldFail": ["admin-only", "admin-manager", "admin-manager-accountant", "organization-admin", "organization-management"]
+      },
+      {
+        "name": "VIEWER read-only access",
+        "role": "VIEWER",
+        "shouldSucceed": ["all-authenticated"],
+        "shouldFail": ["admin-only", "admin-manager", "admin-manager-accountant", "admin-manager-accountant-employee", "organization-admin", "organization-management"]
+      },
+      {
+        "name": "CLIENT minimal access",
+        "role": "CLIENT",
+        "shouldSucceed": ["authenticated"],
+        "shouldFail": ["admin-only", "admin-manager", "admin-manager-accountant", "admin-manager-accountant-employee", "all-authenticated", "organization-admin", "organization-management"]
+      }
+    ],
+    "crossOrganizationTests": [
+      {
+        "name": "Cross-organization data isolation",
+        "description": "Users from org A cannot access org B data",
+        "testType": "isolation"
+      },
+      {
+        "name": "SUPER_ADMIN cross-org access",
+        "description": "SUPER_ADMIN can access any organization",
+        "testType": "super-admin-bypass"
+      }
+    ],
+    "specialCases": [
+      {
+        "name": "Owner authorization bypass",
+        "description": "Users can access their own resources regardless of role",
+        "endpoints": ["GET /users/:userId", "PUT /users/:userId"]
+      },
+      {
+        "name": "Client self-service endpoints",
+        "description": "Clients can only access their own invoices/quotes",
+        "endpoints": ["GET /invoices/:id", "GET /quotes/:id"]
+      }
+    ]
+  }
+}

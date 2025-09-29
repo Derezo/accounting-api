@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Response } from 'express';
 import { body, param, query, validationResult } from 'express-validator';
 import { etransferService } from '../services/etransfer.service';
@@ -28,8 +27,8 @@ export class ETransferController {
 
       const auditContext = {
         userId: req.user!.id,
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent')
+        ipAddress: req.ip || 'unknown',
+        userAgent: req.get('User-Agent') || 'unknown'
       };
 
       const etransfer = await etransferService.createETransfer(
@@ -73,8 +72,8 @@ export class ETransferController {
 
       const auditContext = {
         userId: req.user!.id,
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent')
+        ipAddress: req.ip || 'unknown',
+        userAgent: req.get('User-Agent') || 'unknown'
       };
 
       const etransfer = await etransferService.confirmETransferDeposit(
@@ -130,8 +129,8 @@ export class ETransferController {
 
       const auditContext = {
         userId: req.user!.id,
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent')
+        ipAddress: req.ip || 'unknown',
+        userAgent: req.get('User-Agent') || 'unknown'
       };
 
       const etransfer = await etransferService.cancelETransfer(

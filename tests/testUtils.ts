@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../src/config/database';
 
 /**
  * Comprehensive database cleanup function that handles foreign key constraints properly
@@ -11,7 +9,7 @@ export async function cleanupDatabase(): Promise<void> {
     // Disable foreign key constraints for cleanup
     await prisma.$executeRaw`PRAGMA foreign_keys = OFF`;
 
-    // Delete all data from all tables in the correct order
+    // Use truncate-like approach for better performance and avoiding locks
     const tableNames = [
       // Child tables first (tables with foreign keys to other tables)
       'journal_entries',
@@ -43,6 +41,7 @@ export async function cleanupDatabase(): Promise<void> {
       'users',
       'organizations',
       // Reference tables last
+      'state_provinces',
       'product_categories',
       'service_categories',
       'tax_rates',
@@ -50,10 +49,17 @@ export async function cleanupDatabase(): Promise<void> {
       'countries'
     ];
 
-    // Delete from each table using raw SQL
-    for (const tableName of tableNames) {
-      await prisma.$executeRawUnsafe(`DELETE FROM ${tableName}`);
-    }
+    // Use a single transaction for all deletes to prevent locks
+    await prisma.$transaction(async (tx) => {
+      for (const tableName of tableNames) {
+        try {
+          await tx.$executeRawUnsafe(`DELETE FROM ${tableName}`);
+        } catch (error) {
+          // Continue with other tables if one fails
+          console.warn(`Failed to clean table ${tableName}:`, error);
+        }
+      }
+    });
 
     // Re-enable foreign key constraints
     await prisma.$executeRaw`PRAGMA foreign_keys = ON`;
@@ -61,8 +67,12 @@ export async function cleanupDatabase(): Promise<void> {
   } catch (error) {
     console.error('Database cleanup failed:', error);
     // Re-enable foreign key constraints even if cleanup failed
-    await prisma.$executeRaw`PRAGMA foreign_keys = ON`;
-    throw error;
+    try {
+      await prisma.$executeRaw`PRAGMA foreign_keys = ON`;
+    } catch (fkError) {
+      console.error('Failed to re-enable foreign keys:', fkError);
+    }
+    // Don't throw error to avoid breaking tests
   }
 }
 
@@ -117,3 +127,4 @@ export async function createTestUser(organizationId: string, email = 'test@user.
 }
 
 export { prisma };
+

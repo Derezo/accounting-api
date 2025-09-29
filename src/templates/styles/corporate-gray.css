@@ -1,0 +1,225 @@
+/* Corporate Gray Invoice Style */
+
+/* Override default branding colors for corporate gray theme */
+:root {
+  --primary-color: #374151;
+  --secondary-color: #6b7280;
+  --accent-color: #4b5563;
+  --background-color: #ffffff;
+  --text-color: #1f2937;
+}
+
+body {
+  font-family: "Arial", Helvetica, sans-serif !important;
+  background-color: #f9fafb !important;
+  color: #1f2937 !important;
+}
+
+.invoice-container {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 10px 25px rgba(55, 65, 81, 0.1) !important;
+}
+
+.invoice-header {
+  background: linear-gradient(135deg, #374151 0%, #4b5563 100%) !important;
+  border-bottom: 4px solid #6b7280 !important;
+}
+
+.company-name {
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.invoice-number {
+  font-weight: 700 !important;
+  letter-spacing: 1px;
+}
+
+.billing-card {
+  background: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+  border-left: 4px solid #4b5563 !important;
+}
+
+.billing-title {
+  color: #374151 !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.items-table {
+  border: 1px solid #e5e7eb;
+}
+
+.items-table th {
+  background: #374151 !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.items-table td {
+  border-bottom: 1px solid #f3f4f6 !important;
+}
+
+.items-table tr:nth-child(even) {
+  background-color: #f9fafb !important;
+}
+
+.items-table tr:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.totals-section {
+  background: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.totals-table .total-row td {
+  background: #374151 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border-top: 2px solid #374151 !important;
+}
+
+.info-card {
+  background: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+  border-left: 4px solid #4b5563 !important;
+}
+
+.info-card h4 {
+  color: #374151 !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+.payment-info {
+  background: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+  border-left: 4px solid #4b5563 !important;
+}
+
+.footer {
+  background: #f3f4f6 !important;
+  border-top: 2px solid #e5e7eb !important;
+  color: #6b7280 !important;
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.tax-exempt {
+  background: #fef3cd !important;
+  color: #92400e !important;
+  border: 1px solid #d97706 !important;
+  border-left: 4px solid #d97706 !important;
+  font-weight: 600;
+}
+
+/* Status styling for corporate */
+.invoice-details [style*="background"] {
+  background: #374151 !important;
+  color: white !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+/* Classic template adjustments */
+.invoice-header {
+  border-bottom: 4px solid #374151 !important;
+}
+
+.company-name {
+  font-family: "Arial", Helvetica, sans-serif !important;
+}
+
+.billing-title {
+  border-bottom: 2px solid #374151 !important;
+}
+
+.items-table th {
+  background-color: #374151 !important;
+}
+
+.totals-section .total-row {
+  background-color: #374151 !important;
+}
+
+/* Minimal template adjustments */
+.invoice-header {
+  border-bottom: 3px solid #374151 !important;
+}
+
+.customer-title {
+  color: #374151 !important;
+  font-weight: 700 !important;
+}
+
+.items-table th {
+  border-bottom: 2px solid #374151 !important;
+  color: #374151 !important;
+  background: #f9fafb !important;
+  font-weight: 700 !important;
+}
+
+.totals-table .total-row {
+  border-top: 2px solid #374151 !important;
+  color: #374151 !important;
+  font-weight: 700 !important;
+}
+
+.payment-terms {
+  border-top: 2px solid #e5e7eb !important;
+}
+
+.tax-notice {
+  border: 2px solid #d97706 !important;
+  background: #fef3cd !important;
+  color: #92400e !important;
+  font-weight: 600;
+}
+
+/* Professional touches */
+.customer-details strong {
+  color: #374151 !important;
+  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.invoice-meta {
+  font-weight: 600;
+}
+
+.amount-column {
+  font-weight: 600 !important;
+}
+
+/* Print styles */
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    background: white !important;
+  }
+
+  .invoice-container {
+    box-shadow: none !important;
+    border: 2px solid #374151;
+  }
+
+  .billing-card, .totals-section, .info-card {
+    box-shadow: none !important;
+  }
+}

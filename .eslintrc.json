@@ -31,5 +31,16 @@
     "prefer-const": "error",
     "no-var": "error"
   },
-  "ignorePatterns": ["dist", "node_modules", "coverage", "*.js", "!jest.config.js"]
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    "coverage",
+    "*.js",
+    "!jest.config.js",
+    "database/**/*",
+    "uploads/**/*",
+    "logs/**/*",
+    "*.d.ts",
+    "prisma/migrations/**/*"
+  ]
 }

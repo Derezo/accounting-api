@@ -1,0 +1,1673 @@
+{
+  "totalEndpoints": 176,
+  "wellDocumented": 149,
+  "needsImprovement": 19,
+  "missing": 8,
+  "results": [
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/accounting/transaction-types",
+      "method": "GET",
+      "issues": [
+        "Missing description",
+        "1 parameter(s) missing description",
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 55
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/accounting/trial-balance",
+      "method": "GET",
+      "issues": [
+        "Missing description",
+        "1 parameter(s) missing description",
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 55
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/accounting/trial-balance/report",
+      "method": "GET",
+      "issues": [
+        "Missing description",
+        "3 parameter(s) missing description",
+        "Missing error responses"
+      ],
+      "score": 55
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/accounting/trial-balance/export",
+      "method": "GET",
+      "issues": [
+        "Missing description",
+        "3 parameter(s) missing description",
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 55
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/accounting/validate",
+      "method": "GET",
+      "issues": [
+        "Missing description",
+        "1 parameter(s) missing description",
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 55
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/accounting/accounts",
+      "method": "GET",
+      "issues": [
+        "Missing description",
+        "1 parameter(s) missing description",
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 55
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/accounting/accounts/hierarchy",
+      "method": "GET",
+      "issues": [
+        "Missing description",
+        "1 parameter(s) missing description",
+        "Missing error responses"
+      ],
+      "score": 55
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/accounting/accounts/{accountId}/balance",
+      "method": "GET",
+      "issues": [
+        "Missing description",
+        "2 parameter(s) missing description",
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 55
+    },
+    {
+      "endpoint": "POST /api/v1/organizations/{organizationId}/accounting/transactions",
+      "method": "POST",
+      "issues": [
+        "Missing description",
+        "1 parameter(s) missing description",
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 60
+    },
+    {
+      "endpoint": "POST /api/v1/organizations/{organizationId}/accounting/business-transactions",
+      "method": "POST",
+      "issues": [
+        "Missing description",
+        "1 parameter(s) missing description",
+        "Request body missing description",
+        "Request body missing examples"
+      ],
+      "score": 60
+    },
+    {
+      "endpoint": "POST /api/v1/organizations/{organizationId}/accounting/transactions/{transactionId}/reverse",
+      "method": "POST",
+      "issues": [
+        "Missing description",
+        "2 parameter(s) missing description",
+        "Request body missing description",
+        "Request body missing examples"
+      ],
+      "score": 60
+    },
+    {
+      "endpoint": "POST /api/v1/organizations/{organizationId}/accounting/accounts",
+      "method": "POST",
+      "issues": [
+        "Missing description",
+        "1 parameter(s) missing description",
+        "Request body missing description",
+        "Request body missing examples"
+      ],
+      "score": 60
+    },
+    {
+      "endpoint": "POST /api/v1/organizations/{organizationId}/accounting/accounts/standard",
+      "method": "POST",
+      "issues": [
+        "Missing description",
+        "1 parameter(s) missing description",
+        "Request body missing description",
+        "Request body missing examples"
+      ],
+      "score": 60
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/accounting/accounts/{accountId}",
+      "method": "GET",
+      "issues": [
+        "Missing description",
+        "2 parameter(s) missing description"
+      ],
+      "score": 60
+    },
+    {
+      "endpoint": "PUT /api/v1/organizations/{organizationId}/accounting/accounts/{accountId}",
+      "method": "PUT",
+      "issues": [
+        "Missing description",
+        "2 parameter(s) missing description",
+        "Request body missing description",
+        "Request body missing examples"
+      ],
+      "score": 60
+    },
+    {
+      "endpoint": "DELETE /api/v1/organizations/{organizationId}/accounting/accounts/{accountId}",
+      "method": "DELETE",
+      "issues": [
+        "Missing description",
+        "2 parameter(s) missing description"
+      ],
+      "score": 60
+    },
+    {
+      "endpoint": "POST /documents",
+      "method": "POST",
+      "issues": [
+        "Missing description",
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 60
+    },
+    {
+      "endpoint": "POST /documents/bulk",
+      "method": "POST",
+      "issues": [
+        "Missing description",
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 60
+    },
+    {
+      "endpoint": "GET /documents",
+      "method": "GET",
+      "issues": [
+        "Missing description",
+        "Response 200 missing examples"
+      ],
+      "score": 75
+    },
+    {
+      "endpoint": "GET /documents/{id}",
+      "method": "GET",
+      "issues": [
+        "Missing description",
+        "Response 200 missing examples"
+      ],
+      "score": 75
+    },
+    {
+      "endpoint": "PUT /documents/{id}",
+      "method": "PUT",
+      "issues": [
+        "Missing description",
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 75
+    },
+    {
+      "endpoint": "DELETE /documents/{id}",
+      "method": "DELETE",
+      "issues": [
+        "Missing description",
+        "Response 200 missing examples"
+      ],
+      "score": 75
+    },
+    {
+      "endpoint": "GET /documents/{id}/download",
+      "method": "GET",
+      "issues": [
+        "Missing description",
+        "Response 200 missing examples"
+      ],
+      "score": 75
+    },
+    {
+      "endpoint": "POST /documents/{id}/versions",
+      "method": "POST",
+      "issues": [
+        "Missing description",
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 75
+    },
+    {
+      "endpoint": "GET /documents/{id}/versions",
+      "method": "GET",
+      "issues": [
+        "Missing description",
+        "Response 200 missing examples"
+      ],
+      "score": 75
+    },
+    {
+      "endpoint": "POST /documents/{id}/attach",
+      "method": "POST",
+      "issues": [
+        "Missing description",
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 75
+    },
+    {
+      "endpoint": "GET /documents/stats",
+      "method": "GET",
+      "issues": [
+        "Missing description",
+        "Response 200 missing examples"
+      ],
+      "score": 75
+    },
+    {
+      "endpoint": "POST /auth/verify-email",
+      "method": "POST",
+      "issues": [
+        "Description too brief (< 30 characters)",
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 80
+    },
+    {
+      "endpoint": "GET /health",
+      "method": "GET",
+      "issues": [
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 85
+    },
+    {
+      "endpoint": "GET /health/db",
+      "method": "GET",
+      "issues": [
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 85
+    },
+    {
+      "endpoint": "POST /auth/login",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 85
+    },
+    {
+      "endpoint": "POST /auth/refresh",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 85
+    },
+    {
+      "endpoint": "POST /auth/register",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 85
+    },
+    {
+      "endpoint": "POST /auth/forgot-password",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 85
+    },
+    {
+      "endpoint": "POST /auth/reset-password",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 85
+    },
+    {
+      "endpoint": "GET /auth/me",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples",
+        "Response 401 missing description"
+      ],
+      "score": 85
+    },
+    {
+      "endpoint": "POST /auth/reset-password-request",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 85
+    },
+    {
+      "endpoint": "POST /payments/webhook/stripe",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples",
+        "Missing security requirements"
+      ],
+      "score": 85
+    },
+    {
+      "endpoint": "POST /api/v1/tax/zero-rated/check",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 85
+    },
+    {
+      "endpoint": "POST /api/v1/tax/exempt/check",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Missing error responses"
+      ],
+      "score": 85
+    },
+    {
+      "endpoint": "POST /api/v1/tax/gst-number/validate",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Missing error responses"
+      ],
+      "score": 85
+    },
+    {
+      "endpoint": "GET /api/v1/tax/small-supplier/threshold",
+      "method": "GET",
+      "issues": [
+        "Missing error responses"
+      ],
+      "score": 85
+    },
+    {
+      "endpoint": "POST /auth/logout",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /appointments",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "GET /audit/sessions",
+      "method": "GET",
+      "issues": [],
+      "score": 90
+    },
+    {
+      "endpoint": "GET /audit/security-metrics",
+      "method": "GET",
+      "issues": [],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /auth/logout-all",
+      "method": "POST",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /auth/change-password",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "GET /auth/profile",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "PUT /auth/profile",
+      "method": "PUT",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /auth/2fa/enable",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /auth/2fa/verify",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /auth/2fa/disable",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /customers",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /etransfers",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /etransfers/maintenance/check-expired",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /invoices",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /invoices/from-quote",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "GET /invoices/stats/summary",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /manual-payments",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /manual-payments/batch",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /manual-payments/reconcile",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /manual-payments/payment-plan",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /manual-payments/allocate",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /organizations",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /payments",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /payments/stripe",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /projects",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /projects/authorize",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /quotes",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "GET /quotes/stats/summary",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /api/v1/tax/rates",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /api/v1/tax/rates/canadian/initialize",
+      "method": "POST",
+      "issues": [
+        "Response 201 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /users",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "POST /users/invite",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "GET /organizations/{organizationId}/customers",
+      "method": "GET",
+      "issues": [
+        "5 parameter(s) missing description",
+        "Response 400 missing description",
+        "Response 401 missing description",
+        "Response 403 missing description",
+        "Response 429 missing description",
+        "Response 500 missing description"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "GET /organizations/{organizationId}/customers/{id}",
+      "method": "GET",
+      "issues": [
+        "1 parameter(s) missing description",
+        "Response 401 missing description",
+        "Response 403 missing description",
+        "Response 429 missing description",
+        "Response 500 missing description"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "DELETE /organizations/{organizationId}/customers/{id}",
+      "method": "DELETE",
+      "issues": [
+        "1 parameter(s) missing description",
+        "Response 401 missing description",
+        "Response 403 missing description",
+        "Response 429 missing description",
+        "Response 500 missing description"
+      ],
+      "score": 90
+    },
+    {
+      "endpoint": "GET /appointments",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /appointments/{id}",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PUT /appointments/{id}",
+      "method": "PUT",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /appointments/stats/summary",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /appointments/{id}/confirm",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /appointments/{id}/complete",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /appointments/{id}/cancel",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /appointments/{id}/reschedule",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /audit/logs",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /audit/security-summary",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /audit/export",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /audit/entity/{entityType}/{entityId}/history",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /audit/users/{userId}/activity",
+      "method": "GET",
+      "issues": [],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /audit/suspicious-activity",
+      "method": "GET",
+      "issues": [],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /customers",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /customers/{id}",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PUT /customers/{id}",
+      "method": "PUT",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "DELETE /customers/{id}",
+      "method": "DELETE",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /customers/{id}/stats",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /etransfers",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PUT /etransfers/{etransferNumber}/confirm",
+      "method": "PUT",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PUT /etransfers/{etransferNumber}/cancel",
+      "method": "PUT",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /etransfers/stats/summary",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /etransfers/{etransferNumber}",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/financial-statements/balance-sheet",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/financial-statements/income-statement",
+      "method": "GET",
+      "issues": [
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/financial-statements/cash-flow",
+      "method": "GET",
+      "issues": [
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/financial-statements/ratios",
+      "method": "GET",
+      "issues": [
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/financial-statements/comprehensive",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/financial-statements/comparison",
+      "method": "GET",
+      "issues": [],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /api/v1/organizations/{organizationId}/financial-statements/export",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/financial-statements/history",
+      "method": "GET",
+      "issues": [
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /invoices",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /invoices/{id}",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PUT /invoices/{id}",
+      "method": "PUT",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /invoices/{id}/send",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /invoices/{id}/viewed",
+      "method": "POST",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /invoices/{id}/cancel",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /invoices/{id}/payment",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 201 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PUT /manual-payments/cheque/{paymentId}/status",
+      "method": "PUT",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /organizations",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /organizations/{id}",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PUT /organizations/{id}",
+      "method": "PUT",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "DELETE /organizations/{id}",
+      "method": "DELETE",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /organizations/{id}/stats",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /organizations/{id}/settings",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PUT /organizations/{id}/settings",
+      "method": "PUT",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /payment-analytics/trends",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /payment-analytics/methods",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /payment-analytics/customer-behavior",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /payment-analytics/forecast",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /payment-analytics/cash-flow",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /payment-analytics/aging",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /payment-analytics/fraud-alerts",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /payments",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /payments/{id}",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PUT /payments/{id}/status",
+      "method": "PUT",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /payments/{id}/refund",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /payments/stats/summary",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /projects",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /projects/{id}",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PUT /projects/{id}",
+      "method": "PUT",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "DELETE /projects/{id}",
+      "method": "DELETE",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PATCH /projects/{id}/start",
+      "method": "PATCH",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PATCH /projects/{id}/complete",
+      "method": "PATCH",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PATCH /projects/{id}/time",
+      "method": "PATCH",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /projects/stats/summary",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PATCH /projects/{id}/assign",
+      "method": "PATCH",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /quotes",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /quotes/{id}",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PUT /quotes/{id}",
+      "method": "PUT",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "DELETE /quotes/{id}",
+      "method": "DELETE",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /quotes/{id}/send",
+      "method": "POST",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /quotes/{id}/duplicate",
+      "method": "POST",
+      "issues": [
+        "Response 201 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /quotes/{id}/accept",
+      "method": "POST",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /quotes/{id}/reject",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /quotes/{id}/viewed",
+      "method": "POST",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /quotes/{id}/convert-to-invoice",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /api/v1/organizations/{organizationId}/tax/calculate",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /api/v1/organizations/{organizationId}/tax/calculate/canadian",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /api/v1/organizations/{organizationId}/tax/itc/calculate",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /api/v1/organizations/{organizationId}/tax/gst-hst-return",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /api/v1/organizations/{organizationId}/tax/remittance",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /api/v1/organizations/{organizationId}/tax/payments",
+      "method": "POST",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /api/v1/organizations/{organizationId}/tax/rates",
+      "method": "GET",
+      "issues": [
+        "Missing error responses",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /api/v1/tax/quick-method/rate",
+      "method": "GET",
+      "issues": [
+        "Missing error responses"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /users",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /users/{userId}",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PUT /users/{userId}",
+      "method": "PUT",
+      "issues": [
+        "Request body missing description",
+        "Request body missing examples",
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "DELETE /users/{userId}",
+      "method": "DELETE",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /users/{userId}/resend-invite",
+      "method": "POST",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /users/{userId}/activate",
+      "method": "POST",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /users/{userId}/deactivate",
+      "method": "POST",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "GET /users/{userId}/status",
+      "method": "GET",
+      "issues": [
+        "Response 200 missing examples"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /organizations/{organizationId}/customers",
+      "method": "POST",
+      "issues": [
+        "1 parameter(s) missing description",
+        "Request body missing description",
+        "Response 201 missing examples",
+        "Response 400 missing description",
+        "Response 401 missing description",
+        "Response 403 missing description",
+        "Response 429 missing description",
+        "Response 500 missing description"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "PUT /organizations/{organizationId}/customers/{id}",
+      "method": "PUT",
+      "issues": [
+        "1 parameter(s) missing description",
+        "Request body missing description",
+        "Response 200 missing examples",
+        "Response 400 missing description",
+        "Response 401 missing description",
+        "Response 403 missing description",
+        "Response 429 missing description",
+        "Response 500 missing description"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /organizations/{organizationId}/payments",
+      "method": "POST",
+      "issues": [
+        "1 parameter(s) missing description",
+        "Request body missing description",
+        "Response 400 missing description",
+        "Response 401 missing description",
+        "Response 403 missing description",
+        "Response 429 missing description",
+        "Response 500 missing description"
+      ],
+      "score": 100
+    },
+    {
+      "endpoint": "POST /organizations/{organizationId}/quotes",
+      "method": "POST",
+      "issues": [
+        "1 parameter(s) missing description",
+        "Request body missing description",
+        "Response 400 missing description",
+        "Response 401 missing description",
+        "Response 403 missing description",
+        "Response 429 missing description",
+        "Response 500 missing description"
+      ],
+      "score": 100
+    }
+  ],
+  "summary": {
+    "avgScore": 91.05,
+    "coveragePercentage": 84.66,
+    "criticalIssues": [
+      "Response 200 missing examples (128 endpoints)",
+      "Request body missing description (86 endpoints)",
+      "Request body missing examples (82 endpoints)",
+      "Missing description (27 endpoints)",
+      "Missing error responses (23 endpoints)"
+    ]
+  }
+}

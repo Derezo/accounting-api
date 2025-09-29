@@ -1,8 +1,24 @@
-import { PrismaClient, Quote, QuoteItem } from '@prisma/client';
+import { Quote, QuoteItem, Invoice, InvoiceItem } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { QuoteStatus } from '../types/enums';
 import { auditService } from './audit.service';
+import { invoiceService } from './invoice.service';
+import { appointmentService } from './appointment.service';
+import { prisma } from '../config/database';
 
-const prisma = new PrismaClient();
+import { FinancialMath, calculateRatio, add, subtract, multiply, divide } from '../utils/financial';
+
+export interface QuoteStats {
+  total: number;
+  draft: number;
+  sent: number;
+  accepted: number;
+  rejected: number;
+  expired: number;
+  totalValue: number;
+  acceptedValue: number;
+  conversionRate: number;
+}
 
 interface CreateQuoteData {
   customerId: string;
@@ -54,7 +70,7 @@ export class QuoteService {
     data: CreateQuoteData,
     organizationId: string,
     auditContext: { userId: string; ipAddress?: string; userAgent?: string }
-  ): Promise<Quote & { items: QuoteItem[]; customer?: any }> {
+  ): Promise<Quote & { items: QuoteItem[]; customer?: unknown }> {
     // Verify customer exists and belongs to organization
     const customer = await prisma.customer.findFirst({
       where: {
@@ -70,28 +86,30 @@ export class QuoteService {
 
     const quoteNumber = await this.generateQuoteNumber(organizationId);
 
-    // Calculate totals from items
-    let subtotal = 0;
-    let taxAmount = 0;
+    // Calculate totals from items using Decimal arithmetic
+    let subtotal = new Decimal(0);
+    let taxAmount = new Decimal(0);
     const itemCalculations = data.items.map(item => {
-      const itemSubtotal = item.quantity * item.unitPrice;
-      const itemDiscountAmount = itemSubtotal * ((item.discountPercent || 0) / 100);
-      const itemAfterDiscount = itemSubtotal - itemDiscountAmount;
-      const itemTaxAmount = itemAfterDiscount * (item.taxRate / 100);
-      const itemTotal = itemAfterDiscount + itemTaxAmount;
+      const itemSubtotal = FinancialMath.multiply(item.quantity, item.unitPrice);
+      const discountPercent = new Decimal(item.discountPercent || 0);
+      const itemDiscountAmount = FinancialMath.multiply(itemSubtotal, FinancialMath.divide(discountPercent, 100));
+      const itemAfterDiscount = FinancialMath.subtract(itemSubtotal, itemDiscountAmount);
+      const itemTaxAmount = FinancialMath.multiply(itemAfterDiscount, FinancialMath.divide(item.taxRate, 100));
+      const itemTotal = FinancialMath.add(itemAfterDiscount, itemTaxAmount);
 
-      subtotal += itemSubtotal;
-      taxAmount += itemTaxAmount;
+      subtotal = FinancialMath.add(subtotal, itemSubtotal);
+      taxAmount = FinancialMath.add(taxAmount, itemTaxAmount);
 
       return {
-        subtotal: itemSubtotal,
-        discountAmount: itemDiscountAmount,
-        taxAmount: itemTaxAmount,
-        total: itemTotal
+        subtotal: FinancialMath.toNumber(itemSubtotal),
+        discountAmount: FinancialMath.toNumber(itemDiscountAmount),
+        taxAmount: FinancialMath.toNumber(itemTaxAmount),
+        total: FinancialMath.toNumber(itemTotal)
       };
     });
 
-    const total = subtotal - itemCalculations.reduce((sum, calc) => sum + calc.discountAmount, 0) + taxAmount;
+    const totalDiscountAmount = itemCalculations.reduce((sum, calc) => sum + calc.discountAmount, 0);
+    const total = FinancialMath.subtract(FinancialMath.add(subtotal, taxAmount), totalDiscountAmount);
 
     const quote = await prisma.$transaction(async (tx) => {
       // Create quote
@@ -106,9 +124,9 @@ export class QuoteService {
           validUntil: data.validUntil ? new Date(data.validUntil) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days default
           notes: data.notes,
           terms: data.terms,
-          subtotal,
-          taxAmount,
-          total
+          subtotal: FinancialMath.toNumber(subtotal),
+          taxAmount: FinancialMath.toNumber(taxAmount),
+          total: FinancialMath.toNumber(total)
         },
         include: {
           items: true,
@@ -186,7 +204,7 @@ export class QuoteService {
     id: string,
     organizationId: string,
     auditContext: { userId: string; ipAddress?: string; userAgent?: string }
-  ): Promise<(Quote & { items: QuoteItem[]; customer?: any }) | null> {
+  ): Promise<(Quote & { items: QuoteItem[]; customer?: unknown }) | null> {
     const quote = await prisma.quote.findFirst({
       where: {
         id,
@@ -262,31 +280,40 @@ export class QuoteService {
     let subtotal = existingQuote.subtotal;
     let taxAmount = existingQuote.taxAmount;
     let total = existingQuote.total;
-    let itemCalculations: any[] = [];
+    let itemCalculations: Array<{
+      subtotal: number;
+      discountAmount: number;
+      taxAmount: number;
+      total: number;
+    }> = [];
 
     // Recalculate if items are provided
     if (data.items) {
-      subtotal = 0;
-      taxAmount = 0;
+      let subtotalDecimal = new Decimal(0);
+      let taxAmountDecimal = new Decimal(0);
       itemCalculations = data.items.map(item => {
-        const itemSubtotal = item.quantity * item.unitPrice;
-        const itemDiscountAmount = itemSubtotal * ((item.discountPercent || 0) / 100);
-        const itemAfterDiscount = itemSubtotal - itemDiscountAmount;
-        const itemTaxAmount = itemAfterDiscount * (item.taxRate / 100);
-        const itemTotal = itemAfterDiscount + itemTaxAmount;
+        const itemSubtotal = FinancialMath.multiply(item.quantity, item.unitPrice);
+        const discountPercent = new Decimal(item.discountPercent || 0);
+        const itemDiscountAmount = FinancialMath.multiply(itemSubtotal, FinancialMath.divide(discountPercent, 100));
+        const itemAfterDiscount = FinancialMath.subtract(itemSubtotal, itemDiscountAmount);
+        const itemTaxAmount = FinancialMath.multiply(itemAfterDiscount, FinancialMath.divide(item.taxRate, 100));
+        const itemTotal = FinancialMath.add(itemAfterDiscount, itemTaxAmount);
 
-        subtotal += itemSubtotal;
-        taxAmount += itemTaxAmount;
+        subtotalDecimal = FinancialMath.add(subtotalDecimal, itemSubtotal);
+        taxAmountDecimal = FinancialMath.add(taxAmountDecimal, itemTaxAmount);
 
         return {
-          subtotal: itemSubtotal,
-          discountAmount: itemDiscountAmount,
-          taxAmount: itemTaxAmount,
-          total: itemTotal
+          subtotal: FinancialMath.toNumber(itemSubtotal),
+          discountAmount: FinancialMath.toNumber(itemDiscountAmount),
+          taxAmount: FinancialMath.toNumber(itemTaxAmount),
+          total: FinancialMath.toNumber(itemTotal)
         };
       });
 
-      total = subtotal - itemCalculations.reduce((sum, calc) => sum + calc.discountAmount, 0) + taxAmount;
+      const totalDiscountAmount = itemCalculations.reduce((sum, calc) => sum + calc.discountAmount, 0);
+      subtotal = subtotalDecimal;
+      taxAmount = taxAmountDecimal;
+      total = FinancialMath.subtract(FinancialMath.add(subtotalDecimal, taxAmountDecimal), totalDiscountAmount);
     }
 
     const updatedQuote = await prisma.$transaction(async (tx) => {
@@ -299,9 +326,9 @@ export class QuoteService {
           notes: data.notes,
           terms: data.terms,
           status: data.status,
-          subtotal,
-          taxAmount,
-          total,
+          subtotal: subtotal instanceof Decimal ? FinancialMath.toNumber(subtotal) : subtotal,
+          taxAmount: taxAmount instanceof Decimal ? FinancialMath.toNumber(taxAmount) : taxAmount,
+          total: total instanceof Decimal ? FinancialMath.toNumber(total) : total,
           updatedAt: new Date()
         }
       });
@@ -373,8 +400,8 @@ export class QuoteService {
   async listQuotes(
     filters: QuoteFilters,
     organizationId: string
-  ): Promise<{ quotes: (Quote & { items?: QuoteItem[]; customer?: any })[], total: number }> {
-    const where: any = {
+  ): Promise<{ quotes: (Quote & { items?: QuoteItem[]; customer?: unknown })[], total: number }> {
+    const where: Record<string, unknown> = {
       organizationId,
       deletedAt: null
     };
@@ -415,12 +442,12 @@ export class QuoteService {
     }
 
     if (filters.validFrom || filters.validTo) {
-      where.validUntil = {};
+      where.validUntil = {} as any;
       if (filters.validFrom) {
-        where.validUntil.gte = new Date(filters.validFrom);
+        (where.validUntil as any).gte = new Date(filters.validFrom);
       }
       if (filters.validTo) {
-        where.validUntil.lte = new Date(filters.validTo);
+        (where.validUntil as any).lte = new Date(filters.validTo);
       }
     }
 
@@ -640,13 +667,21 @@ export class QuoteService {
     id: string,
     organizationId: string,
     auditContext: { userId: string; ipAddress?: string; userAgent?: string },
-    acceptanceNotes?: string
-  ): Promise<Quote> {
+    acceptanceNotes?: string,
+    autoGenerateInvoice: boolean = true
+  ): Promise<{
+    quote: Quote;
+    invoice?: Invoice & { items: InvoiceItem[]; customer?: unknown; quote?: unknown } | null;
+    suggestedAppointments?: unknown;
+  }> {
     const quote = await prisma.quote.findFirst({
       where: {
         id,
         organizationId,
         deletedAt: null
+      },
+      include: {
+        customer: true
       }
     });
 
@@ -685,7 +720,88 @@ export class QuoteService {
       }
     );
 
-    return updatedQuote;
+    let generatedInvoice = null;
+    let suggestedAppointments = null;
+
+    // Automatically generate invoice when quote is accepted
+    if (autoGenerateInvoice) {
+      try {
+        // Check if invoice already exists for this quote
+        const existingInvoice = await prisma.invoice.findFirst({
+          where: { quoteId: id, deletedAt: null }
+        });
+
+        if (!existingInvoice) {
+          generatedInvoice = await invoiceService.createInvoiceFromQuote(
+            id,
+            organizationId,
+            auditContext,
+            {
+              // Use customer payment terms or default to 15 days
+              dueDate: new Date(Date.now() + ((quote.customer.paymentTerms || 15) * 24 * 60 * 60 * 1000)),
+              // Default deposit requirement based on business rules (25-50%)
+              depositRequired: Math.round(Number(quote.total) * 0.3 * 100) / 100, // 30% deposit
+              terms: quote.terms || 'Payment due within terms. Work begins after deposit payment.',
+              notes: `Invoice automatically generated from accepted quote ${updatedQuote.quoteNumber || id}${acceptanceNotes ? `\n\nCustomer Notes: ${acceptanceNotes}` : ''}`
+            }
+          );
+        }
+      } catch (error) {
+        console.warn('Failed to auto-generate invoice for accepted quote:', error);
+        // Don't fail the quote acceptance if invoice generation fails
+        // Log this for manual follow-up
+        await auditService.logCreate(
+          'QuoteWorkflowError',
+          id,
+          {
+            error: 'Failed to auto-generate invoice',
+            message: error instanceof Error ? error.message : 'Unknown error',
+            quoteId: id,
+            organizationId
+          },
+          {
+            organizationId,
+            userId: auditContext.userId,
+            ipAddress: auditContext.ipAddress,
+            userAgent: auditContext.userAgent
+          }
+        );
+      }
+    }
+
+    // Suggest available appointment times for consultation
+    try {
+      suggestedAppointments = await appointmentService.suggestAppointmentAfterQuoteAcceptance(
+        organizationId,
+        quote.customerId,
+        id
+      );
+    } catch (error) {
+      console.warn('Failed to suggest appointment times:', error);
+      // Don't fail the quote acceptance if appointment suggestion fails
+      await auditService.logCreate(
+        'QuoteWorkflowError',
+        id,
+        {
+          error: 'Failed to suggest appointment times',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          quoteId: id,
+          organizationId
+        },
+        {
+          organizationId,
+          userId: auditContext.userId,
+          ipAddress: auditContext.ipAddress,
+          userAgent: auditContext.userAgent
+        }
+      );
+    }
+
+    return {
+      quote: updatedQuote,
+      invoice: generatedInvoice,
+      suggestedAppointments
+    };
   }
 
   async rejectQuote(
@@ -792,8 +908,8 @@ export class QuoteService {
   async getQuoteStats(
     organizationId: string,
     customerId?: string
-  ): Promise<any> {
-    const where: any = { organizationId, deletedAt: null };
+  ): Promise<QuoteStats> {
+    const where: Record<string, unknown> = { organizationId, deletedAt: null };
     if (customerId) {
       where.customerId = customerId;
     }
@@ -831,10 +947,27 @@ export class QuoteService {
       accepted: acceptedQuotes,
       rejected: rejectedQuotes,
       expired: expiredQuotes,
-      totalValue: totalValue._sum.total || 0,
-      acceptedValue: acceptedValue._sum.total || 0,
-      conversionRate: sentQuotes > 0 ? (acceptedQuotes / sentQuotes) * 100 : 0
+      totalValue: totalValue._sum.total ? FinancialMath.toNumber(totalValue._sum.total) : 0,
+      acceptedValue: acceptedValue._sum.total ? FinancialMath.toNumber(acceptedValue._sum.total) : 0,
+      conversionRate: sentQuotes > 0 ? FinancialMath.toNumber(calculateRatio(acceptedQuotes, sentQuotes)) : 0
     };
+  }
+
+  /**
+   * Convert a quote to an invoice
+   */
+  async convertToInvoice(
+    quoteId: string,
+    organizationId: string,
+    auditContext: { userId: string; ipAddress?: string; userAgent?: string },
+    options?: {
+      dueDate?: Date;
+      depositRequired?: number;
+      terms?: string;
+      notes?: string;
+    }
+  ): Promise<Invoice & { items: InvoiceItem[]; customer?: unknown; quote?: unknown }> {
+    return invoiceService.createInvoiceFromQuote(quoteId, organizationId, auditContext, options);
   }
 }
 

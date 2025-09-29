@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{invoice.invoiceNumber}}</title>
+    <style>
+        {{{styles}}}
+
+        /* Default invoice styles */
+        body {
+            font-family: {{branding.fontFamily}}, Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: {{branding.backgroundColor}};
+            color: {{branding.textColor}};
+        }
+
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+            border-bottom: 2px solid {{branding.primaryColor}};
+            padding-bottom: 20px;
+        }
+
+        .company-info {
+            flex: 1;
+        }
+
+        .company-logo {
+            max-height: 80px;
+            max-width: 200px;
+            margin-bottom: 10px;
+        }
+
+        .company-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: {{branding.primaryColor}};
+            margin-bottom: 5px;
+        }
+
+        .invoice-details {
+            text-align: right;
+            flex: 1;
+        }
+
+        .invoice-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: {{branding.primaryColor}};
+            margin-bottom: 10px;
+        }
+
+        .invoice-meta {
+            font-size: 14px;
+            color: {{branding.secondaryColor}};
+        }
+
+        .billing-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+        }
+
+        .billing-info {
+            flex: 1;
+        }
+
+        .billing-title {
+            font-weight: bold;
+            color: {{branding.primaryColor}};
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .items-table th {
+            background-color: {{branding.primaryColor}};
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .items-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .items-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .amount-column {
+            text-align: right;
+        }
+
+        .totals-section {
+            float: right;
+            width: 300px;
+            margin-bottom: 30px;
+        }
+
+        .totals-table {
+            width: 100%;
+        }
+
+        .totals-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .totals-table .total-row {
+            font-weight: bold;
+            font-size: 16px;
+            background-color: {{branding.primaryColor}};
+            color: white;
+        }
+
+        .payment-info {
+            clear: both;
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-left: 4px solid {{branding.accentColor}};
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            font-size: 12px;
+            color: {{branding.secondaryColor}};
+        }
+
+        .tax-exempt {
+            font-style: italic;
+            color: {{branding.secondaryColor}};
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Header Section -->
+        <div class="invoice-header">
+            <div class="company-info">
+                {{#if branding.showLogo}}
+                    {{#if branding.logoUrl}}
+                        <img src="{{branding.logoUrl}}" alt="{{organization.name}}" class="company-logo">
+                    {{/if}}
+                {{/if}}
+
+                {{#if branding.showOrgName}}
+                    <div class="company-name">{{organization.name}}</div>
+                {{/if}}
+
+                <div class="company-details">
+                    {{#if organization.legalName}}
+                        <div>{{organization.legalName}}</div>
+                    {{/if}}
+                    <div>{{organization.email}}</div>
+                    <div>{{organization.phone}}</div>
+                    {{#if organization.website}}
+                        <div>{{organization.website}}</div>
+                    {{/if}}
+                </div>
+            </div>
+
+            <div class="invoice-details">
+                <div class="invoice-number">INVOICE {{invoice.invoiceNumber}}</div>
+                <div class="invoice-meta">
+                    <div><strong>Issue Date:</strong> {{formatDate invoice.issueDate}}</div>
+                    <div><strong>Due Date:</strong> {{formatDate invoice.dueDate}}</div>
+                    {{#if invoice.quote}}
+                        <div><strong>Quote:</strong> {{invoice.quote.quoteNumber}}</div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+
+        <!-- Billing Information -->
+        <div class="billing-section">
+            <div class="billing-info">
+                <div class="billing-title">Bill To:</div>
+                <div class="customer-details">
+                    {{#if customer.business}}
+                        <div><strong>{{customer.business.legalName}}</strong></div>
+                        {{#if customer.business.tradeName}}
+                            <div>{{customer.business.tradeName}}</div>
+                        {{/if}}
+                    {{else}}
+                        <div><strong>{{customer.person.firstName}} {{customer.person.lastName}}</strong></div>
+                    {{/if}}
+
+                    {{#if customer.person.email}}
+                        <div>{{customer.person.email}}</div>
+                    {{/if}}
+                    {{#if customer.person.phone}}
+                        <div>{{customer.person.phone}}</div>
+                    {{/if}}
+                </div>
+            </div>
+
+            <div class="billing-info">
+                <div class="billing-title">Payment Terms:</div>
+                <div>{{invoice.currency}} {{formatCurrency invoice.total}}</div>
+                {{#if invoice.depositRequired}}
+                    <div>Deposit: {{formatCurrency invoice.depositRequired}}</div>
+                {{/if}}
+                <div>Status: {{invoice.status}}</div>
+                {{#if invoice.paidAt}}
+                    <div>Paid: {{formatDate invoice.paidAt}}</div>
+                {{/if}}
+            </div>
+        </div>
+
+        <!-- Line Items -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Description</th>
+                    <th style="width: 12%;">Quantity</th>
+                    <th style="width: 15%;">Unit Price</th>
+                    {{#unless branding.taxDisabled}}
+                        <th style="width: 10%;">Tax Rate</th>
+                    {{/unless}}
+                    <th style="width: 13%;" class="amount-column">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each invoice.items}}
+                <tr>
+                    <td>
+                        <strong>{{this.description}}</strong>
+                        {{#if this.product}}
+                            <br><small>SKU: {{this.product.sku}}</small>
+                        {{/if}}
+                        {{#if this.service}}
+                            <br><small>Service: {{this.service.code}}</small>
+                        {{/if}}
+                    </td>
+                    <td>{{formatDecimal this.quantity}}</td>
+                    <td>{{formatCurrency this.unitPrice}}</td>
+                    {{#unless ../branding.taxDisabled}}
+                        <td>{{formatPercent this.taxRate}}%</td>
+                    {{/unless}}
+                    <td class="amount-column">{{formatCurrency this.total}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+
+        <!-- Totals Section -->
+        <div class="totals-section">
+            <table class="totals-table">
+                <tr>
+                    <td>Subtotal:</td>
+                    <td class="amount-column">{{formatCurrency invoice.subtotal}}</td>
+                </tr>
+                {{#unless branding.taxDisabled}}
+                    {{#if invoice.taxAmount}}
+                        <tr>
+                            <td>Tax:</td>
+                            <td class="amount-column">{{formatCurrency invoice.taxAmount}}</td>
+                        </tr>
+                    {{/if}}
+                {{/unless}}
+                <tr class="total-row">
+                    <td><strong>Total:</strong></td>
+                    <td class="amount-column"><strong>{{formatCurrency invoice.total}}</strong></td>
+                </tr>
+                {{#if invoice.amountPaid}}
+                    <tr>
+                        <td>Paid:</td>
+                        <td class="amount-column">{{formatCurrency invoice.amountPaid}}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Balance Due:</strong></td>
+                        <td class="amount-column"><strong>{{formatCurrency invoice.balance}}</strong></td>
+                    </tr>
+                {{/if}}
+            </table>
+        </div>
+
+        <!-- Tax Exempt Notice -->
+        {{#if branding.taxDisabled}}
+            <div class="tax-exempt" style="clear: both; margin-top: 20px;">
+                * Tax calculations have been disabled for this organization.
+            </div>
+        {{/if}}
+
+        <!-- Payment Information -->
+        {{#if invoice.terms}}
+            <div class="payment-info">
+                <strong>Terms & Conditions:</strong>
+                <p>{{invoice.terms}}</p>
+            </div>
+        {{/if}}
+
+        <!-- Notes -->
+        {{#if invoice.notes}}
+            <div class="payment-info">
+                <strong>Notes:</strong>
+                <p>{{invoice.notes}}</p>
+            </div>
+        {{/if}}
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Thank you for your business!</p>
+            {{#if organization.businessNumber}}
+                <p>Business Number: {{organization.businessNumber}}</p>
+            {{/if}}
+            {{#if organization.taxNumber}}
+                <p>Tax Number: {{organization.taxNumber}}</p>
+            {{/if}}
+        </div>
+    </div>
+</body>
+</html>

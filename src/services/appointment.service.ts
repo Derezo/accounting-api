@@ -1,8 +1,9 @@
-import { PrismaClient, Appointment } from '@prisma/client';
+import {  Appointment } from '@prisma/client';
 import { auditService } from './audit.service';
 
-const prisma = new PrismaClient();
 
+
+import { prisma } from '../config/database';
 interface CreateAppointmentData {
   customerId: string;
   projectId?: string;
@@ -587,6 +588,155 @@ export class AppointmentService {
       completionRate: confirmedAppointments > 0 ? (completedAppointments / confirmedAppointments) * 100 : 0,
       cancellationRate: totalAppointments > 0 ? (cancelledAppointments / totalAppointments) * 100 : 0
     };
+  }
+
+  async findAvailableTimeSlots(
+    organizationId: string,
+    duration: number = 15, // Default 15-minute consultation
+    daysAhead: number = 14, // Look ahead 14 days
+    workingHours: { start: number; end: number } = { start: 9, end: 17 } // 9 AM to 5 PM
+  ): Promise<Array<{ date: string; startTime: Date; endTime: Date }>> {
+    const availableSlots: Array<{ date: string; startTime: Date; endTime: Date }> = [];
+    const now = new Date();
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0);
+
+    // If it's already past working hours today, start from tomorrow
+    if (now.getHours() >= workingHours.end) {
+      startDate.setDate(startDate.getDate() + 1);
+    }
+
+    for (let dayOffset = 0; dayOffset < daysAhead; dayOffset++) {
+      const currentDate = new Date(startDate);
+      currentDate.setDate(startDate.getDate() + dayOffset);
+
+      // Skip weekends (Saturday = 6, Sunday = 0)
+      if (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
+        continue;
+      }
+
+      // Generate time slots for this day
+      for (let hour = workingHours.start; hour < workingHours.end; hour++) {
+        for (let minute = 0; minute < 60; minute += duration) {
+          const slotStart = new Date(currentDate);
+          slotStart.setHours(hour, minute, 0, 0);
+
+          const slotEnd = new Date(slotStart);
+          slotEnd.setTime(slotStart.getTime() + duration * 60 * 1000);
+
+          // Skip past time slots for today
+          if (slotStart <= now) {
+            continue;
+          }
+
+          // Don't schedule across hour boundaries for short consultations
+          if (slotEnd.getHours() !== hour && duration < 60) {
+            break;
+          }
+
+          // Check if this slot conflicts with existing appointments
+          const conflict = await this.checkForConflicts(
+            organizationId,
+            slotStart,
+            slotEnd
+          );
+
+          if (!conflict) {
+            availableSlots.push({
+              date: currentDate.toISOString().split('T')[0],
+              startTime: slotStart,
+              endTime: slotEnd
+            });
+          }
+        }
+      }
+    }
+
+    return availableSlots.slice(0, 20); // Return first 20 available slots
+  }
+
+  async suggestAppointmentAfterQuoteAcceptance(
+    organizationId: string,
+    customerId: string,
+    quoteId?: string
+  ): Promise<Array<{ date: string; startTime: Date; endTime: Date }>> {
+    // Find next available 15-minute consultation slots
+    const availableSlots = await this.findAvailableTimeSlots(
+      organizationId,
+      15, // 15-minute consultation
+      21  // Look ahead 3 weeks
+    );
+
+    // If no slots available in working hours, suggest early morning or late afternoon
+    if (availableSlots.length === 0) {
+      // Suggest extended hours (8 AM or 6 PM)
+      const extendedSlots = await this.findAvailableTimeSlots(
+        organizationId,
+        15,
+        21,
+        { start: 8, end: 18 } // 8 AM to 6 PM
+      );
+      return extendedSlots;
+    }
+
+    return availableSlots;
+  }
+
+  async createConsultationFromQuote(
+    organizationId: string,
+    customerId: string,
+    quoteId: string,
+    selectedTimeSlot: { startTime: Date; endTime: Date },
+    auditContext: { userId: string; ipAddress?: string; userAgent?: string }
+  ): Promise<Appointment & { customer?: any; quote?: any }> {
+    // Get quote information for appointment title and description
+    const quote = await prisma.quote.findFirst({
+      where: { id: quoteId, organizationId, deletedAt: null },
+      include: { customer: { include: { person: true, business: true } } }
+    });
+
+    if (!quote) {
+      throw new Error('Quote not found');
+    }
+
+    const customerName = quote.customer.person
+      ? `${quote.customer.person.firstName} ${quote.customer.person.lastName}`
+      : quote.customer.business?.legalName || 'Customer';
+
+    const appointmentData: CreateAppointmentData = {
+      customerId,
+      title: `Consultation - ${customerName}`,
+      description: `15-minute consultation for accepted quote ${quote.quoteNumber || quoteId}.\n\nQuote: ${quote.description}`,
+      startTime: selectedTimeSlot.startTime,
+      endTime: selectedTimeSlot.endTime,
+      duration: 15
+    };
+
+    const appointment = await this.createAppointment(
+      appointmentData,
+      organizationId,
+      auditContext
+    );
+
+    // Link the appointment to the quote in audit logs
+    await auditService.logCreate(
+      'QuoteAppointmentLink',
+      appointment.id,
+      {
+        appointmentId: appointment.id,
+        quoteId,
+        customerId,
+        scheduledBy: auditContext.userId
+      },
+      {
+        organizationId,
+        userId: auditContext.userId,
+        ipAddress: auditContext.ipAddress,
+        userAgent: auditContext.userAgent
+      }
+    );
+
+    return { ...appointment, quote };
   }
 
   private async checkForConflicts(

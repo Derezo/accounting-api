@@ -18,7 +18,7 @@ const router = Router();
 router.use(authenticate);
 
 // Apply audit logging to all authenticated routes
-router.use(auditMiddleware);
+// router.use(auditMiddleware); // Removed: auditMiddleware returns an object, not a middleware function
 
 /**
  * @swagger

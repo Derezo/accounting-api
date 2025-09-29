@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{invoice.invoiceNumber}}</title>
+    <style>
+        {{{styles}}}
+
+        /* Minimal invoice styles */
+        body {
+            font-family: {{branding.fontFamily}}, 'Courier New', monospace;
+            line-height: 1.4;
+            margin: 0;
+            padding: 20px;
+            background-color: {{branding.backgroundColor}};
+            color: {{branding.textColor}};
+            font-size: 14px;
+        }
+
+        .invoice-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+        }
+
+        .invoice-header {
+            border-bottom: 2px solid {{branding.textColor}};
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .company-info h1 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            font-weight: normal;
+        }
+
+        .company-info p {
+            margin: 2px 0;
+        }
+
+        .invoice-details {
+            text-align: right;
+        }
+
+        .invoice-number {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .customer-section {
+            margin-bottom: 30px;
+        }
+
+        .customer-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .items-table th {
+            border-bottom: 1px solid {{branding.textColor}};
+            padding: 10px 5px;
+            text-align: left;
+            font-weight: normal;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .items-table td {
+            padding: 8px 5px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .items-table .amount {
+            text-align: right;
+        }
+
+        .totals-table {
+            float: right;
+            width: 250px;
+            margin-bottom: 30px;
+        }
+
+        .totals-table td {
+            padding: 5px 10px;
+            text-align: right;
+        }
+
+        .totals-table .total-row {
+            border-top: 1px solid {{branding.textColor}};
+            font-weight: bold;
+        }
+
+        .payment-terms {
+            clear: both;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            text-align: center;
+            color: {{branding.secondaryColor}};
+        }
+
+        .tax-notice {
+            font-style: italic;
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Header -->
+        <div class="invoice-header">
+            <div class="header-row">
+                <div class="company-info">
+                    {{#if branding.showOrgName}}
+                        <h1>{{organization.name}}</h1>
+                    {{/if}}
+
+                    {{#if organization.legalName}}
+                        <p>{{organization.legalName}}</p>
+                    {{/if}}
+                    <p>{{organization.email}}</p>
+                    <p>{{organization.phone}}</p>
+                    {{#if organization.website}}
+                        <p>{{organization.website}}</p>
+                    {{/if}}
+                </div>
+
+                <div class="invoice-details">
+                    <div class="invoice-number">INVOICE {{invoice.invoiceNumber}}</div>
+                    <p>Issue Date: {{formatDate invoice.issueDate}}</p>
+                    <p>Due Date: {{formatDate invoice.dueDate}}</p>
+                    {{#if invoice.quote}}
+                        <p>Quote: {{invoice.quote.quoteNumber}}</p>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Information -->
+        <div class="customer-section">
+            <div class="customer-title">Bill To:</div>
+            {{#if customer.business}}
+                <p><strong>{{customer.business.legalName}}</strong></p>
+                {{#if customer.business.tradeName}}
+                    <p>{{customer.business.tradeName}}</p>
+                {{/if}}
+            {{else}}
+                <p><strong>{{customer.person.firstName}} {{customer.person.lastName}}</strong></p>
+            {{/if}}
+
+            {{#if customer.person.email}}
+                <p>{{customer.person.email}}</p>
+            {{/if}}
+            {{#if customer.person.phone}}
+                <p>{{customer.person.phone}}</p>
+            {{/if}}
+        </div>
+
+        <!-- Items -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Description</th>
+                    <th style="width: 12%;">Qty</th>
+                    <th style="width: 15%;">Price</th>
+                    {{#unless branding.taxDisabled}}
+                        <th style="width: 10%;">Tax</th>
+                    {{/unless}}
+                    <th style="width: 13%;" class="amount">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each invoice.items}}
+                <tr>
+                    <td>
+                        {{this.description}}
+                        {{#if this.product}}
+                            <br><small>{{this.product.sku}}</small>
+                        {{/if}}
+                        {{#if this.service}}
+                            <br><small>{{this.service.code}}</small>
+                        {{/if}}
+                    </td>
+                    <td>{{formatDecimal this.quantity}}</td>
+                    <td>{{formatCurrency this.unitPrice}}</td>
+                    {{#unless ../branding.taxDisabled}}
+                        <td>{{formatPercent this.taxRate}}%</td>
+                    {{/unless}}
+                    <td class="amount">{{formatCurrency this.total}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+
+        <!-- Totals -->
+        <table class="totals-table">
+            <tr>
+                <td>Subtotal:</td>
+                <td>{{formatCurrency invoice.subtotal}}</td>
+            </tr>
+            {{#unless branding.taxDisabled}}
+                {{#if invoice.taxAmount}}
+                    <tr>
+                        <td>Tax:</td>
+                        <td>{{formatCurrency invoice.taxAmount}}</td>
+                    </tr>
+                {{/if}}
+            {{/unless}}
+            <tr class="total-row">
+                <td>TOTAL:</td>
+                <td>{{formatCurrency invoice.total}}</td>
+            </tr>
+            {{#if invoice.amountPaid}}
+                <tr>
+                    <td>Paid:</td>
+                    <td>{{formatCurrency invoice.amountPaid}}</td>
+                </tr>
+                <tr>
+                    <td>Balance:</td>
+                    <td>{{formatCurrency invoice.balance}}</td>
+                </tr>
+            {{/if}}
+        </table>
+
+        <!-- Tax Notice -->
+        {{#if branding.taxDisabled}}
+            <div class="tax-notice">
+                * Tax calculations disabled for this organization.
+            </div>
+        {{/if}}
+
+        <!-- Terms and Notes -->
+        <div class="payment-terms">
+            {{#if invoice.terms}}
+                <p><strong>Terms:</strong> {{invoice.terms}}</p>
+            {{/if}}
+
+            {{#if invoice.notes}}
+                <p><strong>Notes:</strong> {{invoice.notes}}</p>
+            {{/if}}
+
+            <p><strong>Status:</strong> {{invoice.status}}</p>
+            {{#if invoice.paidAt}}
+                <p><strong>Paid:</strong> {{formatDate invoice.paidAt}}</p>
+            {{/if}}
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Thank you for your business.</p>
+            {{#if organization.businessNumber}}
+                <p>Business #: {{organization.businessNumber}}</p>
+            {{/if}}
+            {{#if organization.taxNumber}}
+                <p>Tax #: {{organization.taxNumber}}</p>
+            {{/if}}
+        </div>
+    </div>
+</body>
+</html>
