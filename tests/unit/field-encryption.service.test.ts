@@ -31,39 +31,12 @@ jest.mock('node-cache', () => {
   }));
 });
 
-jest.mock('crypto', () => ({
-  createCipheriv: jest.fn(() => ({
-    update: jest.fn((data: string, inputEncoding: string, outputEncoding: string) => 'encrypted'),
-    final: jest.fn((encoding: string) => 'final'),
-    getAuthTag: jest.fn(() => Buffer.from('authtag', 'utf8'))
-  })),
-  createDecipheriv: jest.fn(() => ({
-    setAuthTag: jest.fn(),
-    update: jest.fn((data: string, inputEncoding: string, outputEncoding: string) => 'decrypted'),
-    final: jest.fn((encoding: string) => 'data')
-  })),
-  createCipherGCM: jest.fn(() => ({
-    update: jest.fn(() => Buffer.from('encrypted', 'utf8')),
-    final: jest.fn(() => Buffer.from('final', 'utf8')),
-    getAuthTag: jest.fn(() => Buffer.from('authtag', 'utf8'))
-  })),
-  createDecipherGCM: jest.fn(() => ({
-    setAuthTag: jest.fn(),
-    update: jest.fn(() => Buffer.from('decrypted', 'utf8')),
-    final: jest.fn(() => Buffer.from('data', 'utf8'))
-  })),
-  randomBytes: jest.fn(() => Buffer.from('randomiv123456', 'utf8')),
-  createHash: jest.fn(() => ({
-    update: jest.fn().mockReturnThis(),
-    digest: jest.fn((encoding?: string) => encoding === 'hex' ? 'hashedvalue' : Buffer.from('hashedvalue', 'utf8'))
-  })),
-  createHmac: jest.fn(() => ({
-    update: jest.fn().mockReturnThis(),
-    digest: jest.fn((encoding?: string) => encoding === 'hex' ? 'hmacvalue' : Buffer.from('hmacvalue', 'utf8'))
-  })),
-  pbkdf2Sync: jest.fn(() => Buffer.from('derivedkey', 'utf8')),
-  timingSafeEqual: jest.fn(() => true)
-}));
+// Don't mock crypto - use real encryption for financial service testing
+// Only mock generateIV in encryption key manager for deterministic test output
+jest.mock('crypto', () => {
+  const actualCrypto = jest.requireActual('crypto');
+  return actualCrypto;
+});
 
 import { FieldEncryptionService } from '../../src/services/field-encryption.service';
 import crypto from 'crypto';
@@ -73,13 +46,14 @@ describe('FieldEncryptionService', () => {
   let fieldEncryptionService: FieldEncryptionService;
   let mockCache: jest.Mocked<NodeCache>;
 
+  // Create a proper 32-byte key for AES-256
   const mockKey = {
-    organizationId: 'org-123',
-    purpose: 'data-encryption',
+    id: 'test-key-id-123',
+    key: crypto.randomBytes(32), // Proper 32-byte key for AES-256
     version: 1,
     algorithm: 'aes-256-gcm',
-    keyMaterial: Buffer.from('test-key-32-chars-1234567890123456', 'utf8'),
-    derivedAt: new Date(),
+    purpose: 'data-encryption',
+    createdAt: new Date(),
     expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days
     isActive: true
   };

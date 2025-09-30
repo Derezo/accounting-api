@@ -1,5 +1,12 @@
 import { Options } from 'swagger-jsdoc';
 import { version } from '../../package.json';
+import swaggerJSDoc from 'swagger-jsdoc';
+import * as swaggerUi from 'swagger-ui-express';
+import { Application } from 'express';
+import * as path from 'path';
+import * as fs from 'fs';
+import { config } from './config';
+import { logger } from '../utils/logger';
 
 const swaggerDefinition = {
   openapi: '3.0.0',
@@ -480,5 +487,97 @@ const options: Options = {
   ]
 };
 
+// Load static OpenAPI specs
+const staticOpenApiPath = path.join(process.cwd(), 'docs', 'openapi.yaml');
+const completeOpenApiPath = path.join(process.cwd(), 'docs', 'openapi-complete.yaml');
+
+let staticOpenApiSpec: any = { paths: {} };
+let completeOpenApiSpec: any = { paths: {} };
+
+try {
+  if (fs.existsSync(staticOpenApiPath)) {
+    const yaml = require('js-yaml');
+    staticOpenApiSpec = yaml.load(fs.readFileSync(staticOpenApiPath, 'utf8')) || { paths: {} };
+  }
+  if (fs.existsSync(completeOpenApiPath)) {
+    const yaml = require('js-yaml');
+    completeOpenApiSpec = yaml.load(fs.readFileSync(completeOpenApiPath, 'utf8')) || { paths: {} };
+  }
+} catch (error) {
+  logger.warn('Could not load static OpenAPI specs', { error });
+}
+
+// Generate JSDoc spec
+const jsdocSpec = swaggerJSDoc(options) as { paths?: Record<string, unknown> };
+
+// Merge specifications
+const mergedSpec = {
+  ...swaggerDefinition,
+  paths: {
+    ...(staticOpenApiSpec.paths || {}),
+    ...(completeOpenApiSpec.paths || {}),
+    ...(jsdocSpec.paths || {})
+  }
+};
+
+// Swagger UI options
+const swaggerOptions = {
+  explorer: true,
+  swaggerOptions: {
+    urls: [
+      {
+        url: '/api-docs/openapi.json',
+        name: 'Complete API'
+      }
+    ],
+    displayRequestDuration: true,
+    filter: true,
+    showExtensions: true,
+    showCommonExtensions: true
+  }
+};
+
+export const setupSwagger = (app: Application): void => {
+  // Serve OpenAPI specification as JSON
+  app.get('/api-docs/openapi.json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(mergedSpec);
+  });
+
+  // Swagger UI setup
+  app.use('/api-docs', swaggerUi.serve);
+  app.get('/api-docs', swaggerUi.setup(mergedSpec, swaggerOptions));
+
+  // Alternative documentation endpoints
+  app.get('/docs', (_req, res) => {
+    res.redirect('/api-docs');
+  });
+
+  // Health check for documentation
+  app.get('/api-docs/health', (_req, res) => {
+    res.json({
+      status: 'healthy',
+      documentation: {
+        swagger: '/api-docs',
+        openapi: '/api-docs/openapi.json',
+        redoc: process.env.NODE_ENV === 'development' ? '/redoc' : null,
+      },
+      endpoints: {
+        static: Object.keys(staticOpenApiSpec.paths || {}).length,
+        complete: Object.keys(completeOpenApiSpec.paths || {}).length,
+        jsdoc: Object.keys(jsdocSpec.paths || {}).length,
+        merged: Object.keys(mergedSpec.paths || {}).length
+      },
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  logger.info('Swagger documentation setup complete', {
+    swaggerUi: `http://localhost:${config.PORT}/api-docs`,
+    openApiSpec: `http://localhost:${config.PORT}/api-docs/openapi.json`,
+    documentedEndpoints: Object.keys(mergedSpec.paths || {}).length
+  });
+};
+
 export default options;
-export { swaggerDefinition };
+export { swaggerDefinition, mergedSpec as openApiSpec };

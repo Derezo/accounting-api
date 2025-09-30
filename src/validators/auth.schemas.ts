@@ -31,8 +31,8 @@ export const tokenSchema = z
 
 export const twoFactorTokenSchema = z
   .string()
-  .regex(/^\d{6}$/, 'Two-factor token must be exactly 6 digits')
-  .transform(val => val.trim());
+  .transform(val => val.trim())
+  .pipe(z.string().regex(/^\d{6}$/, 'Two-factor token must be exactly 6 digits'));
 
 export const ipAddressSchema = z
   .string()
@@ -105,7 +105,7 @@ export const setupTwoFactorSchema = z.object({
 });
 
 export const verifyTwoFactorSchema = z.object({
-  token: twoFactorTokenSchema,
+  token: twoFactorTokenSchema.optional(),
   backupCode: z.string().optional()
 }).refine(
   (data) => data.token || data.backupCode,

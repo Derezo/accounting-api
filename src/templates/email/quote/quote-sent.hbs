@@ -1,0 +1,84 @@
+<h1>Your Quote is Ready!</h1>
+
+<p>Hi {{customerName}},</p>
+
+<p>
+    Thank you for your interest! We've prepared a detailed quote for your project.
+</p>
+
+{{#if customMessage}}
+<div class="info-box" style="background-color: #f0f9ff; border-left-color: #0ea5e9;">
+    <h3>Personal Message</h3>
+    <p>{{customMessage}}</p>
+</div>
+{{/if}}
+
+<div class="info-box">
+    <h3>Quote Summary</h3>
+    <p><strong>Quote Number:</strong> {{quoteNumber}}</p>
+    <p><strong>Total Amount:</strong> {{formatCurrency quoteTotal "CAD"}}</p>
+    {{#if quoteDescription}}
+    <p><strong>Description:</strong> {{quoteDescription}}</p>
+    {{/if}}
+    {{#if expiresAt}}
+    <p><strong>Valid Until:</strong> {{formatDate expiresAt "long"}}</p>
+    {{/if}}
+</div>
+
+{{#if items}}
+<div class="info-box">
+    <h3>Quote Items</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="border-bottom: 2px solid #e5e7eb;">
+                <th style="text-align: left; padding: 8px;">Description</th>
+                <th style="text-align: center; padding: 8px;">Qty</th>
+                <th style="text-align: right; padding: 8px;">Unit Price</th>
+                <th style="text-align: right; padding: 8px;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each items}}
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 8px;">{{description}}</td>
+                <td style="text-align: center; padding: 8px;">{{quantity}}</td>
+                <td style="text-align: right; padding: 8px;">{{formatCurrency unitPrice "CAD"}}</td>
+                <td style="text-align: right; padding: 8px;">{{formatCurrency total "CAD"}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</div>
+{{/if}}
+
+<h2>Review and Accept Your Quote</h2>
+<p>
+    Please review your quote and let us know if you'd like to proceed.
+    You can view the full details and accept the quote online.
+</p>
+
+{{> button text="View Full Quote" url=viewUrl}}
+
+<div style="margin-top: 20px;">
+    {{> button text="Accept Quote" url=acceptUrl}}
+</div>
+
+<div class="info-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
+    <h3>Questions?</h3>
+    <p>
+        If you have any questions about this quote, please don't hesitate to reach out:
+        <br>
+        Phone: <strong>{{organizationPhone}}</strong>
+        <br>
+        Email: <strong>{{organizationEmail}}</strong>
+    </p>
+</div>
+
+<p>
+    We look forward to working with you!
+</p>
+
+<p>
+    Best regards,<br>
+    <strong>The {{organizationName}} Team</strong>
+</p>

@@ -387,6 +387,165 @@ export class InvoicePDFController {
   }
 
   /**
+   * @route   PUT /api/v1/organizations/:organizationId/invoice-templates/:templateId
+   * @desc    Update invoice template
+   * @access  Private (Admin, Manager)
+   */
+  async updateInvoiceTemplate(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const { templateId } = req.params;
+      const { name, description, templateType, htmlTemplate, isDefault, tags } = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const template = await invoiceTemplateService.updateTemplate(
+        templateId,
+        { name, description, templateType, htmlTemplate, isDefault, tags },
+        organizationId,
+        auditContext
+      );
+
+      res.json(successResponse('Template updated successfully', {
+        template: {
+          id: template.id,
+          name: template.name,
+          description: template.description,
+          templateType: template.templateType,
+          isDefault: template.isDefault,
+          version: template.version,
+          updatedAt: template.updatedAt
+        }
+      }));
+
+    } catch (error) {
+      logger.error('Failed to update template:', error);
+      const statusCode = error instanceof Error && error.message.includes('not found') ? 404 : 500;
+      res.status(statusCode).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to update template'
+      ));
+    }
+  }
+
+  /**
+   * @route   DELETE /api/v1/organizations/:organizationId/invoice-templates/:templateId
+   * @desc    Delete invoice template
+   * @access  Private (Admin)
+   */
+  async deleteInvoiceTemplate(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const { templateId } = req.params;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      await invoiceTemplateService.deleteTemplate(templateId, organizationId, auditContext);
+
+      res.json(successResponse('Template deleted successfully'));
+
+    } catch (error) {
+      logger.error('Failed to delete template:', error);
+      const statusCode = error instanceof Error && error.message.includes('not found') ? 404 : 500;
+      res.status(statusCode).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to delete template'
+      ));
+    }
+  }
+
+  /**
+   * @route   POST /api/v1/organizations/:organizationId/invoice-templates/:templateId/duplicate
+   * @desc    Duplicate invoice template
+   * @access  Private (Admin, Manager)
+   */
+  async duplicateInvoiceTemplate(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const { templateId } = req.params;
+      const { name } = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const duplicatedTemplate = await invoiceTemplateService.duplicateTemplate(
+        templateId,
+        organizationId,
+        name,
+        auditContext
+      );
+
+      res.status(201).json(successResponse('Template duplicated successfully', {
+        template: {
+          id: duplicatedTemplate.id,
+          name: duplicatedTemplate.name,
+          description: duplicatedTemplate.description,
+          templateType: duplicatedTemplate.templateType,
+          isDefault: duplicatedTemplate.isDefault,
+          version: duplicatedTemplate.version,
+          createdAt: duplicatedTemplate.createdAt
+        }
+      }));
+
+    } catch (error) {
+      logger.error('Failed to duplicate template:', error);
+      const statusCode = error instanceof Error && error.message.includes('not found') ? 404 : 500;
+      res.status(statusCode).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to duplicate template'
+      ));
+    }
+  }
+
+  /**
+   * @route   PUT /api/v1/organizations/:organizationId/invoice-templates/:templateId/set-default
+   * @desc    Set invoice template as default
+   * @access  Private (Admin, Manager)
+   */
+  async setDefaultInvoiceTemplate(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const { templateId } = req.params;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const template = await invoiceTemplateService.setDefaultTemplate(
+        templateId,
+        organizationId,
+        auditContext
+      );
+
+      res.json(successResponse('Template set as default successfully', {
+        template: {
+          id: template.id,
+          name: template.name,
+          isDefault: template.isDefault,
+          updatedAt: template.updatedAt
+        }
+      }));
+
+    } catch (error) {
+      logger.error('Failed to set default template:', error);
+      const statusCode = error instanceof Error && error.message.includes('not found') ? 404 : 500;
+      res.status(statusCode).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to set default template'
+      ));
+    }
+  }
+
+  /**
    * Helper: Delete previous PDFs for regeneration
    */
   private async deletePreviousPDFs(

@@ -21,7 +21,17 @@ export interface AuthenticatedRequest extends Request {}
 /**
  * Resource type for permission checking
  */
-export type ResourceType = 'customer' | 'quote' | 'invoice' | 'payment' | 'project' | 'appointment';
+export type ResourceType =
+  | 'customer'
+  | 'quote'
+  | 'invoice'
+  | 'payment'
+  | 'project'
+  | 'appointment'
+  | 'vendor'
+  | 'bill'
+  | 'purchaseOrder'
+  | 'inventory';
 
 /**
  * Middleware to check if user has access to a specific resource
@@ -150,6 +160,30 @@ async function getResource(
         select: { organizationId: true }
       });
 
+    case 'vendor':
+      return await prisma.vendor.findUnique({
+        where: { id: resourceId },
+        select: { organizationId: true }
+      });
+
+    case 'bill':
+      return await prisma.bill.findUnique({
+        where: { id: resourceId },
+        select: { organizationId: true }
+      });
+
+    case 'purchaseOrder':
+      return await prisma.purchaseOrder.findUnique({
+        where: { id: resourceId },
+        select: { organizationId: true }
+      });
+
+    case 'inventory':
+      return await prisma.inventoryItem.findUnique({
+        where: { id: resourceId },
+        select: { organizationId: true }
+      });
+
     default:
       return null;
   }
@@ -234,6 +268,13 @@ async function checkUserResourceAssignment(
         });
         return !!appointment;
 
+      case 'vendor':
+      case 'bill':
+      case 'purchaseOrder':
+      case 'inventory':
+        // These resources are internal only - VIEWER and CLIENT should not have access
+        return false;
+
       default:
         return false;
     }
@@ -298,10 +339,18 @@ export function checkResourceOwnership(
         return;
       }
 
-      // Others can only modify their own resources
-      if (resource.createdBy !== userId) {
+      // Others can only modify their own resources (if resource has createdBy)
+      if (resource.createdBy && resource.createdBy !== userId) {
         res.status(403).json({
           error: 'Access denied - you can only modify resources you created'
+        });
+        return;
+      }
+
+      // If resource doesn't have createdBy (like Vendor, InventoryItem), allow ACCOUNTANT+ to modify
+      if (!resource.createdBy && role !== UserRole.ACCOUNTANT) {
+        res.status(403).json({
+          error: 'Insufficient permissions'
         });
         return;
       }
@@ -320,42 +369,68 @@ export function checkResourceOwnership(
 async function getResourceWithCreator(
   resourceType: ResourceType,
   resourceId: string
-): Promise<{ organizationId: string; createdBy: string | null } | null> {
+): Promise<{ organizationId: string; createdBy?: string | null } | null> {
   switch (resourceType) {
     case 'customer':
       return await prisma.customer.findUnique({
         where: { id: resourceId },
         select: { organizationId: true, createdBy: true }
-      });
+      }) as any;
 
     case 'quote':
       return await prisma.quote.findUnique({
         where: { id: resourceId },
         select: { organizationId: true, createdBy: true }
-      });
+      }) as any;
 
     case 'invoice':
       return await prisma.invoice.findUnique({
         where: { id: resourceId },
         select: { organizationId: true, createdBy: true }
-      });
+      }) as any;
 
     case 'payment':
       return await prisma.payment.findUnique({
         where: { id: resourceId },
         select: { organizationId: true, createdBy: true }
-      });
+      }) as any;
 
     case 'project':
       return await prisma.project.findUnique({
         where: { id: resourceId },
         select: { organizationId: true, createdBy: true }
-      });
+      }) as any;
 
     case 'appointment':
       return await prisma.appointment.findUnique({
         where: { id: resourceId },
         select: { organizationId: true, createdBy: true }
+      }) as any;
+
+    case 'vendor':
+      // Vendor doesn't have createdBy field
+      return await prisma.vendor.findUnique({
+        where: { id: resourceId },
+        select: { organizationId: true }
+      });
+
+    case 'bill':
+      return await prisma.bill.findUnique({
+        where: { id: resourceId },
+        select: { organizationId: true, createdBy: true }
+      }) as any;
+
+    case 'purchaseOrder':
+      return await prisma.purchaseOrder.findUnique({
+        where: { id: resourceId },
+        select: { organizationId: true, createdBy: true }
+      }) as any;
+
+    case 'inventory':
+      // InventoryItem doesn't have createdBy field
+      return await prisma.inventoryItem.findUnique({
+        where: { id: resourceId },
+        select: { organizationId: true }
       });
 
     default:

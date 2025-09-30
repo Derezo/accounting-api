@@ -1,0 +1,70 @@
+<h1>New Appointment Booked</h1>
+
+<p>A new appointment has been booked through the public booking system.</p>
+
+<div class="info-box">
+    <h3>Appointment Details</h3>
+    <p><strong>Appointment ID:</strong> {{appointmentId}}</p>
+    <p><strong>Title:</strong> {{appointmentTitle}}</p>
+    <p><strong>Date & Time:</strong> {{formatDate startTime "long"}} at {{formatDate startTime "time"}}</p>
+    <p><strong>Duration:</strong> {{duration}} minutes</p>
+    <p><strong>Quote Number:</strong> {{quoteNumber}}</p>
+</div>
+
+<div class="info-box" style="background-color: #dbeafe; border-left-color: #3b82f6;">
+    <h3>Customer Information</h3>
+    <p><strong>Name:</strong> {{customerName}}</p>
+    <p><strong>Email:</strong> {{customerEmail}}</p>
+    {{#if customerPhone}}
+    <p><strong>Phone:</strong> {{customerPhone}}</p>
+    {{/if}}
+</div>
+
+{{#if meetingLink}}
+<div class="info-box">
+    <h3>Meeting Details</h3>
+    {{#if hasGoogleMeet}}
+    <p>Google Meet link has been created and sent to the customer.</p>
+    {{else}}
+    <p>Meeting link (fallback):</p>
+    {{/if}}
+    <p style="margin-top: 8px;">
+        <a href="{{meetingLink}}" style="color: #3b82f6; word-break: break-all;">{{meetingLink}}</a>
+    </p>
+    {{#if hasGoogleMeet}}
+    <p style="font-size: 14px; color: #6b7280;">
+        Meeting ID: {{meetingId}}
+    </p>
+    {{/if}}
+</div>
+{{/if}}
+
+{{#if appointmentDescription}}
+<div class="info-box">
+    <h3>Appointment Description</h3>
+    <p>{{appointmentDescription}}</p>
+</div>
+{{/if}}
+
+<h2>Action Required</h2>
+<ul>
+    <li>Review the customer's quote details</li>
+    <li>Prepare necessary documents and materials for the meeting</li>
+    <li>Add this appointment to your personal calendar</li>
+    <li>Ensure you're available at the scheduled time</li>
+</ul>
+
+{{> button text="View in Dashboard" url=dashboardUrl}}
+
+<div class="info-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
+    <h3>Reminder</h3>
+    <p>
+        Please join the meeting 5 minutes early to ensure everything is set up properly.
+        The customer has been sent a confirmation email with all the details.
+    </p>
+</div>
+
+<p>
+    Best regards,<br>
+    <strong>{{organizationName}} Booking System</strong>
+</p>

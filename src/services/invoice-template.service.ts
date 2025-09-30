@@ -587,6 +587,115 @@ export class InvoiceTemplateService {
   }
 
   /**
+   * Duplicate template
+   */
+  async duplicateTemplate(
+    id: string,
+    organizationId: string,
+    newName?: string,
+    auditContext?: { userId: string; ipAddress?: string; userAgent?: string }
+  ): Promise<InvoiceTemplate> {
+    const sourceTemplate = await prisma.invoiceTemplate.findFirst({
+      where: { id, organizationId, deletedAt: null }
+    });
+
+    if (!sourceTemplate) {
+      throw new Error('Template not found');
+    }
+
+    // Generate unique name
+    const baseName = newName || `${sourceTemplate.name} (Copy)`;
+    let uniqueName = baseName;
+    let counter = 1;
+
+    // Check for name conflicts
+    while (await prisma.invoiceTemplate.findFirst({
+      where: { organizationId, name: uniqueName, deletedAt: null }
+    })) {
+      uniqueName = `${baseName} ${counter}`;
+      counter++;
+    }
+
+    // Create duplicate
+    const duplicatedTemplate = await prisma.invoiceTemplate.create({
+      data: {
+        organizationId,
+        name: uniqueName,
+        description: sourceTemplate.description ? `${sourceTemplate.description} (Copy)` : undefined,
+        templateType: sourceTemplate.templateType,
+        htmlTemplate: sourceTemplate.htmlTemplate,
+        isDefault: false, // Never duplicate as default
+        isSystem: false, // Duplicates are always custom
+        version: '1.0',
+        tags: sourceTemplate.tags
+      }
+    });
+
+    if (auditContext) {
+      await auditService.logCreate(
+        'InvoiceTemplate',
+        duplicatedTemplate.id,
+        {
+          ...duplicatedTemplate,
+          sourceTemplateId: id
+        },
+        {
+          organizationId,
+          userId: auditContext.userId,
+          ipAddress: auditContext.ipAddress,
+          userAgent: auditContext.userAgent
+        }
+      );
+    }
+
+    return duplicatedTemplate;
+  }
+
+  /**
+   * Set template as default
+   */
+  async setDefaultTemplate(
+    id: string,
+    organizationId: string,
+    auditContext: { userId: string; ipAddress?: string; userAgent?: string }
+  ): Promise<InvoiceTemplate> {
+    const template = await prisma.invoiceTemplate.findFirst({
+      where: { id, organizationId, deletedAt: null }
+    });
+
+    if (!template) {
+      throw new Error('Template not found');
+    }
+
+    // Unset all other defaults
+    await prisma.invoiceTemplate.updateMany({
+      where: { organizationId, isDefault: true, id: { not: id } },
+      data: { isDefault: false }
+    });
+
+    // Set this template as default
+    const updatedTemplate = await prisma.invoiceTemplate.update({
+      where: { id },
+      data: { isDefault: true, updatedAt: new Date() }
+    });
+
+    await auditService.logUpdate(
+      'InvoiceTemplate',
+      id,
+      template,
+      updatedTemplate,
+      {
+        organizationId,
+        userId: auditContext.userId,
+        ipAddress: auditContext.ipAddress,
+        userAgent: auditContext.userAgent
+      }
+    );
+
+    return updatedTemplate;
+  }
+
+  /**
    * Delete style (soft delete)
    */
   async deleteStyle(

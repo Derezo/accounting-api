@@ -181,7 +181,7 @@ export function sendInternalError(
 /**
  * Send standardized empty list response
  */
-export function sendEmptyList<T>(
+export function sendEmptyList(
   res: Response,
   listName: string,
   pagination?: PaginationMeta

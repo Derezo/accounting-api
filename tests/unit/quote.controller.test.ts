@@ -72,36 +72,30 @@ const mockValidationResult = (hasErrors = false, errors: any[] = []) => {
   });
 };
 
-jest.mock('express-validator', () => ({
-  validationResult: jest.fn(),
-  body: jest.fn(() => ({
-    notEmpty: jest.fn(() => ({
-      withMessage: jest.fn(() => ({
-        trim: jest.fn(() => ({}))
-      }))
-    })),
-    optional: jest.fn(() => ({
-      isISO8601: jest.fn(() => ({})),
-      trim: jest.fn(() => ({})),
-      isFloat: jest.fn(() => ({
-        withMessage: jest.fn(() => ({}))
-      }))
-    })),
-    isArray: jest.fn(() => ({
-      withMessage: jest.fn(() => ({}))
-    })),
-    isIn: jest.fn(() => ({}))
-  })),
-  query: jest.fn(() => ({
-    optional: jest.fn(() => ({
-      isString: jest.fn(() => ({})),
-      isIn: jest.fn(() => ({})),
-      trim: jest.fn(() => ({})),
-      isISO8601: jest.fn(() => ({})),
-      isInt: jest.fn(() => ({}))
-    }))
-  }))
-}));
+jest.mock('express-validator', () => {
+  // Create a mock chain that supports all validator methods
+  const createMockChain = (): any => {
+    const chain: any = {
+      notEmpty: jest.fn(() => chain),
+      trim: jest.fn(() => chain),
+      withMessage: jest.fn(() => chain),
+      optional: jest.fn(() => chain),
+      isISO8601: jest.fn(() => chain),
+      isFloat: jest.fn(() => chain),
+      isArray: jest.fn(() => chain),
+      isIn: jest.fn(() => chain),
+      isString: jest.fn(() => chain),
+      isInt: jest.fn(() => chain)
+    };
+    return chain;
+  };
+
+  return {
+    validationResult: jest.fn(),
+    body: jest.fn(() => createMockChain()),
+    query: jest.fn(() => createMockChain())
+  };
+});
 
 describe('Quote Controller', () => {
   let mockQuoteService: jest.Mocked<typeof quoteService>;

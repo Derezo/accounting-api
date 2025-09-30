@@ -1,0 +1,85 @@
+<h1>🔔 New Service Request Received</h1>
+
+<p>
+    A new {{capitalize profileType}} customer has submitted a {{capitalize serviceCategory}} service request.
+</p>
+
+{{#if_eq urgency "EMERGENCY"}}
+<div class="info-box" style="background-color: #fee2e2; border-left-color: #dc2626;">
+    <h3>⚠️ EMERGENCY REQUEST</h3>
+    <p style="color: #991b1b; font-weight: 600;">
+        This is marked as an emergency. Please respond immediately!
+    </p>
+</div>
+{{/if_eq}}
+
+<div class="info-box">
+    <h3>Customer Information</h3>
+    <p><strong>Name:</strong> {{customerName}}</p>
+    <p><strong>Email:</strong> <a href="mailto:{{customerEmail}}">{{customerEmail}}</a></p>
+    <p><strong>Phone:</strong> <a href="tel:{{customerPhone}}">{{customerPhone}}</a></p>
+    {{#if businessName}}
+    <p><strong>Business:</strong> {{businessName}}</p>
+    {{/if}}
+    <p><strong>Profile Type:</strong> {{capitalize profileType}}</p>
+</div>
+
+{{#if customerAddress}}
+<div class="info-box">
+    <h3>Service Location</h3>
+    <p>
+        {{customerAddress.street}}<br>
+        {{customerAddress.city}}, {{customerAddress.state}} {{customerAddress.postalCode}}
+    </p>
+</div>
+{{/if}}
+
+<div class="info-box">
+    <h3>Service Request Details</h3>
+    <p><strong>Reference:</strong> {{referenceNumber}}</p>
+    <p><strong>Category:</strong> {{capitalize serviceCategory}}</p>
+    <p><strong>Type:</strong> {{capitalize serviceType}}</p>
+    <p><strong>Urgency:</strong> {{capitalize urgency}}</p>
+    {{#if estimatedBudget}}
+    <p><strong>Budget:</strong> {{estimatedBudget}}</p>
+    {{/if}}
+    <p><strong>Submitted:</strong> {{formatDate submittedAt "long"}} at {{formatDate submittedAt "time"}}</p>
+</div>
+
+{{#if description}}
+<div class="info-box">
+    <h3>Customer's Description</h3>
+    <p>{{description}}</p>
+</div>
+{{/if}}
+
+{{#if additionalNotes}}
+<div class="info-box">
+    <h3>Additional Notes</h3>
+    <p>{{additionalNotes}}</p>
+</div>
+{{/if}}
+
+{{#if customFields}}
+<div class="info-box">
+    <h3>Additional Information</h3>
+    {{#each customFields}}
+    <p><strong>{{@key}}:</strong> {{this}}</p>
+    {{/each}}
+</div>
+{{/if}}
+
+<h2>Quick Actions</h2>
+
+{{> button text="View in Dashboard" url=dashboardUrl}}
+
+<div style="margin-top: 20px;">
+    <a href="tel:{{customerPhone}}" style="color: #2563eb; text-decoration: none; margin-right: 20px;">📞 Call Customer</a>
+    <a href="mailto:{{customerEmail}}" style="color: #2563eb; text-decoration: none;">📧 Email Customer</a>
+</div>
+
+<div class="divider"></div>
+
+<p style="font-size: 14px; color: #6b7280;">
+    <strong>Response Time:</strong> Please respond within 24 hours to maintain our service standards.
+</p>

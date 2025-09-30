@@ -1,0 +1,56 @@
+<h1>Reminder: Your Appointment is Tomorrow</h1>
+
+<p>Hi {{customerName}},</p>
+
+<p>
+    This is a friendly reminder that you have an appointment scheduled with us tomorrow.
+</p>
+
+<div class="info-box" style="background-color: #dbeafe; border-left-color: #3b82f6;">
+    <h3>Appointment Details</h3>
+    <p><strong>Date & Time:</strong> {{formatDate startTime "long"}} at {{formatDate startTime "time"}}</p>
+    <p><strong>Duration:</strong> {{duration}} minutes</p>
+    <p><strong>Title:</strong> {{appointmentTitle}}</p>
+</div>
+
+{{#if meetingLink}}
+<div class="info-box">
+    <h3>Join Meeting</h3>
+    <p>
+        You can join the meeting using the link below. We recommend joining 5 minutes early to test your connection.
+    </p>
+    {{> button text="Join Meeting" url=meetingLink}}
+    <p style="font-size: 14px; color: #6b7280; margin-top: 16px;">
+        <strong>Meeting Link:</strong><br>
+        <a href="{{meetingLink}}" style="color: #3b82f6; word-break: break-all;">{{meetingLink}}</a>
+    </p>
+</div>
+{{/if}}
+
+<h2>Preparation Checklist</h2>
+<ul>
+    <li>Review your quote details before the meeting</li>
+    <li>Prepare any questions you have for our team</li>
+    <li>Ensure your device and internet connection are working properly</li>
+    <li>Have a quiet space ready for the meeting</li>
+</ul>
+
+<div class="info-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
+    <h3>Need to Reschedule?</h3>
+    <p>
+        If you need to reschedule or cancel, please contact us as soon as possible:
+        <br>
+        Phone: <strong>{{organizationPhone}}</strong>
+        <br>
+        Email: <strong>{{organizationEmail}}</strong>
+    </p>
+</div>
+
+<p>
+    We're looking forward to meeting with you!
+</p>
+
+<p>
+    Best regards,<br>
+    <strong>The {{organizationName}} Team</strong>
+</p>

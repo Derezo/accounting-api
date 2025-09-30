@@ -127,8 +127,9 @@ describe('QuoteService', () => {
       );
 
       expect(quote.items).toHaveLength(1);
-      expect(quote.items[0]?.discountPercent).toBe(10);
-      expect(quote.items[0]?.taxRate).toBe(10);
+      // Database returns string values
+      expect(Number(quote.items[0]?.discountPercent)).toBe(10);
+      expect(Number(quote.items[0]?.taxRate)).toBe(10);
     });
 
     it('should generate unique quote numbers', async () => {
@@ -551,7 +552,8 @@ describe('QuoteService', () => {
       expect(duplicatedQuote.description).toBe('Original Quote - Original description (Copy)');
       expect(duplicatedQuote.status).toBe(QuoteStatus.DRAFT);
       expect(duplicatedQuote.items).toHaveLength(2);
-      expect(duplicatedQuote.total).toBe(testQuote.total);
+      // Compare totals as numbers
+      expect(Number(duplicatedQuote.total)).toBe(Number(testQuote.total));
     });
 
     it('should call audit service', async () => {

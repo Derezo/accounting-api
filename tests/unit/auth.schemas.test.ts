@@ -98,9 +98,9 @@ describe('Auth Schemas Validation', () => {
         '12345678', // No letters, special char
         'Password', // No number, special char
         'Password123', // No special char
-        'Password!', // Too short
+        'Short1!', // Too short (7 chars)
         '', // Empty
-        'Pass123!', // Too short (7 chars)
+        'Pass12!', // Too short (7 chars)
       ];
 
       invalidPasswords.forEach(password => {

@@ -20,7 +20,9 @@ export const validateRegister = [
       /onload=/i,
       /onerror=/i,
       /data:text\/html/i,
+      // eslint-disable-next-line no-control-regex
       /\x00/,  // null bytes
+      // eslint-disable-next-line no-control-regex
       /\x1a/   // control characters
     ];
 
@@ -55,7 +57,9 @@ export const validateLogin = [
       /onload=/i,
       /onerror=/i,
       /data:text\/html/i,
+      // eslint-disable-next-line no-control-regex
       /\x00/,  // null bytes
+      // eslint-disable-next-line no-control-regex
       /\x1a/   // control characters
     ];
 
@@ -86,7 +90,9 @@ export const validateChangePassword = [
       /onload=/i,
       /onerror=/i,
       /data:text\/html/i,
+      // eslint-disable-next-line no-control-regex
       /\x00/,  // null bytes
+      // eslint-disable-next-line no-control-regex
       /\x1a/   // control characters
     ];
 
@@ -113,7 +119,9 @@ export const validateChangePassword = [
       /onload=/i,
       /onerror=/i,
       /data:text\/html/i,
+      // eslint-disable-next-line no-control-regex
       /\x00/,  // null bytes
+      // eslint-disable-next-line no-control-regex
       /\x1a/   // control characters
     ];
 
@@ -144,7 +152,9 @@ export const validateResetPassword = [
       /onload=/i,
       /onerror=/i,
       /data:text\/html/i,
+      // eslint-disable-next-line no-control-regex
       /\x00/,  // null bytes
+      // eslint-disable-next-line no-control-regex
       /\x1a/   // control characters
     ];
 
@@ -176,7 +186,8 @@ export class AuthController {
           email: result.user.email,
           firstName: result.user.firstName,
           lastName: result.user.lastName,
-          role: result.user.role
+          role: result.user.role,
+          organizationId: result.user.organizationId
         },
         organization: {
           id: result.organization.id,
@@ -210,7 +221,8 @@ export class AuthController {
           email: result.user.email,
           firstName: result.user.firstName,
           lastName: result.user.lastName,
-          role: result.user.role
+          role: result.user.role,
+          organizationId: result.user.organizationId
         },
         tokens: result.tokens
       });

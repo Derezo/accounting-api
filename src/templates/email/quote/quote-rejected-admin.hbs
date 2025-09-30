@@ -1,0 +1,50 @@
+<h1>Quote Declined</h1>
+
+<p>
+    {{customerName}} has declined quote #{{quoteNumber}}.
+</p>
+
+<div class="info-box" style="background-color: #fee2e2; border-left-color: #dc2626;">
+    <h3>❌ Quote Rejected</h3>
+    <p style="color: #991b1b;">
+        The customer has decided not to proceed at this time.
+    </p>
+</div>
+
+<div class="info-box">
+    <h3>Quote Details</h3>
+    <p><strong>Quote Number:</strong> {{quoteNumber}}</p>
+    <p><strong>Total Amount:</strong> {{formatCurrency quoteTotal "CAD"}}</p>
+    <p><strong>Customer:</strong> {{customerName}}</p>
+    <p><strong>Email:</strong> <a href="mailto:{{customerEmail}}">{{customerEmail}}</a></p>
+</div>
+
+{{#if rejectionReason}}
+<div class="info-box">
+    <h3>Rejection Reason</h3>
+    <p>{{rejectionReason}}</p>
+</div>
+{{/if}}
+
+<h2>Recommended Follow-Up Actions</h2>
+<ul>
+    <li><strong>Review the quote</strong> to understand if pricing or scope was a concern</li>
+    <li><strong>Reach out to the customer</strong> to understand their decision better</li>
+    <li><strong>Offer to revise the quote</strong> if there are concerns you can address</li>
+    <li><strong>Keep them in your pipeline</strong> for future opportunities</li>
+    <li><strong>Request feedback</strong> to improve future quotes</li>
+</ul>
+
+<h2>Quick Actions</h2>
+
+{{> button text="View Quote in Dashboard" url=dashboardUrl}}
+
+<div style="margin-top: 20px;">
+    <a href="mailto:{{customerEmail}}" style="color: #2563eb; text-decoration: none; margin-right: 20px;">📧 Email Customer</a>
+</div>
+
+<div class="divider"></div>
+
+<p style="font-size: 14px; color: #6b7280;">
+    <strong>Tip:</strong> A polite follow-up email can help you understand the customer's concerns and potentially save the deal.
+</p>

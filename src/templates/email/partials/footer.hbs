@@ -1,0 +1,31 @@
+<p style="margin: 0 0 10px 0;">
+    <strong>{{organizationName}}</strong>
+</p>
+
+{{#if organizationAddress}}
+<p style="margin: 0 0 5px 0;">
+    {{organizationAddress}}
+</p>
+{{/if}}
+
+{{#if organizationPhone}}
+<p style="margin: 0 0 5px 0;">
+    Phone: <a href="tel:{{organizationPhone}}" style="color: #2563eb; text-decoration: none;">{{organizationPhone}}</a>
+</p>
+{{/if}}
+
+{{#if organizationEmail}}
+<p style="margin: 0 0 15px 0;">
+    Email: <a href="mailto:{{organizationEmail}}" style="color: #2563eb; text-decoration: none;">{{organizationEmail}}</a>
+</p>
+{{/if}}
+
+<div class="divider" style="border-top: 1px solid #e5e7eb; margin: 20px 0;"></div>
+
+<p style="margin: 0 0 5px 0; font-size: 12px;">
+    This is an automated message from {{organizationName}}
+</p>
+
+<p style="margin: 0; font-size: 12px;">
+    &copy; {{currentYear}} {{organizationName}}. All rights reserved.
+</p>

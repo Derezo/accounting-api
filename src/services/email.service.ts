@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { config } from '../config/config';
 import { ETransferNotificationData } from './etransfer.service';
 
@@ -9,27 +9,19 @@ export interface EmailTemplate {
 }
 
 export class EmailService {
-  private transporter: nodemailer.Transporter | null = null;
+  private resend: Resend | null = null;
 
   constructor() {
-    this.initializeTransporter();
+    this.initializeResend();
   }
 
-  private initializeTransporter(): void {
-    if (!config.SMTP_HOST || !config.SMTP_USER || !config.SMTP_PASSWORD) {
-      console.warn('Email service not configured - SMTP settings missing');
+  private initializeResend(): void {
+    if (!config.RESEND_API_KEY) {
+      console.warn('Email service not configured - RESEND_API_KEY missing');
       return;
     }
 
-    this.transporter = nodemailer.createTransport({
-      host: config.SMTP_HOST,
-      port: config.SMTP_PORT,
-      secure: config.SMTP_PORT === 465,
-      auth: {
-        user: config.SMTP_USER,
-        pass: config.SMTP_PASSWORD
-      }
-    });
+    this.resend = new Resend(config.RESEND_API_KEY);
   }
 
   async sendEmail(
@@ -39,21 +31,21 @@ export class EmailService {
     text?: string,
     attachments?: any[]
   ): Promise<void> {
-    if (!this.transporter) {
+    if (!this.resend) {
       throw new Error('Email service not configured');
     }
 
-    const mailOptions = {
-      from: config.EMAIL_FROM || config.SMTP_USER,
-      to: Array.isArray(to) ? to.join(', ') : to,
-      subject,
-      html,
-      text: text || this.htmlToText(html),
-      attachments
-    };
+    const from = config.EMAIL_FROM || 'Lifestream Dynamics <noreply@lifestreamdynamics.com>';
 
     try {
-      await this.transporter.sendMail(mailOptions);
+      await this.resend.emails.send({
+        from,
+        to: Array.isArray(to) ? to : [to],
+        subject,
+        html,
+        text: text || this.htmlToText(html),
+        attachments
+      });
     } catch (error) {
       console.error('Failed to send email:', error);
       throw new Error('Failed to send email notification');
@@ -509,12 +501,12 @@ If you have already made this payment, please disregard this notice.
   }
 
   async testConnection(): Promise<boolean> {
-    if (!this.transporter) {
+    if (!this.resend) {
       return false;
     }
 
     try {
-      await this.transporter.verify();
+      // Resend doesn't have a verify method, so we just check if it's initialized
       return true;
     } catch (error) {
       console.error('Email service test failed:', error);

@@ -120,7 +120,7 @@ describe('Document Validator', () => {
 
       mockRequest.body = {
         category: DocumentCategory.INVOICE,
-        tags: 'single-tag'
+        tags: ['single-tag']
       };
 
       validateDocumentUpload(mockRequest as Request, mockResponse as Response, nextFunction);
@@ -143,8 +143,13 @@ describe('Document Validator', () => {
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
-        error: 'Validation error',
-        message: 'Invalid request data'
+        error: 'Validation failed',
+        details: expect.arrayContaining([
+          expect.objectContaining({
+            field: 'body',
+            message: expect.stringContaining('Expected object')
+          })
+        ])
       });
       expect(nextFunction).not.toHaveBeenCalled();
     });
@@ -279,8 +284,8 @@ describe('Document Validator', () => {
         error: 'Validation failed',
         details: expect.arrayContaining([
           expect.objectContaining({
-            field: expect.stringContaining('limit'),
-            message: expect.stringContaining('too small')
+            field: 'query.limit',
+            message: expect.stringContaining('greater than or equal to 1')
           })
         ])
       });
@@ -295,6 +300,11 @@ describe('Document Validator', () => {
       validateDocumentFilters(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: 'Validation failed'
+        })
+      );
       expect(nextFunction).not.toHaveBeenCalled();
     });
 
@@ -306,6 +316,11 @@ describe('Document Validator', () => {
       validateDocumentFilters(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: 'Validation failed'
+        })
+      );
       expect(nextFunction).not.toHaveBeenCalled();
     });
   });
@@ -336,7 +351,7 @@ describe('Document Validator', () => {
         details: expect.arrayContaining([
           expect.objectContaining({
             field: 'body.entityType',
-            message: 'Entity type is required'
+            message: expect.stringContaining('Required')
           })
         ])
       });
@@ -377,7 +392,7 @@ describe('Document Validator', () => {
         details: expect.arrayContaining([
           expect.objectContaining({
             field: 'body.entityId',
-            message: 'Entity ID is required'
+            message: expect.stringContaining('Required')
           })
         ])
       });

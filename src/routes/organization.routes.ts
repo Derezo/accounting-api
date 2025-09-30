@@ -8,6 +8,7 @@ import {
 } from '../controllers/organization.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { auditMiddleware } from '../middleware/audit.middleware';
+import { requireMasterOrgSuperAdmin, requireSameOrgOrMasterAdmin } from '../middleware/master-org.middleware';
 import { UserRole } from '../types/enums';
 
 const router = Router();
@@ -125,7 +126,7 @@ const audit = auditMiddleware('Organization');
  */
 router.get(
   '/',
-  authorize(UserRole.SUPER_ADMIN),
+  requireMasterOrgSuperAdmin,  // ← Enhanced: Master org only
   validateListOrganizations,
   audit.view,
   (req: Request, res: Response) => organizationController.listOrganizations(req as any, res)
@@ -250,7 +251,7 @@ router.get(
  */
 router.post(
   '/',
-  authorize(UserRole.SUPER_ADMIN),
+  requireMasterOrgSuperAdmin,  // ← Enhanced: Master org only + domain verification
   validateCreateOrganization,
   audit.create,
   (req: Request, res: Response) => organizationController.createOrganization(req as any, res)
@@ -356,6 +357,7 @@ router.post(
  */
 router.get(
   '/:id',
+  requireSameOrgOrMasterAdmin,  // ← Enhanced: Same org or master admin
   audit.view,
   (req: Request, res: Response) => organizationController.getOrganization(req as any, res)
 );
@@ -520,7 +522,7 @@ router.put(
  */
 router.delete(
   '/:id',
-  authorize(UserRole.SUPER_ADMIN),
+  requireMasterOrgSuperAdmin,  // ← Enhanced: Master org only
   audit.delete,
   (req: Request, res: Response) => organizationController.deactivateOrganization(req as any, res)
 );

@@ -118,7 +118,8 @@ describe('AuthController', () => {
           email: mockUser.email,
           firstName: mockUser.firstName,
           lastName: mockUser.lastName,
-          role: mockUser.role
+          role: mockUser.role,
+          organizationId: mockUser.organizationId
         },
         organization: {
           id: mockOrganization.id,
@@ -201,7 +202,8 @@ describe('AuthController', () => {
           email: mockUser.email,
           firstName: mockUser.firstName,
           lastName: mockUser.lastName,
-          role: mockUser.role
+          role: mockUser.role,
+          organizationId: mockUser.organizationId
         },
         tokens: mockTokens
       });

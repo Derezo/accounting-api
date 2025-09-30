@@ -1,0 +1,46 @@
+<h1>Appointment Cancelled</h1>
+
+<p>Hi {{customerName}},</p>
+
+<p>
+    This is to confirm that your appointment has been cancelled.
+</p>
+
+<div class="info-box">
+    <h3>Cancelled Appointment Details</h3>
+    <p><strong>Title:</strong> {{appointmentTitle}}</p>
+    <p><strong>Original Date & Time:</strong> {{formatDate startTime "long"}} at {{formatDate startTime "time"}}</p>
+</div>
+
+{{#if cancellationReason}}
+<div class="info-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
+    <h3>Cancellation Reason</h3>
+    <p>{{cancellationReason}}</p>
+</div>
+{{/if}}
+
+<h2>What's Next?</h2>
+<p>
+    If you'd like to reschedule or book a new appointment, please contact us:
+    <br><br>
+    Phone: <strong>{{organizationPhone}}</strong>
+    <br>
+    Email: <strong>{{organizationEmail}}</strong>
+</p>
+
+<p>
+    We understand that schedules change. We're here whenever you're ready to move forward with your project.
+</p>
+
+<div class="info-box" style="background-color: #dbeafe; border-left-color: #3b82f6;">
+    <h3>Questions?</h3>
+    <p>
+        If you have any questions about this cancellation or need assistance with anything else,
+        please don't hesitate to reach out to us.
+    </p>
+</div>
+
+<p>
+    Best regards,<br>
+    <strong>The {{organizationName}} Team</strong>
+</p>

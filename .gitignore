@@ -11,10 +11,14 @@ dist/
 build/
 *.tsbuildinfo
 
-# Environment files
+# Environment files (SENSITIVE)
 .env
 .env.local
 .env.*.local
+.env.production
+.env.staging
+.env.test
+*.env
 
 # IDE
 .vscode/
@@ -28,6 +32,9 @@ build/
 coverage/
 *.lcov
 .nyc_output/
+test-results/
+junit.xml
+**/jest-html-reporters-attach/
 
 # Logs
 logs/
@@ -52,12 +59,33 @@ Desktop.ini
 docs/_build/
 api-docs/
 
-# Certificates and keys
+# Certificates and keys (SENSITIVE)
 *.pem
 *.key
 *.crt
 *.p12
+google-credentials.json
+service-account-key.json
+oauth-credentials.json
+*.secret
 
 # Backup files
 *.backup
 *.bak
+*.old
+*.orig
+
+# Uploads and user content
+uploads/
+temp-uploads/
+user-files/
+
+# Email template cache
+.template-cache/
+
+# Session data
+sessions/
+
+# Database backups
+*.sql
+*.dump

@@ -8,6 +8,7 @@ const configSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.string().default('3000').transform(Number),
   API_VERSION: z.string().default('v1'),
+  FRONTEND_URL: z.string().default('https://account.lifestreamdynamics.com'),
 
   // Database
   DATABASE_URL: z.string(),
@@ -29,12 +30,11 @@ const configSchema = z.object({
   STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
 
-  // Email
-  SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.string().default('587').transform(Number),
-  SMTP_USER: z.string().optional(),
-  SMTP_PASSWORD: z.string().optional(),
-  EMAIL_FROM: z.string().email().optional(),
+  // Email (Resend)
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
+  ORGANIZATION_EMAIL: z.string().default('info@lifestreamdynamics.com'),
+  ORGANIZATION_PHONE: z.string().default('+1-800-555-0123'),
 
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: z.string().default('900000').transform(Number),

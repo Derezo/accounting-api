@@ -123,15 +123,15 @@ export const codeSchema = z
   .string()
   .min(1, 'Code is required')
   .max(50, 'Code must not exceed 50 characters')
-  .regex(/^[A-Z0-9_\-]+$/, 'Code can only contain uppercase letters, numbers, underscores, and hyphens')
-  .transform(val => val.toUpperCase().trim());
+  .transform(val => val.toUpperCase().trim())
+  .pipe(z.string().regex(/^[A-Z0-9_\-]+$/, 'Code can only contain uppercase letters, numbers, underscores, and hyphens'));
 
 export const slugSchema = z
   .string()
   .min(1, 'Slug is required')
   .max(100, 'Slug must not exceed 100 characters')
-  .regex(/^[a-z0-9\-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens')
-  .transform(val => val.toLowerCase().trim());
+  .transform(val => val.toLowerCase().trim())
+  .pipe(z.string().regex(/^[a-z0-9\-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens'));
 
 // Currency and country schemas
 export const currencyCodeSchema = z

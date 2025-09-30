@@ -808,9 +808,18 @@ describe('Payment Controller', () => {
 
       expect(mockPaymentService.listPayments).toHaveBeenCalledWith(
         'org-123',
-        {},
+        {
+          customerId: undefined,
+          invoiceId: undefined,
+          status: undefined,
+          paymentMethod: undefined,
+          startDate: undefined,
+          endDate: undefined,
+          minAmount: undefined,
+          maxAmount: undefined
+        },
         1,
-        50
+        10
       );
 
       expect(res.json).toHaveBeenCalledWith(mockPaymentsList);
@@ -864,7 +873,7 @@ describe('Payment Controller', () => {
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
-        error: 'Failed to list payments',
+        error: 'Failed to retrieve payments',
         message: 'Database connection failed'
       });
     });

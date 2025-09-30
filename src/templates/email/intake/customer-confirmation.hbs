@@ -1,0 +1,56 @@
+<h1>Thank You for Your Request!</h1>
+
+<p>Hi {{customerFirstName}},</p>
+
+<p>
+    We've received your {{serviceCategory}} service request and our team is reviewing it now.
+    You'll hear from us within <strong>24 hours</strong> with a detailed quote.
+</p>
+
+<div class="info-box">
+    <h3>Your Request Summary</h3>
+    <p><strong>Reference Number:</strong> {{referenceNumber}}</p>
+    <p><strong>Service Type:</strong> {{capitalize serviceCategory}}</p>
+    <p><strong>Service Needed:</strong> {{capitalize serviceType}}</p>
+    {{#if urgency}}
+    <p><strong>Urgency:</strong> {{capitalize urgency}}</p>
+    {{/if}}
+    <p><strong>Submitted:</strong> {{formatDate submittedAt "long"}}</p>
+</div>
+
+{{#if description}}
+<h2>Service Details</h2>
+<p>{{description}}</p>
+{{/if}}
+
+<h2>What Happens Next?</h2>
+<ul>
+    <li><strong>Step 1:</strong> Our team reviews your request (within 2 hours)</li>
+    <li><strong>Step 2:</strong> We prepare a detailed quote with pricing (within 24 hours)</li>
+    <li><strong>Step 3:</strong> You receive an email with your quote and acceptance link</li>
+    <li><strong>Step 4:</strong> Once accepted, you can schedule your appointment online</li>
+</ul>
+
+<div class="info-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
+    <h3>Need Immediate Assistance?</h3>
+    <p>
+        {{#if_eq urgency "EMERGENCY"}}
+        For emergency services, please call us directly at <strong>{{organizationPhone}}</strong>
+        {{else}}
+        If you have questions, feel free to reach out:
+        <br>
+        Phone: <strong>{{organizationPhone}}</strong>
+        <br>
+        Email: <strong>{{organizationEmail}}</strong>
+        {{/if_eq}}
+    </p>
+</div>
+
+<p>
+    We appreciate your business and look forward to serving you!
+</p>
+
+<p>
+    Best regards,<br>
+    <strong>The {{organizationName}} Team</strong>
+</p>

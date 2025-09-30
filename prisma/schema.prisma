@@ -10,1080 +10,1209 @@ datasource db {
 // ==================== MULTI-TENANT CORE ====================
 
 model Organization {
-  id               String           @id @default(cuid())
-  name             String
-  legalName        String?
-  domain           String?          @unique
-  type             String           @default("SINGLE_BUSINESS") // OrganizationType
-  subscriptionId   String?
-  isActive         Boolean          @default(true)
-  settings         String?          // JSON stored as string
-  encryptionKey    String           // Organization-specific encryption
-  businessNumber   String?
-  taxNumber        String?
+  id             String  @id @default(cuid())
+  name           String
+  legalName      String?
+  domain         String? @unique
+  type           String  @default("SINGLE_BUSINESS") // OrganizationType
+  subscriptionId String?
+  isActive       Boolean @default(true)
+  settings       String? // JSON stored as string
+  encryptionKey  String // Organization-specific encryption
+  businessNumber String?
+  taxNumber      String?
+
+  // Master Organization (for lifestreamdynamics.com)
+  isMasterOrg      Boolean   @default(false)
+  domainVerified   Boolean   @default(false)
+  domainVerifiedAt DateTime?
 
   // Contact Information
-  email            String
-  phone            String
-  website          String?
+  email   String
+  phone   String
+  website String?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  users            User[]
-  persons          Person[]
-  businesses       Business[]
-  customers        Customer[]
-  vendors          Vendor[]
-  employees        Employee[]
-  contractors      Contractor[]
-  locations        Location[]
-  products         Product[]
-  services         Service[]
-  accounts         Account[]
-  quotes           Quote[]
-  invoices         Invoice[]
-  payments         Payment[]
-  expenses         Expense[]
-  projects         Project[]
-  appointments     Appointment[]
-  addresses        Address[]
-  documents        Document[]
-  auditLogs        AuditLog[]
-  apiKeys          ApiKey[]
-  taxRecords       TaxRecord[]
-  bankAccounts     BankAccount[]
-  bankTransactions BankTransaction[]
-  securityEvents   SecurityEvent[]
-  recurringInvoices RecurringInvoice[]
+  users                  User[]
+  persons                Person[]
+  businesses             Business[]
+  customers              Customer[]
+  vendors                Vendor[]
+  employees              Employee[]
+  contractors            Contractor[]
+  locations              Location[]
+  products               Product[]
+  services               Service[]
+  accounts               Account[]
+  quotes                 Quote[]
+  invoices               Invoice[]
+  payments               Payment[]
+  expenses               Expense[]
+  projects               Project[]
+  appointments           Appointment[]
+  addresses              Address[]
+  documents              Document[]
+  auditLogs              AuditLog[]
+  apiKeys                ApiKey[]
+  taxRecords             TaxRecord[]
+  bankAccounts           BankAccount[]
+  bankTransactions       BankTransaction[]
+  securityEvents         SecurityEvent[]
+  recurringInvoices      RecurringInvoice[]
   customerPaymentMethods CustomerPaymentMethod[]
-  contractorPayments ContractorPayment[]
-  notifications    Notification[]
-  webhooks         Webhook[]
-  invoiceTemplates InvoiceTemplate[]
-  invoiceStyles    InvoiceStyle[]
-  branding         OrganizationBranding?
-  generatedPDFs    GeneratedPDF[]
+  contractorPayments     ContractorPayment[]
+  notifications          Notification[]
+  webhooks               Webhook[]
+  invoiceTemplates       InvoiceTemplate[]
+  invoiceStyles          InvoiceStyle[]
+  branding               OrganizationBranding?
+  generatedPDFs          GeneratedPDF[]
+  purchaseOrders         PurchaseOrder[]
+  bills                  Bill[]
+  vendorPayments         VendorPayment[]
+  inventoryItems         InventoryItem[]
+  inventoryTransactions  InventoryTransaction[]
+  employeeTimeEntries    EmployeeTimeEntry[]
+  quoteAcceptanceTokens  QuoteAcceptanceToken[]
+  appointmentBookingTokens AppointmentBookingToken[]
 
-  @@map("organizations")
   @@index([domain])
   @@index([isActive])
+  @@map("organizations")
 }
 
 // ==================== AUTHENTICATION & AUTHORIZATION ====================
 
 model User {
-  id               String           @id @default(cuid())
+  id               String  @id @default(cuid())
   organizationId   String
-  email            String           @unique
+  email            String  @unique
   passwordHash     String
-  role             String           @default("EMPLOYEE") // UserRole
-  isActive         Boolean          @default(true)
-  emailVerified    Boolean          @default(false)
-  twoFactorEnabled Boolean          @default(false)
+  role             String  @default("EMPLOYEE") // UserRole
+  isActive         Boolean @default(true)
+  emailVerified    Boolean @default(false)
+  twoFactorEnabled Boolean @default(false)
   twoFactorSecret  String?
 
   // Profile
-  firstName        String
-  lastName         String
-  avatar           String?
-  phone            String?
+  firstName String
+  lastName  String
+  avatar    String?
+  phone     String?
 
   // CLIENT role support - links user to customer record
-  customerId       String?          @unique
-  customer         Customer?        @relation("UserCustomer", fields: [customerId], references: [id])
+  customerId String?   @unique
+  customer   Customer? @relation("UserCustomer", fields: [customerId], references: [id])
 
   // Security
-  lastLoginAt      DateTime?
-  lastLoginIp      String?
-  failedAttempts   Int              @default(0)
-  lockedUntil      DateTime?
-  passwordResetToken String?
+  lastLoginAt          DateTime?
+  lastLoginIp          String?
+  failedAttempts       Int       @default(0)
+  lockedUntil          DateTime?
+  passwordResetToken   String?
   passwordResetExpires DateTime?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  sessions         Session[]
-  uploadedDocuments Document[]
-  auditLogs        AuditLog[]
-  createdQuotes    Quote[]          @relation("QuoteCreator")
-  assignedProjects Project[]        @relation("ProjectAssignee")
-  securityEvents   SecurityEvent[]
-  notifications    Notification[]
-  createdCustomers Customer[]       @relation("CustomerCreator")
-  createdInvoices  Invoice[]        @relation("InvoiceCreator")
-  createdPayments  Payment[]        @relation("PaymentCreator")
-  createdProjects  Project[]        @relation("ProjectCreator")
-  createdAppointments Appointment[] @relation("AppointmentCreator")
+  organization        Organization    @relation(fields: [organizationId], references: [id])
+  sessions            Session[]
+  uploadedDocuments   Document[]
+  auditLogs           AuditLog[]
+  createdQuotes       Quote[]         @relation("QuoteCreator")
+  assignedProjects    Project[]       @relation("ProjectAssignee")
+  securityEvents      SecurityEvent[]
+  notifications       Notification[]
+  createdCustomers    Customer[]      @relation("CustomerCreator")
+  createdInvoices     Invoice[]       @relation("InvoiceCreator")
+  createdPayments     Payment[]       @relation("PaymentCreator")
+  createdProjects     Project[]       @relation("ProjectCreator")
+  createdAppointments Appointment[]   @relation("AppointmentCreator")
 
-  @@map("users")
   @@index([organizationId])
   @@index([email])
   @@index([customerId])
+  @@map("users")
 }
 
 model Session {
-  id               String           @id @default(cuid())
-  userId           String
-  token            String           @unique
-  refreshToken     String           @unique
-  ipAddress        String
-  userAgent        String?
-  expiresAt        DateTime
-  createdAt        DateTime         @default(now())
+  id           String   @id @default(cuid())
+  userId       String
+  token        String   @unique
+  refreshToken String   @unique
+  ipAddress    String
+  userAgent    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
 
   // Relationships
-  user             User             @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("sessions")
   @@index([userId])
   @@index([token])
+  @@map("sessions")
 }
 
 model ApiKey {
-  id               String           @id @default(cuid())
-  organizationId   String
-  name             String
-  key              String           @unique
-  hashedKey        String           @unique
-  permissions      String           // JSON stored as string
-  lastUsedAt       DateTime?
-  lastUsedIp       String?
-  expiresAt        DateTime?
-  isActive         Boolean          @default(true)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  key            String    @unique
+  hashedKey      String    @unique
+  permissions    String // JSON stored as string
+  lastUsedAt     DateTime?
+  lastUsedIp     String?
+  expiresAt      DateTime?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
 
-  @@map("api_keys")
   @@index([organizationId])
   @@index([hashedKey])
+  @@map("api_keys")
 }
 
 // ==================== NORMALIZED ENTITIES (3NF) ====================
 
 model Person {
-  id               String           @id @default(cuid())
-  organizationId   String
-  firstName        String
-  lastName         String
-  middleName       String?
-  dateOfBirth      DateTime?
-  socialInsNumber  String?          // Encrypted
+  id              String    @id @default(cuid())
+  organizationId  String
+  firstName       String
+  lastName        String
+  middleName      String?
+  dateOfBirth     DateTime?
+  socialInsNumber String? // Encrypted
 
   // Contact
-  email            String?
-  phone            String?
-  mobile           String?
+  email  String?
+  phone  String?
+  mobile String?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  customer         Customer?
-  employee         Employee?
-  contractor       Contractor?
+  organization Organization @relation(fields: [organizationId], references: [id])
+  customer     Customer?
+  employee     Employee?
+  contractor   Contractor?
 
-  @@map("persons")
   @@index([organizationId])
+  @@map("persons")
 }
 
 model Business {
-  id               String           @id @default(cuid())
-  organizationId   String
-  legalName        String
-  tradeName        String?
-  businessNumber   String?
-  taxNumber        String?
+  id                String    @id @default(cuid())
+  organizationId    String
+  legalName         String
+  tradeName         String?
+  businessNumber    String?
+  taxNumber         String?
   incorporationDate DateTime?
-  businessType     String           // BusinessType
+  businessType      String // BusinessType
 
   // Contact
-  email            String?
-  phone            String?
-  website          String?
+  email   String?
+  phone   String?
+  website String?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  customer         Customer?
-  vendor           Vendor?
+  organization Organization @relation(fields: [organizationId], references: [id])
+  customer     Customer?
+  vendor       Vendor?
 
-  @@map("businesses")
-  @@index([organizationId])
   @@unique([organizationId, businessNumber])
+  @@index([organizationId])
+  @@map("businesses")
 }
 
 // ==================== CUSTOMERS & VENDORS ====================
 
 model Customer {
-  id               String           @id @default(cuid())
-  organizationId   String
-  customerNumber   String
-  personId         String?          @unique
-  businessId       String?          @unique
+  id             String  @id @default(cuid())
+  organizationId String
+  customerNumber String
+  personId       String? @unique
+  businessId     String? @unique
 
   // Customer Details
-  tier             String           @default("PERSONAL") // CustomerTier
-  status           String           @default("PROSPECT") // CustomerStatus
-  creditLimit      Decimal?
-  paymentTerms     Int              @default(15) // Days
-  taxExempt        Boolean          @default(false)
-  preferredCurrency String          @default("CAD")
-  notes            String?
+  tier              String   @default("PERSONAL") // CustomerTier
+  status            String   @default("PROSPECT") // CustomerStatus
+  creditLimit       Decimal?
+  paymentTerms      Int      @default(15) // Days
+  taxExempt         Boolean  @default(false)
+  preferredCurrency String   @default("CAD")
+  notes             String?
 
   // Audit fields
-  createdBy        String?
-  updatedBy        String?
-  deletedBy        String?
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  person           Person?          @relation(fields: [personId], references: [id])
-  business         Business?        @relation(fields: [businessId], references: [id])
-  creator          User?            @relation("CustomerCreator", fields: [createdBy], references: [id])
-  addresses        CustomerAddress[]
-  quotes           Quote[]
-  invoices         Invoice[]
-  payments         Payment[]
-  projects         Project[]
-  appointments     Appointment[]
+  organization      Organization            @relation(fields: [organizationId], references: [id])
+  person            Person?                 @relation(fields: [personId], references: [id])
+  business          Business?               @relation(fields: [businessId], references: [id])
+  creator           User?                   @relation("CustomerCreator", fields: [createdBy], references: [id])
+  addresses         CustomerAddress[]
+  quotes            Quote[]
+  invoices          Invoice[]
+  payments          Payment[]
+  projects          Project[]
+  appointments      Appointment[]
   recurringInvoices RecurringInvoice[]
-  paymentMethods   CustomerPaymentMethod[]
-  linkedUser       User?            @relation("UserCustomer")
+  paymentMethods    CustomerPaymentMethod[]
+  linkedUser        User?                   @relation("UserCustomer")
 
-  @@map("customers")
+  @@unique([organizationId, customerNumber])
   @@index([organizationId])
   @@index([createdBy])
   @@index([status])
-  @@unique([organizationId, customerNumber])
+  @@map("customers")
 }
 
 model Vendor {
-  id               String           @id @default(cuid())
-  organizationId   String
-  vendorNumber     String
-  businessId       String           @unique
+  id             String @id @default(cuid())
+  organizationId String
+  vendorNumber   String
+  businessId     String @unique
 
   // Vendor Details
-  category         String
-  paymentTerms     Int              @default(30) // Days
-  taxNumber        String?
-  preferredPaymentMethod String      @default("BANK_TRANSFER") // PaymentMethod
-  bankAccount      String?          // Encrypted JSON
-  notes            String?
-  isActive         Boolean          @default(true)
+  category               String
+  paymentTerms           Int     @default(30) // Days
+  taxNumber              String?
+  preferredPaymentMethod String  @default("BANK_TRANSFER") // PaymentMethod
+  bankAccount            String? // Encrypted JSON
+  notes                  String?
+  isActive               Boolean @default(true)
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  business         Business         @relation(fields: [businessId], references: [id])
-  addresses        VendorAddress[]
-  expenses         Expense[]
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  business       Business        @relation(fields: [businessId], references: [id])
+  addresses      VendorAddress[]
+  expenses       Expense[]
+  purchaseOrders PurchaseOrder[]
+  bills          Bill[]
+  payments       VendorPayment[]
 
-  @@map("vendors")
-  @@index([organizationId])
   @@unique([organizationId, vendorNumber])
+  @@index([organizationId])
+  @@map("vendors")
 }
 
 // ==================== EMPLOYEES & CONTRACTORS ====================
 
 model Employee {
-  id               String           @id @default(cuid())
-  organizationId   String
-  personId         String           @unique
-  employeeNumber   String
+  id             String @id @default(cuid())
+  organizationId String
+  personId       String @unique
+  employeeNumber String
 
   // Employment Details
-  position         String
-  department       String?
-  hireDate         DateTime
-  terminationDate  DateTime?
-  salary           Decimal?         // Encrypted
-  hourlyRate       Decimal?
-  isActive         Boolean          @default(true)
+  position        String
+  department      String?
+  hireDate        DateTime
+  terminationDate DateTime?
+  salary          Decimal? // Encrypted
+  hourlyRate      Decimal?
+  isActive        Boolean   @default(true)
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  person           Person           @relation(fields: [personId], references: [id])
+  organization Organization        @relation(fields: [organizationId], references: [id])
+  person       Person              @relation(fields: [personId], references: [id])
+  timeEntries  EmployeeTimeEntry[]
 
-  @@map("employees")
-  @@index([organizationId])
   @@unique([organizationId, employeeNumber])
+  @@index([organizationId])
+  @@map("employees")
 }
 
 model Contractor {
-  id               String           @id @default(cuid())
+  id               String @id @default(cuid())
   organizationId   String
-  personId         String           @unique
+  personId         String @unique
   contractorNumber String
 
   // Contractor Details
-  businessNumber   String?
-  hourlyRate       Decimal
-  specialization   String
-  t4aRequired      Boolean          @default(true)
-  isActive         Boolean          @default(true)
+  businessNumber String?
+  hourlyRate     Decimal
+  specialization String
+  t4aRequired    Boolean @default(true)
+  isActive       Boolean @default(true)
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  person           Person           @relation(fields: [personId], references: [id])
-  expenses         Expense[]
+  organization       Organization        @relation(fields: [organizationId], references: [id])
+  person             Person              @relation(fields: [personId], references: [id])
+  expenses           Expense[]
   contractorPayments ContractorPayment[]
 
-  @@map("contractors")
-  @@index([organizationId])
   @@unique([organizationId, contractorNumber])
+  @@index([organizationId])
+  @@map("contractors")
 }
 
 // ==================== ADDRESSES (NORMALIZED) ====================
 
 model Address {
-  id               String           @id @default(cuid())
-  organizationId   String
+  id             String @id @default(cuid())
+  organizationId String
 
   // Address Details
-  line1            String
-  line2            String?
-  city             String
-  stateProvinceId  String?
-  postalCode       String
-  countryId        String
+  line1           String
+  line2           String?
+  city            String
+  stateProvinceId String?
+  postalCode      String
+  countryId       String
 
   // Geolocation
-  latitude         Float?
-  longitude        Float?
+  latitude  Float?
+  longitude Float?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  country          Country          @relation(fields: [countryId], references: [id])
-  stateProvince    StateProvince?   @relation(fields: [stateProvinceId], references: [id])
+  organization      Organization      @relation(fields: [organizationId], references: [id])
+  country           Country           @relation(fields: [countryId], references: [id])
+  stateProvince     StateProvince?    @relation(fields: [stateProvinceId], references: [id])
   customerAddresses CustomerAddress[]
-  vendorAddresses  VendorAddress[]
-  locations        Location[]
+  vendorAddresses   VendorAddress[]
+  locations         Location[]
 
-  @@map("addresses")
   @@index([organizationId])
   @@index([countryId])
+  @@map("addresses")
 }
 
 model CustomerAddress {
-  id               String           @id @default(cuid())
-  customerId       String
-  addressId        String
-  addressType      String           @default("BILLING") // BILLING, SHIPPING, OTHER
-  isPrimary        Boolean          @default(false)
+  id          String  @id @default(cuid())
+  customerId  String
+  addressId   String
+  addressType String  @default("BILLING") // BILLING, SHIPPING, OTHER
+  isPrimary   Boolean @default(false)
 
   // Relationships
-  customer         Customer         @relation(fields: [customerId], references: [id])
-  address          Address          @relation(fields: [addressId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  address  Address  @relation(fields: [addressId], references: [id])
 
-  @@map("customer_addresses")
   @@unique([customerId, addressId, addressType])
+  @@map("customer_addresses")
 }
 
 model VendorAddress {
-  id               String           @id @default(cuid())
-  vendorId         String
-  addressId        String
-  addressType      String           @default("BILLING")
-  isPrimary        Boolean          @default(false)
+  id          String  @id @default(cuid())
+  vendorId    String
+  addressId   String
+  addressType String  @default("BILLING")
+  isPrimary   Boolean @default(false)
 
   // Relationships
-  vendor           Vendor           @relation(fields: [vendorId], references: [id])
-  address          Address          @relation(fields: [addressId], references: [id])
+  vendor  Vendor  @relation(fields: [vendorId], references: [id])
+  address Address @relation(fields: [addressId], references: [id])
 
-  @@map("vendor_addresses")
   @@unique([vendorId, addressId, addressType])
+  @@map("vendor_addresses")
 }
 
 // ==================== LOCATIONS ====================
 
 model Location {
-  id               String           @id @default(cuid())
-  organizationId   String
-  name             String
-  code             String
-  addressId        String
-  phone            String?
-  email            String?
-  isHeadquarters   Boolean          @default(false)
-  isActive         Boolean          @default(true)
+  id             String  @id @default(cuid())
+  organizationId String
+  name           String
+  code           String
+  addressId      String
+  phone          String?
+  email          String?
+  isHeadquarters Boolean @default(false)
+  isActive       Boolean @default(true)
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  address          Address          @relation(fields: [addressId], references: [id])
-  appointments     Appointment[]
+  organization          Organization           @relation(fields: [organizationId], references: [id])
+  address               Address                @relation(fields: [addressId], references: [id])
+  appointments          Appointment[]
+  inventoryItems        InventoryItem[]
+  inventoryTransactions InventoryTransaction[]
 
-  @@map("locations")
-  @@index([organizationId])
   @@unique([organizationId, code])
+  @@index([organizationId])
+  @@map("locations")
 }
 
 // ==================== PRODUCTS & SERVICES ====================
 
 model Product {
-  id               String           @id @default(cuid())
-  organizationId   String
-  sku              String
-  name             String
-  description      String?
-  categoryId       String
-  unitPrice        Decimal
-  cost             Decimal?
-  taxable          Boolean          @default(true)
-  isActive         Boolean          @default(true)
+  id             String   @id @default(cuid())
+  organizationId String
+  sku            String
+  name           String
+  description    String?
+  categoryId     String
+  unitPrice      Decimal
+  cost           Decimal?
+  taxable        Boolean  @default(true)
+  isActive       Boolean  @default(true)
 
   // Inventory
-  trackInventory   Boolean          @default(false)
-  quantity         Int              @default(0)
-  reorderPoint     Int?
+  trackInventory Boolean @default(false)
+  quantity       Int     @default(0)
+  reorderPoint   Int?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  category         ProductCategory  @relation(fields: [categoryId], references: [id])
-  quoteItems       QuoteItem[]
-  invoiceItems     InvoiceItem[]
+  organization       Organization            @relation(fields: [organizationId], references: [id])
+  category           ProductCategory         @relation(fields: [categoryId], references: [id])
+  quoteItems         QuoteItem[]
+  invoiceItems       InvoiceItem[]
+  purchaseOrderItems PurchaseOrderLineItem[]
+  billItems          BillLineItem[]
+  inventoryItems     InventoryItem[]
 
-  @@map("products")
+  @@unique([organizationId, sku])
   @@index([organizationId])
   @@index([categoryId])
-  @@unique([organizationId, sku])
+  @@map("products")
 }
 
 model Service {
-  id               String           @id @default(cuid())
-  organizationId   String
-  code             String
-  name             String
-  description      String?
-  categoryId       String
-  hourlyRate       Decimal
-  minimumHours     Decimal          @default(0.25)
-  taxable          Boolean          @default(true)
-  isActive         Boolean          @default(true)
+  id             String  @id @default(cuid())
+  organizationId String
+  code           String
+  name           String
+  description    String?
+  categoryId     String
+  hourlyRate     Decimal
+  minimumHours   Decimal @default(0.25)
+  taxable        Boolean @default(true)
+  isActive       Boolean @default(true)
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  category         ServiceCategory  @relation(fields: [categoryId], references: [id])
-  quoteItems       QuoteItem[]
-  invoiceItems     InvoiceItem[]
+  organization Organization    @relation(fields: [organizationId], references: [id])
+  category     ServiceCategory @relation(fields: [categoryId], references: [id])
+  quoteItems   QuoteItem[]
+  invoiceItems InvoiceItem[]
 
-  @@map("services")
+  @@unique([organizationId, code])
   @@index([organizationId])
   @@index([categoryId])
-  @@unique([organizationId, code])
+  @@map("services")
 }
 
 // ==================== QUOTES & INVOICES ====================
 
 model Quote {
-  id               String           @id @default(cuid())
-  organizationId   String
-  quoteNumber      String
-  customerId       String
-  createdById      String
+  id             String @id @default(cuid())
+  organizationId String
+  quoteNumber    String
+  customerId     String
+  createdById    String
 
   // Quote Details
-  status           String           @default("DRAFT") // QuoteStatus
-  validUntil       DateTime
-  currency         String           @default("CAD")
-  exchangeRate     Decimal          @default(1.0)
+  status       String   @default("DRAFT") // QuoteStatus
+  validUntil   DateTime
+  currency     String   @default("CAD")
+  exchangeRate Decimal  @default(1.0)
 
   // Amounts (stored for performance, calculated from items)
-  subtotal         Decimal
-  taxAmount        Decimal
-  total            Decimal
+  subtotal  Decimal
+  taxAmount Decimal
+  total     Decimal
 
   // Content
-  description      String?
-  terms            String?
-  notes            String?
+  description String?
+  terms       String?
+  notes       String?
 
   // Tracking
-  sentAt           DateTime?
-  viewedAt         DateTime?
-  acceptedAt       DateTime?
-  rejectedAt       DateTime?
-  rejectionReason  String?
-  expiresAt        DateTime?        // Expiration date for quote validation
+  sentAt          DateTime?
+  viewedAt        DateTime?
+  acceptedAt      DateTime?
+  rejectedAt      DateTime?
+  rejectionReason String?
+  expiresAt       DateTime? // Expiration date for quote validation
+
+  // Intake Integration
+  intakeSessionId String? // Link to intake session that created this quote
+  customFields    String? // JSON string for dynamic/custom fields
+
+  // Public Access (for quote acceptance workflow)
+  publicViewEnabled Boolean @default(false)
+  publicViewToken   String? @unique // Token for viewing quote publicly
+  acceptanceToken   String? @unique // Token for accepting quote
 
   // Audit fields
-  updatedBy        String?
-  deletedBy        String?
+  updatedBy String?
+  deletedBy String?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  customer         Customer         @relation(fields: [customerId], references: [id])
-  createdBy        User            @relation("QuoteCreator", fields: [createdById], references: [id])
-  items            QuoteItem[]
-  invoice          Invoice?
+  organization      Organization           @relation(fields: [organizationId], references: [id])
+  customer          Customer               @relation(fields: [customerId], references: [id])
+  createdBy         User                   @relation("QuoteCreator", fields: [createdById], references: [id])
+  items             QuoteItem[]
+  invoice           Invoice?
+  acceptanceTokens  QuoteAcceptanceToken[]
+  appointments      Appointment[]
+  bookingTokens     AppointmentBookingToken[]
 
-  @@map("quotes")
+  @@unique([organizationId, quoteNumber])
   @@index([organizationId])
   @@index([customerId])
   @@index([createdById])
   @@index([status])
-  @@unique([organizationId, quoteNumber])
+  @@index([intakeSessionId])
+  @@index([publicViewToken])
+  @@index([acceptanceToken])
+  @@map("quotes")
 }
 
 model QuoteItem {
-  id               String           @id @default(cuid())
-  quoteId          String
-  productId        String?
-  serviceId        String?
+  id        String  @id @default(cuid())
+  quoteId   String
+  productId String?
+  serviceId String?
 
   // Item Details
-  description      String
-  quantity         Decimal
-  unitPrice        Decimal
-  discountPercent  Decimal          @default(0)
-  taxRate          Decimal
+  description     String
+  quantity        Decimal
+  unitPrice       Decimal
+  discountPercent Decimal @default(0)
+  taxRate         Decimal
 
   // Calculated (stored for performance)
-  subtotal         Decimal
-  discountAmount   Decimal
-  taxAmount        Decimal
-  total            Decimal
+  subtotal       Decimal
+  discountAmount Decimal
+  taxAmount      Decimal
+  total          Decimal
 
   // Ordering
-  sortOrder        Int
+  sortOrder Int
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relationships
-  quote            Quote            @relation(fields: [quoteId], references: [id])
-  product          Product?         @relation(fields: [productId], references: [id])
-  service          Service?         @relation(fields: [serviceId], references: [id])
+  quote   Quote    @relation(fields: [quoteId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+  service Service? @relation(fields: [serviceId], references: [id])
 
-  @@map("quote_items")
   @@index([quoteId])
+  @@map("quote_items")
+}
+
+model QuoteAcceptanceToken {
+  id             String  @id @default(cuid())
+  quoteId        String
+  organizationId String
+
+  // Token Details
+  tokenHash    String @unique // bcrypt hash of token
+  tokenVersion Int    @default(1)
+
+  // Status
+  status      String   @default("ACTIVE") // ACTIVE, USED, EXPIRED, INVALIDATED
+  usedAt      DateTime?
+  invalidated Boolean  @default(false)
+
+  // Security Context (when token was generated)
+  generatedBy   String? // User ID who generated the token
+  ipAddressUsed String? // IP address when token was used
+
+  // Acceptance Details
+  acceptedBy      String? // Customer email who accepted
+  acceptanceNotes String? // Optional notes from customer during acceptance
+
+  // Expiration
+  expiresAt DateTime
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  quote        Quote        @relation(fields: [quoteId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([quoteId])
+  @@index([tokenHash])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("quote_acceptance_tokens")
 }
 
 model Invoice {
-  id               String           @id @default(cuid())
-  organizationId   String
-  invoiceNumber    String
-  customerId       String
-  quoteId          String?          @unique
+  id             String  @id @default(cuid())
+  organizationId String
+  invoiceNumber  String
+  customerId     String
+  quoteId        String? @unique
 
   // Invoice Details
-  status           String           @default("DRAFT") // InvoiceStatus
-  issueDate        DateTime         @default(now())
-  dueDate          DateTime
-  currency         String           @default("CAD")
-  exchangeRate     Decimal          @default(1.0)
+  status       String   @default("DRAFT") // InvoiceStatus
+  issueDate    DateTime @default(now())
+  dueDate      DateTime
+  currency     String   @default("CAD")
+  exchangeRate Decimal  @default(1.0)
 
   // Amounts (stored for performance)
-  subtotal         Decimal
-  taxAmount        Decimal
-  total            Decimal
-  depositRequired  Decimal
-  amountPaid       Decimal          @default(0)
-  balance          Decimal
+  subtotal        Decimal
+  taxAmount       Decimal
+  total           Decimal
+  depositRequired Decimal
+  amountPaid      Decimal @default(0)
+  balance         Decimal
 
   // Content
-  terms            String?
-  notes            String?
+  terms String?
+  notes String?
 
   // Tracking
-  sentAt           DateTime?
-  viewedAt         DateTime?
-  paidAt           DateTime?
+  sentAt   DateTime?
+  viewedAt DateTime?
+  paidAt   DateTime?
 
   // Audit fields
-  createdBy        String?
-  updatedBy        String?
-  deletedBy        String?
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  customer         Customer         @relation(fields: [customerId], references: [id])
-  quote            Quote?           @relation(fields: [quoteId], references: [id])
-  creator          User?            @relation("InvoiceCreator", fields: [createdBy], references: [id])
-  items            InvoiceItem[]
-  payments         Payment[]
-  generatedPDFs    GeneratedPDF[]
-  project          Project?
+  organization  Organization        @relation(fields: [organizationId], references: [id])
+  customer      Customer            @relation(fields: [customerId], references: [id])
+  quote         Quote?              @relation(fields: [quoteId], references: [id])
+  creator       User?               @relation("InvoiceCreator", fields: [createdBy], references: [id])
+  items         InvoiceItem[]
+  payments      Payment[]
+  generatedPDFs GeneratedPDF[]
+  project       Project?
+  timeEntries   EmployeeTimeEntry[]
 
-  @@map("invoices")
+  @@unique([organizationId, invoiceNumber])
   @@index([organizationId])
   @@index([customerId])
   @@index([createdBy])
   @@index([status])
-  @@unique([organizationId, invoiceNumber])
+  @@map("invoices")
 }
 
 model InvoiceItem {
-  id               String           @id @default(cuid())
-  invoiceId        String
-  productId        String?
-  serviceId        String?
+  id        String  @id @default(cuid())
+  invoiceId String
+  productId String?
+  serviceId String?
 
   // Item Details
-  description      String
-  quantity         Decimal
-  unitPrice        Decimal
-  discountPercent  Decimal          @default(0)
-  taxRate          Decimal
+  description     String
+  quantity        Decimal
+  unitPrice       Decimal
+  discountPercent Decimal @default(0)
+  taxRate         Decimal
 
   // Calculated
-  subtotal         Decimal
-  discountAmount   Decimal
-  taxAmount        Decimal
-  total            Decimal
+  subtotal       Decimal
+  discountAmount Decimal
+  taxAmount      Decimal
+  total          Decimal
 
   // Ordering
-  sortOrder        Int
+  sortOrder Int
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relationships
-  invoice          Invoice          @relation(fields: [invoiceId], references: [id])
-  product          Product?         @relation(fields: [productId], references: [id])
-  service          Service?         @relation(fields: [serviceId], references: [id])
+  invoice Invoice  @relation(fields: [invoiceId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+  service Service? @relation(fields: [serviceId], references: [id])
 
-  @@map("invoice_items")
   @@index([invoiceId])
+  @@map("invoice_items")
 }
 
 // ==================== PAYMENTS ====================
 
 model Payment {
-  id               String           @id @default(cuid())
-  organizationId   String
-  paymentNumber    String
-  customerId       String
-  invoiceId        String?
+  id             String  @id @default(cuid())
+  organizationId String
+  paymentNumber  String
+  customerId     String
+  invoiceId      String?
 
   // Payment Details
-  paymentMethod    String           // PaymentMethod
-  amount           Decimal
-  currency         String           @default("CAD")
-  paymentDate      DateTime
+  paymentMethod String // PaymentMethod
+  amount        Decimal
+  currency      String   @default("CAD")
+  paymentDate   DateTime
 
   // Payment References
-  referenceNumber  String?          // E-transfer ref, cash receipt, etc.
+  referenceNumber       String? // E-transfer ref, cash receipt, etc.
   stripePaymentIntentId String?
-  stripeChargeId   String?
-  bankReference    String?
+  stripeChargeId        String?
+  bankReference         String?
 
   // Status
-  status           String           @default("PENDING") // PaymentStatus
-  failureReason    String?
+  status        String  @default("PENDING") // PaymentStatus
+  failureReason String?
 
   // Processing
-  processorFee     Decimal?
-  netAmount        Decimal?
+  processorFee Decimal?
+  netAmount    Decimal?
 
   // Notes
-  customerNotes    String?
-  adminNotes       String?
-  metadata         String?          // JSON stored as string
+  customerNotes String?
+  adminNotes    String?
+  metadata      String? // JSON stored as string
 
   // Audit fields
-  createdBy        String?
-  updatedBy        String?
-  deletedBy        String?
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
 
   // Timestamps
-  processedAt      DateTime?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  customer         Customer         @relation(fields: [customerId], references: [id])
-  invoice          Invoice?         @relation(fields: [invoiceId], references: [id])
-  creator          User?            @relation("PaymentCreator", fields: [createdBy], references: [id])
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  customer         Customer          @relation(fields: [customerId], references: [id])
+  invoice          Invoice?          @relation(fields: [invoiceId], references: [id])
+  creator          User?             @relation("PaymentCreator", fields: [createdBy], references: [id])
   bankTransactions BankTransaction[]
   stripePayment    StripePayment?
 
-  @@map("payments")
+  @@unique([organizationId, paymentNumber])
   @@index([organizationId])
   @@index([customerId])
   @@index([invoiceId])
   @@index([status])
-  @@unique([organizationId, paymentNumber])
+  @@map("payments")
 }
 
 // ==================== ACCOUNTING ====================
 
 model Account {
-  id               String           @id @default(cuid())
-  organizationId   String
-  accountNumber    String
-  name             String
-  type             String           // AccountType
-  parentId         String?
+  id             String  @id @default(cuid())
+  organizationId String
+  accountNumber  String
+  name           String
+  type           String // AccountType
+  parentId       String?
 
   // Account Details
-  description      String?
-  isActive         Boolean          @default(true)
-  isSystemAccount  Boolean          @default(false)
+  description     String?
+  isActive        Boolean @default(true)
+  isSystemAccount Boolean @default(false)
 
   // Balance (calculated, cached for performance)
-  balance          Decimal @default(0)
+  balance Decimal @default(0)
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  parent           Account?         @relation("AccountHierarchy", fields: [parentId], references: [id])
-  children         Account[]        @relation("AccountHierarchy")
-  transactions     JournalEntry[]
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  parent         Account?        @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children       Account[]       @relation("AccountHierarchy")
+  transactions   JournalEntry[]
+  vendorPayments VendorPayment[]
+  billLineItems  BillLineItem[]
 
-  @@map("accounts")
+  @@unique([organizationId, accountNumber])
   @@index([organizationId])
   @@index([type])
-  @@unique([organizationId, accountNumber])
+  @@map("accounts")
 }
 
 model JournalEntry {
-  id               String           @id @default(cuid())
-  accountId        String
-  transactionId    String
+  id            String @id @default(cuid())
+  accountId     String
+  transactionId String
 
   // Entry Details
-  type             String           // TransactionType
-  amount           Decimal
-  description      String
-  referenceType    String?          // INVOICE, PAYMENT, EXPENSE, etc.
-  referenceId      String?
+  type          String // TransactionType
+  amount        Decimal
+  description   String
+  referenceType String? // INVOICE, PAYMENT, EXPENSE, etc.
+  referenceId   String?
 
   // Timestamps
-  entryDate        DateTime
-  createdAt        DateTime         @default(now())
+  entryDate DateTime
+  createdAt DateTime @default(now())
 
   // Relationships
-  account          Account          @relation(fields: [accountId], references: [id])
-  transaction      Transaction      @relation(fields: [transactionId], references: [id])
+  account     Account     @relation(fields: [accountId], references: [id])
+  transaction Transaction @relation(fields: [transactionId], references: [id])
 
-  @@map("journal_entries")
   @@index([accountId])
   @@index([transactionId])
   @@index([entryDate])
+  @@map("journal_entries")
 }
 
 model Transaction {
-  id               String           @id @default(cuid())
-  transactionNumber String          @unique
-  date             DateTime
-  description      String
+  id                String   @id @default(cuid())
+  transactionNumber String   @unique
+  date              DateTime
+  description       String
 
   // Transaction must balance (debits = credits)
-  totalDebits      Decimal
-  totalCredits     Decimal
+  totalDebits  Decimal
+  totalCredits Decimal
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  reversedAt       DateTime?
-  reversalId       String?
+  createdAt  DateTime  @default(now())
+  reversedAt DateTime?
+  reversalId String?
 
   // Relationships
-  entries          JournalEntry[]
-  reversal         Transaction?     @relation("TransactionReversal", fields: [reversalId], references: [id])
-  reversedBy       Transaction[]    @relation("TransactionReversal")
+  entries    JournalEntry[]
+  reversal   Transaction?   @relation("TransactionReversal", fields: [reversalId], references: [id])
+  reversedBy Transaction[]  @relation("TransactionReversal")
 
-  @@map("transactions")
   @@index([date])
+  @@map("transactions")
 }
 
 // ==================== EXPENSES ====================
 
 model Expense {
-  id               String           @id @default(cuid())
-  organizationId   String
-  expenseNumber    String
-  vendorId         String?
-  contractorId     String?
+  id             String  @id @default(cuid())
+  organizationId String
+  expenseNumber  String
+  vendorId       String?
+  contractorId   String?
 
   // Expense Details
-  category         String           // ExpenseCategory
-  amount           Decimal
-  taxAmount        Decimal @default(0)
-  currency         String           @default("CAD")
-  expenseDate      DateTime
+  category    String // ExpenseCategory
+  amount      Decimal
+  taxAmount   Decimal  @default(0)
+  currency    String   @default("CAD")
+  expenseDate DateTime
 
   // Payment
-  paymentMethod    String?          // PaymentMethod
-  paymentStatus    String           @default("PENDING") // PaymentStatus
-  paidAt           DateTime?
+  paymentMethod String? // PaymentMethod
+  paymentStatus String    @default("PENDING") // PaymentStatus
+  paidAt        DateTime?
 
   // Documentation
-  description      String
-  receipt          String?          // S3 URL
-  notes            String?
+  description String
+  receipt     String? // S3 URL
+  notes       String?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  vendor           Vendor?          @relation(fields: [vendorId], references: [id])
-  contractor       Contractor?      @relation(fields: [contractorId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  vendor       Vendor?      @relation(fields: [vendorId], references: [id])
+  contractor   Contractor?  @relation(fields: [contractorId], references: [id])
 
-  @@map("expenses")
+  @@unique([organizationId, expenseNumber])
   @@index([organizationId])
   @@index([category])
-  @@unique([organizationId, expenseNumber])
+  @@map("expenses")
 }
 
 // ==================== PROJECTS & APPOINTMENTS ====================
 
 model Project {
-  id               String           @id @default(cuid())
-  organizationId   String
-  projectNumber    String
-  customerId       String
-  assignedToId     String?
+  id             String  @id @default(cuid())
+  organizationId String
+  projectNumber  String
+  customerId     String
+  assignedToId   String?
 
   // Project Details
-  name             String
-  description      String?
-  status           String           @default("QUOTED") // ProjectStatus
-  priority         Int              @default(3) // 1=Critical, 2=High, 3=Normal, 4=Low
+  name        String
+  description String?
+  status      String  @default("QUOTED") // ProjectStatus
+  priority    Int     @default(3) // 1=Critical, 2=High, 3=Normal, 4=Low
 
   // Timeline
-  startDate        DateTime?
-  endDate          DateTime?
-  actualStartDate  DateTime?
-  actualEndDate    DateTime?
+  startDate       DateTime?
+  endDate         DateTime?
+  actualStartDate DateTime?
+  actualEndDate   DateTime?
 
   // Budget
-  estimatedHours   Decimal?
-  actualHours      Decimal?
-  hourlyRate       Decimal?
-  fixedPrice       Decimal?
+  estimatedHours Decimal?
+  actualHours    Decimal?
+  hourlyRate     Decimal?
+  fixedPrice     Decimal?
 
   // Deposit tracking
-  depositPaid      Boolean          @default(false)
-  depositPaidAt    DateTime?
-  invoiceId        String?          @unique
+  depositPaid   Boolean   @default(false)
+  depositPaidAt DateTime?
+  invoiceId     String?   @unique
 
   // Audit fields
-  createdBy        String?
-  updatedBy        String?
-  deletedBy        String?
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  completedAt      DateTime?
-  deletedAt        DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+  deletedAt   DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  customer         Customer         @relation(fields: [customerId], references: [id])
-  assignedTo       User?            @relation("ProjectAssignee", fields: [assignedToId], references: [id])
-  creator          User?            @relation("ProjectCreator", fields: [createdBy], references: [id])
-  invoice          Invoice?         @relation(fields: [invoiceId], references: [id])
-  appointments     Appointment[]
+  organization Organization        @relation(fields: [organizationId], references: [id])
+  customer     Customer            @relation(fields: [customerId], references: [id])
+  assignedTo   User?               @relation("ProjectAssignee", fields: [assignedToId], references: [id])
+  creator      User?               @relation("ProjectCreator", fields: [createdBy], references: [id])
+  invoice      Invoice?            @relation(fields: [invoiceId], references: [id])
+  appointments Appointment[]
+  timeEntries  EmployeeTimeEntry[]
 
-  @@map("projects")
+  @@unique([organizationId, projectNumber])
   @@index([organizationId])
   @@index([customerId])
   @@index([createdBy])
   @@index([status])
   @@index([depositPaid])
-  @@unique([organizationId, projectNumber])
+  @@map("projects")
 }
 
 model Appointment {
-  id               String           @id @default(cuid())
-  organizationId   String
-  customerId       String
-  projectId        String?
-  locationId       String?
+  id             String  @id @default(cuid())
+  organizationId String
+  customerId     String
+  quoteId        String? // Link to accepted quote
+  projectId      String?
+  locationId     String?
 
   // Appointment Details
-  title            String
-  description      String?
-  startTime        DateTime
-  endTime          DateTime
-  duration         Int              // Minutes
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  duration    Int // Minutes
+
+  // Meeting Integration
+  meetingLink String? // Google Meet link
+  meetingId   String? // Google Meet meeting ID
 
   // Status
-  confirmed        Boolean          @default(false)
-  completed        Boolean          @default(false)
-  cancelled        Boolean          @default(false)
+  confirmed          Boolean @default(false)
+  completed          Boolean @default(false)
+  cancelled          Boolean @default(false)
   cancellationReason String?
 
   // Reminders
-  reminderSent     Boolean          @default(false)
-  reminderSentAt   DateTime?
+  reminderSent   Boolean   @default(false)
+  reminderSentAt DateTime?
 
   // Audit fields
-  createdBy        String?
-  updatedBy        String?
-  deletedBy        String?
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  customer         Customer         @relation(fields: [customerId], references: [id])
-  project          Project?         @relation(fields: [projectId], references: [id])
-  location         Location?        @relation(fields: [locationId], references: [id])
-  creator          User?            @relation("AppointmentCreator", fields: [createdBy], references: [id])
+  organization    Organization             @relation(fields: [organizationId], references: [id])
+  customer        Customer                 @relation(fields: [customerId], references: [id])
+  quote           Quote?                   @relation(fields: [quoteId], references: [id])
+  project         Project?                 @relation(fields: [projectId], references: [id])
+  location        Location?                @relation(fields: [locationId], references: [id])
+  creator         User?                    @relation("AppointmentCreator", fields: [createdBy], references: [id])
+  bookingTokens   AppointmentBookingToken[]
 
-  @@map("appointments")
   @@index([organizationId])
   @@index([customerId])
+  @@index([quoteId])
   @@index([createdBy])
   @@index([startTime])
+  @@map("appointments")
+}
+
+model AppointmentBookingToken {
+  id             String  @id @default(cuid())
+  quoteId        String // Quote that this booking token is for
+  appointmentId  String? // Created appointment (once booked)
+  organizationId String
+
+  // Token Details
+  tokenHash    String @unique // bcrypt hash of token
+  tokenVersion Int    @default(1)
+
+  // Status
+  status      String   @default("ACTIVE") // ACTIVE, USED, EXPIRED, INVALIDATED
+  usedAt      DateTime?
+  invalidated Boolean  @default(false)
+
+  // Booking Details
+  bookedBy      String? // Customer email who booked
+  bookedIp      String? // IP address when token was used
+  bookingNotes  String? // Optional notes from customer
+
+  // Expiration
+  expiresAt DateTime
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  quote        Quote        @relation(fields: [quoteId], references: [id])
+  appointment  Appointment? @relation(fields: [appointmentId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([quoteId])
+  @@index([appointmentId])
+  @@index([tokenHash])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("appointment_booking_tokens")
 }
 
 // ==================== REFERENCE TABLES (3NF) ====================
 
 model Country {
-  id               String           @id @default(cuid())
-  code             String           @unique // ISO 3166-1 alpha-2
-  code3            String           @unique // ISO 3166-1 alpha-3
-  name             String
-  phoneCode        String?
-  currency         String?
+  id        String  @id @default(cuid())
+  code      String  @unique // ISO 3166-1 alpha-2
+  code3     String  @unique // ISO 3166-1 alpha-3
+  name      String
+  phoneCode String?
+  currency  String?
 
   // Relationships
-  addresses        Address[]
-  stateProvinces   StateProvince[]
+  addresses      Address[]
+  stateProvinces StateProvince[]
 
   @@map("countries")
 }
 
 model Currency {
-  id               String           @id @default(cuid())
-  code             String           @unique // ISO 4217
-  name             String
-  symbol           String
-  decimalPlaces    Int              @default(2)
+  id            String @id @default(cuid())
+  code          String @unique // ISO 4217
+  name          String
+  symbol        String
+  decimalPlaces Int    @default(2)
 
   // Relationships
-  fromExchangeRates ExchangeRate[]  @relation("FromCurrency")
-  toExchangeRates   ExchangeRate[]  @relation("ToCurrency")
+  fromExchangeRates ExchangeRate[] @relation("FromCurrency")
+  toExchangeRates   ExchangeRate[] @relation("ToCurrency")
 
   @@map("currencies")
 }
 
 model TaxRate {
-  id               String           @id @default(cuid())
-  code             String           @unique
-  name             String
-  rate             Decimal
-  countryCode      String
-  stateProvince    String?
-  isDefault        Boolean          @default(false)
-  effectiveDate    DateTime
-  expiryDate       DateTime?
+  id            String    @id @default(cuid())
+  code          String    @unique
+  name          String
+  rate          Decimal
+  countryCode   String
+  stateProvince String?
+  isDefault     Boolean   @default(false)
+  effectiveDate DateTime
+  expiryDate    DateTime?
 
-  @@map("tax_rates")
   @@index([countryCode])
+  @@map("tax_rates")
 }
 
 model ProductCategory {
-  id               String           @id @default(cuid())
-  code             String           @unique
-  name             String
-  description      String?
-  parentId         String?
+  id          String  @id @default(cuid())
+  code        String  @unique
+  name        String
+  description String?
+  parentId    String?
 
   // Relationships
-  parent           ProductCategory? @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children         ProductCategory[] @relation("CategoryHierarchy")
-  products         Product[]
+  parent   ProductCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children ProductCategory[] @relation("CategoryHierarchy")
+  products Product[]
 
   @@map("product_categories")
 }
 
 model ServiceCategory {
-  id               String           @id @default(cuid())
-  code             String           @unique
-  name             String
-  description      String?
-  parentId         String?
+  id          String  @id @default(cuid())
+  code        String  @unique
+  name        String
+  description String?
+  parentId    String?
 
   // Relationships
-  parent           ServiceCategory? @relation("ServiceCategoryHierarchy", fields: [parentId], references: [id])
-  children         ServiceCategory[] @relation("ServiceCategoryHierarchy")
-  services         Service[]
+  parent   ServiceCategory?  @relation("ServiceCategoryHierarchy", fields: [parentId], references: [id])
+  children ServiceCategory[] @relation("ServiceCategoryHierarchy")
+  services Service[]
 
   @@map("service_categories")
 }
@@ -1091,188 +1220,188 @@ model ServiceCategory {
 // ==================== DOCUMENT MANAGEMENT ====================
 
 model Document {
-  id               String           @id @default(cuid())
-  organizationId   String
-  uploadedById     String
+  id             String @id @default(cuid())
+  organizationId String
+  uploadedById   String
 
   // File Information
-  filename         String           // Original filename
-  originalName     String           // Original filename from upload
-  mimeType         String           // MIME type (e.g., application/pdf, image/jpeg)
-  size             Int              // File size in bytes
-  path             String           // Storage path/URL
-  hash             String           // SHA-256 hash for integrity
+  filename     String // Original filename
+  originalName String // Original filename from upload
+  mimeType     String // MIME type (e.g., application/pdf, image/jpeg)
+  size         Int // File size in bytes
+  path         String // Storage path/URL
+  hash         String // SHA-256 hash for integrity
 
   // Document Metadata
-  title            String?          // User-friendly title
-  description      String?          // Document description
-  category         String           // DocumentCategory enum
-  tags             String?          // JSON array of tags
+  title       String? // User-friendly title
+  description String? // Document description
+  category    String // DocumentCategory enum
+  tags        String? // JSON array of tags
 
   // Entity Associations (polymorphic relationships)
-  entityType       String?          // Customer, Invoice, Quote, Payment, etc.
-  entityId         String?          // ID of the associated entity
+  entityType String? // Customer, Invoice, Quote, Payment, etc.
+  entityId   String? // ID of the associated entity
 
   // File Processing
-  isProcessed      Boolean          @default(false)
-  processingStatus String           @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
-  processingError  String?          // Error message if processing failed
-  thumbnailPath    String?          // Path to generated thumbnail
-  ocrText          String?          // Extracted text from OCR (if applicable)
+  isProcessed      Boolean @default(false)
+  processingStatus String  @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  processingError  String? // Error message if processing failed
+  thumbnailPath    String? // Path to generated thumbnail
+  ocrText          String? // Extracted text from OCR (if applicable)
 
   // Security & Access
-  isPublic         Boolean          @default(false)
-  isEncrypted      Boolean          @default(false)
-  encryptionKey    String?          // Document-specific encryption key
-  accessLevel      String           @default("PRIVATE") // PUBLIC, PRIVATE, RESTRICTED
+  isPublic      Boolean @default(false)
+  isEncrypted   Boolean @default(false)
+  encryptionKey String? // Document-specific encryption key
+  accessLevel   String  @default("PRIVATE") // PUBLIC, PRIVATE, RESTRICTED
 
   // Versioning
-  version          Int              @default(1)
-  parentId         String?          // Parent document for versioning
-  isLatestVersion  Boolean          @default(true)
+  version         Int     @default(1)
+  parentId        String? // Parent document for versioning
+  isLatestVersion Boolean @default(true)
 
   // Retention & Compliance
-  retentionDate    DateTime?        // When document can be deleted
-  isArchived       Boolean          @default(false)
-  archivedAt       DateTime?
+  retentionDate DateTime? // When document can be deleted
+  isArchived    Boolean   @default(false)
+  archivedAt    DateTime?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  uploadedBy       User             @relation(fields: [uploadedById], references: [id])
-  parent           Document?        @relation("DocumentVersions", fields: [parentId], references: [id])
-  versions         Document[]       @relation("DocumentVersions")
+  organization Organization @relation(fields: [organizationId], references: [id])
+  uploadedBy   User         @relation(fields: [uploadedById], references: [id])
+  parent       Document?    @relation("DocumentVersions", fields: [parentId], references: [id])
+  versions     Document[]   @relation("DocumentVersions")
 
-  @@map("documents")
   @@index([organizationId])
   @@index([entityType, entityId])
   @@index([category])
   @@index([createdAt])
   @@index([hash])
+  @@map("documents")
 }
 
 // ==================== AUDIT & COMPLIANCE ====================
 
 model AuditLog {
-  id               String           @id @default(cuid())
-  organizationId   String
-  userId           String?
+  id             String  @id @default(cuid())
+  organizationId String
+  userId         String?
 
   // Audit Details
-  action           String           // CREATE, UPDATE, DELETE, VIEW, etc.
-  entityType       String           // Model name
-  entityId         String
-  changes          String?          // JSON stored as string
+  action     String // CREATE, UPDATE, DELETE, VIEW, etc.
+  entityType String // Model name
+  entityId   String
+  changes    String? // JSON stored as string
 
   // Context
-  ipAddress        String?
-  userAgent        String?
-  requestId        String?
+  ipAddress String?
+  userAgent String?
+  requestId String?
 
   // Timestamp (immutable)
-  timestamp        DateTime         @default(now())
+  timestamp DateTime @default(now())
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  user             User?            @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User?        @relation(fields: [userId], references: [id])
 
-  @@map("audit_logs")
   @@index([organizationId])
   @@index([entityType, entityId])
   @@index([timestamp])
+  @@map("audit_logs")
 }
 
 // ==================== CRITICAL FINANCIAL INFRASTRUCTURE ====================
 
 model StateProvince {
-  id               String           @id @default(cuid())
-  countryId        String
-  code             String           // Province/State code (e.g., "ON", "CA")
-  name             String
-  taxRate          Decimal?         // Provincial tax rate
-  isActive         Boolean          @default(true)
+  id        String   @id @default(cuid())
+  countryId String
+  code      String // Province/State code (e.g., "ON", "CA")
+  name      String
+  taxRate   Decimal? // Provincial tax rate
+  isActive  Boolean  @default(true)
 
   // Relationships
-  country          Country          @relation(fields: [countryId], references: [id])
-  addresses        Address[]
-  taxRecords       TaxRecord[]
+  country    Country     @relation(fields: [countryId], references: [id])
+  addresses  Address[]
+  taxRecords TaxRecord[]
 
   @@unique([countryId, code])
-  @@map("state_provinces")
   @@index([countryId])
   @@index([isActive])
+  @@map("state_provinces")
 }
 
 model ExchangeRate {
-  id               String           @id @default(cuid())
+  id               String   @id @default(cuid())
   fromCurrencyCode String
   toCurrencyCode   String
-  rate             Decimal          // High precision for exchange rates
-  effectiveDate    DateTime         @default(now())
-  source           String?          // Rate source (e.g., "Bank of Canada")
+  rate             Decimal // High precision for exchange rates
+  effectiveDate    DateTime @default(now())
+  source           String? // Rate source (e.g., "Bank of Canada")
 
   // Relationships
-  fromCurrency     Currency         @relation("FromCurrency", fields: [fromCurrencyCode], references: [code])
-  toCurrency       Currency         @relation("ToCurrency", fields: [toCurrencyCode], references: [code])
+  fromCurrency Currency @relation("FromCurrency", fields: [fromCurrencyCode], references: [code])
+  toCurrency   Currency @relation("ToCurrency", fields: [toCurrencyCode], references: [code])
 
   @@unique([fromCurrencyCode, toCurrencyCode, effectiveDate])
-  @@map("exchange_rates")
   @@index([effectiveDate])
+  @@map("exchange_rates")
 }
 
 model TaxRecord {
-  id               String           @id @default(cuid())
-  organizationId   String
-  taxYear          Int
-  taxPeriod        String           // "Q1", "Q2", "Q3", "Q4", "ANNUAL"
-  jurisdiction     String           // "FEDERAL", "PROVINCIAL", "MUNICIPAL"
-  stateProvinceId  String?
+  id              String  @id @default(cuid())
+  organizationId  String
+  taxYear         Int
+  taxPeriod       String // "Q1", "Q2", "Q3", "Q4", "ANNUAL"
+  jurisdiction    String // "FEDERAL", "PROVINCIAL", "MUNICIPAL"
+  stateProvinceId String?
 
   // Tax Details
-  taxType          String           // "INCOME", "GST", "HST", "PST", "PROPERTY"
-  grossIncome      Decimal
-  taxableIncome    Decimal
-  taxOwed          Decimal
-  taxPaid          Decimal
-  taxBalance       Decimal
+  taxType       String // "INCOME", "GST", "HST", "PST", "PROPERTY"
+  grossIncome   Decimal
+  taxableIncome Decimal
+  taxOwed       Decimal
+  taxPaid       Decimal
+  taxBalance    Decimal
 
   // Filing Information
-  filedDate        DateTime?
-  dueDate          DateTime
-  status           String           @default("PENDING") // PENDING, FILED, PAID, OVERDUE
+  filedDate DateTime?
+  dueDate   DateTime
+  status    String    @default("PENDING") // PENDING, FILED, PAID, OVERDUE
 
   // Documents
-  returnDocument   String?          // Path to tax return
-  supportingDocs   String?          // JSON array of document paths
+  returnDocument String? // Path to tax return
+  supportingDocs String? // JSON array of document paths
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  stateProvince    StateProvince?   @relation(fields: [stateProvinceId], references: [id])
+  organization  Organization   @relation(fields: [organizationId], references: [id])
+  stateProvince StateProvince? @relation(fields: [stateProvinceId], references: [id])
 
-  @@map("tax_records")
   @@index([organizationId])
   @@index([taxYear, taxPeriod])
   @@index([dueDate])
   @@index([status])
+  @@map("tax_records")
 }
 
 model BankAccount {
-  id               String           @id @default(cuid())
-  organizationId   String
-  accountName      String
-  accountNumber    String           // Encrypted
-  routingNumber    String?          // Encrypted
-  bankName         String
-  accountType      String           // "CHECKING", "SAVINGS", "CREDIT"
-  currency         String           @default("CAD")
+  id             String  @id @default(cuid())
+  organizationId String
+  accountName    String
+  accountNumber  String // Encrypted
+  routingNumber  String? // Encrypted
+  bankName       String
+  accountType    String // "CHECKING", "SAVINGS", "CREDIT"
+  currency       String  @default("CAD")
 
   // Balance tracking
   currentBalance   Decimal
@@ -1280,418 +1409,994 @@ model BankAccount {
   lastReconciled   DateTime?
 
   // Account status
-  isActive         Boolean          @default(true)
-  isDefault        Boolean          @default(false)
+  isActive  Boolean @default(true)
+  isDefault Boolean @default(false)
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  transactions     BankTransaction[]
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  transactions BankTransaction[]
 
-  @@map("bank_accounts")
+  @@unique([organizationId, accountNumber])
   @@index([organizationId])
   @@index([isActive])
-  @@unique([organizationId, accountNumber])
+  @@map("bank_accounts")
 }
 
 model BankTransaction {
-  id               String           @id @default(cuid())
-  organizationId   String
-  bankAccountId    String
+  id             String @id @default(cuid())
+  organizationId String
+  bankAccountId  String
 
   // Transaction Details
-  transactionDate  DateTime
-  description      String
-  amount           Decimal
-  transactionType  String           // "DEBIT", "CREDIT"
-  category         String?
-  reference        String?          // Bank reference number
+  transactionDate DateTime
+  description     String
+  amount          Decimal
+  transactionType String // "DEBIT", "CREDIT"
+  category        String?
+  reference       String? // Bank reference number
 
   // Reconciliation
-  isReconciled     Boolean          @default(false)
+  isReconciled     Boolean   @default(false)
   reconciledDate   DateTime?
-  reconciledBy     String?          // User ID
-  matchedPaymentId String?          // Link to Payment record
+  reconciledBy     String? // User ID
+  matchedPaymentId String? // Link to Payment record
 
   // Import tracking
-  importId         String?          // Batch import identifier
-  importedAt       DateTime?
+  importId   String? // Batch import identifier
+  importedAt DateTime?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  bankAccount      BankAccount      @relation(fields: [bankAccountId], references: [id])
-  matchedPayment   Payment?         @relation(fields: [matchedPaymentId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  bankAccount    BankAccount  @relation(fields: [bankAccountId], references: [id])
+  matchedPayment Payment?     @relation(fields: [matchedPaymentId], references: [id])
 
-  @@map("bank_transactions")
+  @@unique([bankAccountId, reference])
   @@index([organizationId])
   @@index([bankAccountId])
   @@index([transactionDate])
   @@index([isReconciled])
-  @@unique([bankAccountId, reference])
+  @@map("bank_transactions")
 }
 
 model SecurityEvent {
-  id               String           @id @default(cuid())
-  organizationId   String?          // Null for system-wide events
-  userId           String?
+  id             String  @id @default(cuid())
+  organizationId String? // Null for system-wide events
+  userId         String?
 
   // Event Details
-  eventType        String           // "LOGIN_FAILED", "SUSPICIOUS_ACTIVITY", "ACCOUNT_LOCKED", etc.
-  severity         String           // "LOW", "MEDIUM", "HIGH", "CRITICAL"
-  description      String
-  source           String?          // "WEB", "API", "MOBILE"
+  eventType   String // "LOGIN_FAILED", "SUSPICIOUS_ACTIVITY", "ACCOUNT_LOCKED", etc.
+  severity    String // "LOW", "MEDIUM", "HIGH", "CRITICAL"
+  description String
+  source      String? // "WEB", "API", "MOBILE"
 
   // Context
-  ipAddress        String?
-  userAgent        String?
-  location         String?          // Geo-location
-  requestId        String?
-  sessionId        String?
+  ipAddress String?
+  userAgent String?
+  location  String? // Geo-location
+  requestId String?
+  sessionId String?
 
   // Additional Data
-  metadata         String?          // JSON stored as string
+  metadata String? // JSON stored as string
 
   // Resolution
-  resolved         Boolean          @default(false)
-  resolvedAt       DateTime?
-  resolvedBy       String?          // User ID
-  resolution       String?          // Description of resolution
+  resolved   Boolean   @default(false)
+  resolvedAt DateTime?
+  resolvedBy String? // User ID
+  resolution String? // Description of resolution
 
   // Timestamp (immutable)
-  timestamp        DateTime         @default(now())
+  timestamp DateTime @default(now())
 
   // Relationships
-  organization     Organization?    @relation(fields: [organizationId], references: [id])
-  user             User?            @relation(fields: [userId], references: [id])
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  user         User?         @relation(fields: [userId], references: [id])
 
-  @@map("security_events")
   @@index([organizationId])
   @@index([eventType])
   @@index([severity])
   @@index([timestamp])
   @@index([resolved])
+  @@map("security_events")
 }
 
 // ==================== ENHANCED BUSINESS OPERATIONS ====================
 
 model StripePayment {
-  id               String           @id @default(cuid())
-  paymentId        String           @unique
-  stripeChargeId   String?          @unique
-  stripeIntentId   String?          @unique
-  customerId       String?          // Stripe customer ID
-  amount           Decimal
-  currency         String           @default("cad")
-  status           String
-  metadata         String?          // JSON stored as string
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id             String   @id @default(cuid())
+  paymentId      String   @unique
+  stripeChargeId String?  @unique
+  stripeIntentId String?  @unique
+  customerId     String? // Stripe customer ID
+  amount         Decimal
+  currency       String   @default("cad")
+  status         String
+  metadata       String? // JSON stored as string
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relationships
-  payment          Payment          @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
 
-  @@map("stripe_payments")
   @@index([stripeChargeId])
   @@index([stripeIntentId])
+  @@map("stripe_payments")
 }
 
 model RecurringInvoice {
-  id               String           @id @default(cuid())
-  organizationId   String
-  customerId       String
-  templateId       String           // Reference to invoice template
-  frequency        String           // "MONTHLY", "QUARTERLY", "YEARLY"
-  nextIssueDate    DateTime
-  lastIssueDate    DateTime?
-  endDate          DateTime?
-  isActive         Boolean          @default(true)
-  autoSend         Boolean          @default(false)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id             String    @id @default(cuid())
+  organizationId String
+  customerId     String
+  templateId     String // Reference to invoice template
+  frequency      String // "MONTHLY", "QUARTERLY", "YEARLY"
+  nextIssueDate  DateTime
+  lastIssueDate  DateTime?
+  endDate        DateTime?
+  isActive       Boolean   @default(true)
+  autoSend       Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  customer         Customer         @relation(fields: [customerId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  customer     Customer     @relation(fields: [customerId], references: [id])
 
-  @@map("recurring_invoices")
   @@index([organizationId])
   @@index([customerId])
   @@index([nextIssueDate])
+  @@map("recurring_invoices")
 }
 
 model CustomerPaymentMethod {
-  id               String           @id @default(cuid())
-  organizationId   String
-  customerId       String
-  type             String           // "CARD", "BANK_ACCOUNT", "PAYPAL"
-  isDefault        Boolean          @default(false)
-  stripeMethodId   String?          @unique
-  last4            String?
-  brand            String?
-  expiryMonth      Int?
-  expiryYear       Int?
-  isActive         Boolean          @default(true)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id             String   @id @default(cuid())
+  organizationId String
+  customerId     String
+  type           String // "CARD", "BANK_ACCOUNT", "PAYPAL"
+  isDefault      Boolean  @default(false)
+  stripeMethodId String?  @unique
+  last4          String?
+  brand          String?
+  expiryMonth    Int?
+  expiryYear     Int?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  customer         Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id])
+  customer     Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
-  @@map("customer_payment_methods")
   @@index([organizationId])
   @@index([customerId])
   @@index([stripeMethodId])
+  @@map("customer_payment_methods")
 }
 
 model ContractorPayment {
-  id               String           @id @default(cuid())
-  organizationId   String
-  contractorId     String
-  amount           Decimal
-  description      String
-  periodStart      DateTime
-  periodEnd        DateTime
-  status           String           @default("PENDING") // PaymentStatus
-  paidAt           DateTime?
-  reference        String?
-  t4aIssued        Boolean          @default(false)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id             String    @id @default(cuid())
+  organizationId String
+  contractorId   String
+  amount         Decimal
+  description    String
+  periodStart    DateTime
+  periodEnd      DateTime
+  status         String    @default("PENDING") // PaymentStatus
+  paidAt         DateTime?
+  reference      String?
+  t4aIssued      Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  contractor       Contractor       @relation(fields: [contractorId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  contractor   Contractor   @relation(fields: [contractorId], references: [id])
 
-  @@map("contractor_payments")
   @@index([organizationId])
   @@index([contractorId])
   @@index([status])
+  @@map("contractor_payments")
 }
 
 model Notification {
-  id               String           @id @default(cuid())
-  organizationId   String?
-  userId           String?
-  email            String?
-  type             String           // "INVOICE_DUE", "PAYMENT_RECEIVED", "QUOTE_EXPIRED"
-  title            String
-  message          String
-  data             String?          // JSON stored as string
-  status           String           @default("PENDING") // "PENDING", "SENT", "FAILED"
-  sentAt           DateTime?
-  readAt           DateTime?
-  createdAt        DateTime         @default(now())
+  id             String    @id @default(cuid())
+  organizationId String?
+  userId         String?
+  email          String?
+  type           String // "INVOICE_DUE", "PAYMENT_RECEIVED", "QUOTE_EXPIRED"
+  title          String
+  message        String
+  data           String? // JSON stored as string
+  status         String    @default("PENDING") // "PENDING", "SENT", "FAILED"
+  sentAt         DateTime?
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
 
   // Relationships
-  organization     Organization?    @relation(fields: [organizationId], references: [id])
-  user             User?            @relation(fields: [userId], references: [id])
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  user         User?         @relation(fields: [userId], references: [id])
 
-  @@map("notifications")
   @@index([organizationId])
   @@index([userId])
   @@index([status])
+  @@map("notifications")
 }
 
 model Webhook {
-  id               String           @id @default(cuid())
-  organizationId   String
-  url              String
-  events           String           // JSON array of event types
-  secret           String
-  isActive         Boolean          @default(true)
-  lastTriggered    DateTime?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id             String    @id @default(cuid())
+  organizationId String
+  url            String
+  events         String // JSON array of event types
+  secret         String
+  isActive       Boolean   @default(true)
+  lastTriggered  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  deliveries       WebhookDelivery[]
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  deliveries   WebhookDelivery[]
 
-  @@map("webhooks")
   @@index([organizationId])
   @@index([isActive])
+  @@map("webhooks")
 }
 
 model WebhookDelivery {
-  id               String           @id @default(cuid())
-  webhookId        String
-  eventType        String
-  payload          String           // JSON stored as string
-  status           String           @default("PENDING") // "PENDING", "SUCCESS", "FAILED"
-  responseCode     Int?
-  responseBody     String?
-  attempts         Int              @default(0)
-  nextRetryAt      DateTime?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id           String    @id @default(cuid())
+  webhookId    String
+  eventType    String
+  payload      String // JSON stored as string
+  status       String    @default("PENDING") // "PENDING", "SUCCESS", "FAILED"
+  responseCode Int?
+  responseBody String?
+  attempts     Int       @default(0)
+  nextRetryAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // Relationships
-  webhook          Webhook          @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
 
-  @@map("webhook_deliveries")
   @@index([webhookId])
   @@index([status])
   @@index([nextRetryAt])
+  @@map("webhook_deliveries")
 }
 
 // ==================== INVOICE TEMPLATES & CUSTOMIZATION ====================
 
 model InvoiceTemplate {
-  id               String           @id @default(cuid())
-  organizationId   String
-  name             String
-  description      String?
-  templateType     String           @default("STANDARD") // STANDARD, MINIMAL, MODERN, CUSTOM
+  id             String  @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  templateType   String  @default("STANDARD") // STANDARD, MINIMAL, MODERN, CUSTOM
 
   // Template Content
-  htmlTemplate     String           // Handlebars template
-  isDefault        Boolean          @default(false)
-  isSystem         Boolean          @default(false) // System-provided templates
+  htmlTemplate String // Handlebars template
+  isDefault    Boolean @default(false)
+  isSystem     Boolean @default(false) // System-provided templates
 
   // Template Metadata
-  version          String           @default("1.0")
-  tags             String?          // JSON array of tags
-  previewUrl       String?          // Preview image URL
+  version    String  @default("1.0")
+  tags       String? // JSON array of tags
+  previewUrl String? // Preview image URL
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  invoiceStyles    InvoiceStyle[]
-  generatedPDFs    GeneratedPDF[]
+  organization  Organization   @relation(fields: [organizationId], references: [id])
+  invoiceStyles InvoiceStyle[]
+  generatedPDFs GeneratedPDF[]
 
-  @@map("invoice_templates")
+  @@unique([organizationId, name])
   @@index([organizationId])
   @@index([templateType])
   @@index([isDefault])
-  @@unique([organizationId, name])
+  @@map("invoice_templates")
 }
 
 model InvoiceStyle {
-  id               String           @id @default(cuid())
-  organizationId   String
-  templateId       String?          // Nullable for global styles
-  name             String
-  description      String?
+  id             String  @id @default(cuid())
+  organizationId String
+  templateId     String? // Nullable for global styles
+  name           String
+  description    String?
 
   // Style Configuration
-  cssContent       String           // CSS styles
-  colorScheme      String           // JSON color configuration
-  fontFamily       String           @default("Arial, sans-serif")
-  isDefault        Boolean          @default(false)
-  isSystem         Boolean          @default(false) // System-provided styles
+  cssContent  String // CSS styles
+  colorScheme String // JSON color configuration
+  fontFamily  String  @default("Arial, sans-serif")
+  isDefault   Boolean @default(false)
+  isSystem    Boolean @default(false) // System-provided styles
 
   // Template Metadata
-  version          String           @default("1.0")
-  tags             String?          // JSON array of tags
-  previewUrl       String?          // Preview image URL
+  version    String  @default("1.0")
+  tags       String? // JSON array of tags
+  previewUrl String? // Preview image URL
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  template         InvoiceTemplate? @relation(fields: [templateId], references: [id])
-  generatedPDFs    GeneratedPDF[]
+  organization  Organization     @relation(fields: [organizationId], references: [id])
+  template      InvoiceTemplate? @relation(fields: [templateId], references: [id])
+  generatedPDFs GeneratedPDF[]
 
-  @@map("invoice_styles")
+  @@unique([organizationId, name])
   @@index([organizationId])
   @@index([templateId])
   @@index([isDefault])
-  @@unique([organizationId, name])
+  @@map("invoice_styles")
 }
 
 model OrganizationBranding {
-  id               String           @id @default(cuid())
-  organizationId   String           @unique
+  id             String @id @default(cuid())
+  organizationId String @unique
 
   // Logo Configuration
-  logoUrl          String?          // URL to uploaded logo
-  logoWidth        Int?             // Logo display width in pixels
-  logoHeight       Int?             // Logo display height in pixels
-  showLogo         Boolean          @default(true)
-  showOrgName      Boolean          @default(true)
+  logoUrl     String? // URL to uploaded logo
+  logoWidth   Int? // Logo display width in pixels
+  logoHeight  Int? // Logo display height in pixels
+  showLogo    Boolean @default(true)
+  showOrgName Boolean @default(true)
 
   // Color Scheme
-  primaryColor     String           @default("#000000")
-  secondaryColor   String           @default("#666666")
-  accentColor      String           @default("#0066cc")
-  backgroundColor  String           @default("#ffffff")
-  textColor        String           @default("#000000")
+  primaryColor    String @default("#000000")
+  secondaryColor  String @default("#666666")
+  accentColor     String @default("#0066cc")
+  backgroundColor String @default("#ffffff")
+  textColor       String @default("#000000")
 
   // Invoice Display Settings
-  displaySettings  String           // JSON: { dateFormat, currency, layout, etc. }
-  customCss        String?          // Additional custom CSS
+  displaySettings String // JSON: { dateFormat, currency, layout, etc. }
+  customCss       String? // Additional custom CSS
 
   // Tax Settings
-  taxesEnabled     Boolean          @default(true)
-  defaultTaxExempt Boolean          @default(false)
-  taxDisplaySettings String?        // JSON tax configuration
+  taxesEnabled       Boolean @default(true)
+  defaultTaxExempt   Boolean @default(false)
+  taxDisplaySettings String? // JSON tax configuration
 
   // Template Selection
   defaultTemplateId String?
-  defaultStyleId   String?
+  defaultStyleId    String?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
 
   @@map("organization_branding")
 }
 
 model GeneratedPDF {
-  id               String           @id @default(cuid())
-  organizationId   String
-  invoiceId        String
-  templateId       String?
-  styleId          String?
+  id             String  @id @default(cuid())
+  organizationId String
+  invoiceId      String
+  templateId     String?
+  styleId        String?
 
   // PDF Information
-  filename         String           // Generated PDF filename
-  fileSize         Int              // File size in bytes
-  filePath         String           // Storage path/URL
-  fileHash         String           // SHA-256 hash for integrity
+  filename String // Generated PDF filename
+  fileSize Int // File size in bytes
+  filePath String // Storage path/URL
+  fileHash String // SHA-256 hash for integrity
 
   // Generation Context
-  templateVersion  String           @default("1.0")
-  generatedBy      String           // User ID who generated
-  generationParams String?          // JSON generation parameters
+  templateVersion  String  @default("1.0")
+  generatedBy      String // User ID who generated
+  generationParams String? // JSON generation parameters
 
   // Status
-  status           String           @default("GENERATED") // GENERATED, FAILED, PROCESSING
-  errorMessage     String?
+  status       String  @default("GENERATED") // GENERATED, FAILED, PROCESSING
+  errorMessage String?
 
   // Timestamps
-  createdAt        DateTime         @default(now())
-  expiresAt        DateTime?        // Optional expiration for cleanup
+  createdAt DateTime  @default(now())
+  expiresAt DateTime? // Optional expiration for cleanup
 
   // Relationships
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  invoice          Invoice          @relation(fields: [invoiceId], references: [id])
-  template         InvoiceTemplate? @relation(fields: [templateId], references: [id])
-  style            InvoiceStyle?    @relation(fields: [styleId], references: [id])
+  organization Organization     @relation(fields: [organizationId], references: [id])
+  invoice      Invoice          @relation(fields: [invoiceId], references: [id])
+  template     InvoiceTemplate? @relation(fields: [templateId], references: [id])
+  style        InvoiceStyle?    @relation(fields: [styleId], references: [id])
 
-  @@map("generated_pdfs")
+  @@unique([invoiceId, templateId, styleId]) // One PDF per template/style combo
   @@index([organizationId])
   @@index([invoiceId])
   @@index([createdAt])
   @@index([status])
-  @@unique([invoiceId, templateId, styleId]) // One PDF per template/style combo
+  @@map("generated_pdfs")
+}
+
+// ==================== PURCHASE ORDERS & BILLS ====================
+
+model PurchaseOrder {
+  id             String @id @default(cuid())
+  organizationId String
+  poNumber       String // Auto-generated PO number
+  vendorId       String
+
+  // Order Details
+  status       String    @default("DRAFT") // DRAFT, SENT, ACKNOWLEDGED, PARTIALLY_RECEIVED, RECEIVED, CANCELLED
+  orderDate    DateTime  @default(now())
+  expectedDate DateTime? // Expected delivery date
+  receivedDate DateTime? // Actual receipt date
+
+  // Amounts
+  subtotal       Decimal
+  taxAmount      Decimal
+  totalAmount    Decimal
+  receivedAmount Decimal @default(0)
+
+  // Additional Info
+  currency      String  @default("CAD")
+  notes         String?
+  internalNotes String?
+  terms         String? // Payment terms
+
+  // Tracking
+  createdBy  String
+  approvedBy String?
+  approvedAt DateTime?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization            @relation(fields: [organizationId], references: [id])
+  vendor       Vendor                  @relation(fields: [vendorId], references: [id])
+  lineItems    PurchaseOrderLineItem[]
+  bills        Bill[]
+
+  @@unique([organizationId, poNumber])
+  @@index([organizationId])
+  @@index([vendorId])
+  @@index([status])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderLineItem {
+  id              String  @id @default(cuid())
+  purchaseOrderId String
+  productId       String? // Optional - can be service or non-inventoried item
+
+  // Line Item Details
+  description String
+  quantity    Decimal
+  unitPrice   Decimal
+  taxRate     Decimal @default(0)
+  taxAmount   Decimal
+  lineTotal   Decimal
+
+  // Receiving Status
+  quantityReceived Decimal @default(0)
+  quantityBilled   Decimal @default(0)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product       Product?      @relation(fields: [productId], references: [id])
+
+  @@index([purchaseOrderId])
+  @@index([productId])
+  @@map("purchase_order_line_items")
+}
+
+model Bill {
+  id              String  @id @default(cuid())
+  organizationId  String
+  billNumber      String // Auto-generated or vendor's invoice number
+  vendorId        String
+  purchaseOrderId String? // Optional - can create bill without PO
+
+  // Bill Details
+  status   String   @default("RECEIVED") // RECEIVED, VERIFIED, APPROVED, PAID, DISPUTED, CANCELLED
+  billDate DateTime // Date on vendor's invoice
+  dueDate  DateTime
+
+  // Amounts
+  subtotal      Decimal
+  taxAmount     Decimal
+  totalAmount   Decimal
+  paidAmount    Decimal @default(0)
+  balanceAmount Decimal // totalAmount - paidAmount
+
+  // Additional Info
+  currency            String  @default("CAD")
+  notes               String?
+  internalNotes       String?
+  vendorInvoiceNumber String? // Their reference number
+
+  // Tracking
+  createdBy  String
+  approvedBy String?
+  approvedAt DateTime?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization  Organization    @relation(fields: [organizationId], references: [id])
+  vendor        Vendor          @relation(fields: [vendorId], references: [id])
+  purchaseOrder PurchaseOrder?  @relation(fields: [purchaseOrderId], references: [id])
+  lineItems     BillLineItem[]
+  payments      VendorPayment[]
+
+  @@unique([organizationId, billNumber])
+  @@index([organizationId])
+  @@index([vendorId])
+  @@index([purchaseOrderId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("bills")
+}
+
+model BillLineItem {
+  id        String  @id @default(cuid())
+  billId    String
+  productId String?
+  accountId String? // Expense account for this line
+
+  // Line Item Details
+  description String
+  quantity    Decimal
+  unitPrice   Decimal
+  taxRate     Decimal @default(0)
+  taxAmount   Decimal
+  lineTotal   Decimal
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  bill    Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+  account Account? @relation(fields: [accountId], references: [id])
+
+  @@index([billId])
+  @@index([productId])
+  @@index([accountId])
+  @@map("bill_line_items")
+}
+
+model VendorPayment {
+  id             String  @id @default(cuid())
+  organizationId String
+  paymentNumber  String // Auto-generated
+  vendorId       String
+  billId         String? // Optional - can make payment without specific bill
+  accountId      String // Bank account used for payment
+
+  // Payment Details
+  amount          Decimal
+  paymentDate     DateTime @default(now())
+  paymentMethod   String // CHEQUE, BANK_TRANSFER, CREDIT_CARD, CASH, OTHER
+  referenceNumber String? // Cheque number, transfer confirmation, etc.
+
+  // Status
+  status      String    @default("PENDING") // PENDING, COMPLETED, CANCELLED, FAILED
+  clearedDate DateTime? // When payment cleared bank
+
+  // Additional Info
+  currency     String  @default("CAD")
+  exchangeRate Decimal @default(1.0)
+  notes        String?
+
+  // Tracking
+  createdBy  String
+  approvedBy String?
+  approvedAt DateTime?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  vendor       Vendor       @relation(fields: [vendorId], references: [id])
+  bill         Bill?        @relation(fields: [billId], references: [id])
+  account      Account      @relation(fields: [accountId], references: [id])
+
+  @@unique([organizationId, paymentNumber])
+  @@index([organizationId])
+  @@index([vendorId])
+  @@index([billId])
+  @@index([accountId])
+  @@index([status])
+  @@index([paymentDate])
+  @@map("vendor_payments")
+}
+
+// ==================== INVENTORY MANAGEMENT ====================
+
+model InventoryItem {
+  id             String  @id @default(cuid())
+  organizationId String
+  productId      String
+  locationId     String? // Optional - null means company-wide
+
+  // Quantities
+  quantityOnHand    Decimal @default(0)
+  quantityReserved  Decimal @default(0) // Reserved for orders
+  quantityAvailable Decimal @default(0) // onHand - reserved
+
+  // Reorder Management
+  reorderPoint    Decimal?
+  reorderQuantity Decimal?
+  maxQuantity     Decimal?
+
+  // Valuation (for costing)
+  averageCost    Decimal?
+  lastCost       Decimal?
+  lastStockCount DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  organization Organization           @relation(fields: [organizationId], references: [id])
+  product      Product                @relation(fields: [productId], references: [id])
+  location     Location?              @relation(fields: [locationId], references: [id])
+  transactions InventoryTransaction[]
+
+  @@unique([productId, locationId])
+  @@index([organizationId])
+  @@index([productId])
+  @@index([locationId])
+  @@map("inventory_items")
+}
+
+model InventoryTransaction {
+  id              String @id @default(cuid())
+  organizationId  String
+  inventoryItemId String
+
+  // Transaction Details
+  type      String // RECEIPT, SALE, ADJUSTMENT, TRANSFER, RETURN
+  quantity  Decimal // Positive for increase, negative for decrease
+  unitCost  Decimal?
+  totalCost Decimal?
+
+  // Reference
+  referenceType   String? // PURCHASE_ORDER, INVOICE, ADJUSTMENT, TRANSFER
+  referenceId     String? // ID of related document
+  referenceNumber String? // Human-readable reference
+
+  // Transfer Details (if type is TRANSFER)
+  fromLocationId String?
+  toLocationId   String?
+
+  // Additional Info
+  reason String?
+  notes  String?
+
+  // Tracking
+  createdBy       String
+  transactionDate DateTime @default(now())
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  organization  Organization  @relation(fields: [organizationId], references: [id])
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  fromLocation  Location?     @relation(fields: [fromLocationId], references: [id])
+
+  @@index([organizationId])
+  @@index([inventoryItemId])
+  @@index([referenceType, referenceId])
+  @@index([transactionDate])
+  @@index([fromLocationId])
+  @@map("inventory_transactions")
+}
+
+// ==================== TIME TRACKING ====================
+
+model EmployeeTimeEntry {
+  id             String  @id @default(cuid())
+  organizationId String
+  employeeId     String
+  projectId      String? // Optional - can be general time
+
+  // Time Details
+  date      DateTime
+  startTime DateTime?
+  endTime   DateTime?
+  hours     Decimal // Total hours worked
+
+  // Description & Billing
+  description String?
+  billable    Boolean  @default(false)
+  hourlyRate  Decimal? // Rate at time of entry
+
+  // Approval
+  status          String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  approvedBy      String?
+  approvedAt      DateTime?
+  rejectionReason String?
+
+  // Invoicing
+  invoiced  Boolean @default(false)
+  invoiceId String?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+  project      Project?     @relation(fields: [projectId], references: [id])
+  invoice      Invoice?     @relation(fields: [invoiceId], references: [id])
+
+  @@index([organizationId])
+  @@index([employeeId])
+  @@index([projectId])
+  @@index([date])
+  @@index([status])
+  @@map("employee_time_entries")
+}
+
+// ==================== DOMAIN VERIFICATION ====================
+
+model DomainVerification {
+  id                String    @id @default(cuid())
+  domain            String    @unique
+  verificationToken String
+  status            String    @default("PENDING") // PENDING, VERIFIED, FAILED, EXPIRED
+  attempts          Int       @default(0)
+  lastAttemptAt     DateTime?
+  verifiedAt        DateTime?
+  expiresAt         DateTime
+
+  // Audit fields
+  requestedBy String?
+  verifiedBy  String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([domain, status])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("domain_verifications")
+}
+
+// ==================== PUBLIC INTAKE WORKFLOW ====================
+
+model IntakeSession {
+  id String @id @default(cuid())
+
+  // Token Management
+  tokenHash    String @unique // bcrypt hash of token
+  tokenVersion Int    @default(1)
+
+  // Session Metadata
+  status         String @default("ACTIVE") // ACTIVE, COMPLETED, EXPIRED, ABANDONED, BLOCKED
+  currentStep    String @default("EMAIL_CAPTURE") // Current workflow step
+  completedSteps String @default("[]") // JSON array of completed steps
+
+  // Security Context
+  ipAddress   String
+  userAgent   String?
+  fingerprint String? // Browser fingerprint
+  origin      String? // Request origin
+
+  // Bot Detection Flags
+  suspicionScore    Int     @default(0) // 0-100, higher = more suspicious
+  botFlags          String? // JSON array of triggered bot detection rules
+  honeypotTriggered Boolean @default(false)
+
+  // Timing Analysis
+  sessionStartedAt DateTime @default(now())
+  lastActivityAt   DateTime @default(now())
+  stepTimings      String? // JSON object with step completion times
+
+  // Request Tracking
+  requestCount       Int @default(0)
+  submissionAttempts Int @default(0)
+
+  // Data References
+  customerDataId String? @unique
+  quoteDataId    String? @unique
+
+  // Conversion Tracking
+  convertedAt           DateTime?
+  convertedToCustomerId String?
+  convertedToQuoteId    String?
+
+  // Compliance & Retention
+  privacyPolicyAccepted Boolean @default(false)
+  termsAccepted         Boolean @default(false)
+  marketingConsent      Boolean @default(false)
+
+  // Expiration
+  expiresAt DateTime
+  deletedAt DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  customerData   IntakeCustomerData?
+  quoteData      IntakeQuoteData?
+  securityEvents IntakeSecurityEvent[]
+
+  @@index([tokenHash])
+  @@index([ipAddress])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([suspicionScore])
+  @@index([sessionStartedAt])
+  @@map("intake_sessions")
+}
+
+model IntakeCustomerData {
+  id        String @id @default(cuid())
+  sessionId String @unique
+
+  // Profile Type
+  profileType String? // RESIDENTIAL, COMMERCIAL
+
+  // Email (captured first)
+  email         String // Encrypted
+  emailVerified Boolean @default(false)
+
+  // Personal Information (RESIDENTIAL)
+  firstName String?
+  lastName  String?
+  phone     String? // Encrypted
+
+  // Business Information (COMMERCIAL)
+  businessName  String?
+  contactName   String?
+  businessPhone String? // Encrypted
+
+  // Address Information
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  province     String? // State/Province
+  postalCode   String?
+  country      String? @default("CA")
+
+  // Additional Details
+  notes          String? // Customer-provided notes
+  referralSource String? // How did you hear about us?
+
+  // Data Completeness
+  completionPercentage Int @default(0) // 0-100
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  session IntakeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([sessionId])
+  @@map("intake_customer_data")
+}
+
+model IntakeQuoteData {
+  id        String @id @default(cuid())
+  sessionId String @unique
+
+  // Service Category
+  category    String? // HVAC, PLUMBING, ELECTRICAL, etc.
+  subcategory String?
+
+  // Quote Details
+  serviceType   String? // REPAIR, INSTALLATION, MAINTENANCE, CONSULTATION
+  urgency       String? // EMERGENCY, URGENT, ROUTINE, SCHEDULED
+  preferredDate DateTime? // Preferred service date
+
+  // Description
+  description String? // Detailed description of needs
+  attachments String? // JSON array of uploaded file references
+
+  // Budget
+  estimatedBudget String? // UNDER_1000, 1000_5000, 5000_10000, 10000_PLUS, UNSURE
+
+  // Location (if different from customer address)
+  serviceAddressLine1 String?
+  serviceAddressLine2 String?
+  serviceCity         String?
+  serviceProvince     String?
+  servicePostalCode   String?
+  serviceCountry      String? @default("CA")
+
+  // Additional Questions
+  propertyType       String? // RESIDENTIAL, COMMERCIAL, INDUSTRIAL
+  accessInstructions String? // How to access property
+  additionalNotes    String? // Additional customer notes
+
+  // Custom/Dynamic Fields
+  customFields String? // JSON string for industry-specific or dynamic fields
+
+  // Data Completeness
+  completionPercentage Int @default(0) // 0-100
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  session IntakeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@index([urgency])
+  @@index([sessionId])
+  @@map("intake_quote_data")
+}
+
+model IntakeSecurityEvent {
+  id        String  @id @default(cuid())
+  sessionId String? // Null for pre-session events
+
+  // Event Classification
+  eventType String // BOT_DETECTED, RATE_LIMIT_EXCEEDED, HONEYPOT_TRIGGERED, etc.
+  severity  String // LOW, MEDIUM, HIGH, CRITICAL
+
+  // Event Details
+  description   String
+  ruleTriggered String? // Which bot detection rule triggered
+  metadata      String? // JSON metadata
+
+  // Context
+  ipAddress     String
+  userAgent     String?
+  requestPath   String?
+  requestMethod String?
+  requestBody   String? // Sanitized request body
+
+  // Action Taken
+  actionTaken String // LOGGED, BLOCKED, CHALLENGED, RATE_LIMITED
+  blocked     Boolean @default(false)
+
+  // Timestamp
+  timestamp DateTime @default(now())
+
+  // Relationships
+  session IntakeSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId])
+  @@index([eventType])
+  @@index([severity])
+  @@index([ipAddress])
+  @@index([timestamp])
+  @@index([blocked])
+  @@map("intake_security_events")
 }

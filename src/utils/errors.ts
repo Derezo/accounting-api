@@ -450,7 +450,7 @@ export const ErrorUtils = {
    * Log error with appropriate level
    */
   logError: (error: Error, context?: Record<string, any>): void => {
-    const logContext = {
+    const logContext: Record<string, any> = {
       ...context,
       errorName: error.name,
       message: error.message,

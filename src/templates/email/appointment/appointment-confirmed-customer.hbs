@@ -1,0 +1,79 @@
+<h1>Appointment Confirmed!</h1>
+
+<p>Hi {{customerName}},</p>
+
+<p>
+    Great news! Your appointment has been successfully booked. We're looking forward to meeting with you.
+</p>
+
+<div class="info-box">
+    <h3>Appointment Details</h3>
+    <p><strong>Date & Time:</strong> {{formatDate startTime "long"}} at {{formatDate startTime "time"}}</p>
+    <p><strong>Duration:</strong> {{duration}} minutes</p>
+    <p><strong>Quote Number:</strong> {{quoteNumber}}</p>
+    <p><strong>Appointment ID:</strong> {{appointmentId}}</p>
+</div>
+
+{{#if meetingLink}}
+<div class="info-box" style="background-color: #dbeafe; border-left-color: #3b82f6;">
+    <h3>Join Meeting</h3>
+    <p>
+        {{#if hasGoogleMeet}}
+        Your appointment will take place via Google Meet. You can join the meeting using the link below:
+        {{else}}
+        Your appointment meeting link:
+        {{/if}}
+    </p>
+    {{> button text="Join Meeting" url=meetingLink}}
+    <p style="font-size: 14px; color: #6b7280; margin-top: 16px;">
+        <strong>Meeting Link:</strong><br>
+        <a href="{{meetingLink}}" style="color: #3b82f6; word-break: break-all;">{{meetingLink}}</a>
+    </p>
+    {{#if hasGoogleMeet}}
+    <p style="font-size: 14px; color: #6b7280;">
+        A calendar invitation has been sent to your email with this meeting link.
+    </p>
+    {{/if}}
+</div>
+{{/if}}
+
+<h2>What to Expect</h2>
+<ul>
+    <li><strong>Before the meeting:</strong> Please review your quote details and prepare any questions</li>
+    <li><strong>During the meeting:</strong> We'll discuss the project scope, timeline, and answer your questions</li>
+    <li><strong>After the meeting:</strong> You'll receive an invoice and we'll schedule the work to begin</li>
+</ul>
+
+{{#if appointmentDescription}}
+<div class="info-box">
+    <h3>Appointment Notes</h3>
+    <p>{{appointmentDescription}}</p>
+</div>
+{{/if}}
+
+<div class="info-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
+    <h3>Important Reminders</h3>
+    <ul style="margin: 8px 0; padding-left: 20px;">
+        <li>Please join the meeting 5 minutes early to test your connection</li>
+        <li>Have your quote details handy for reference</li>
+        <li>If you need to reschedule or cancel, please contact us at least 24 hours in advance</li>
+    </ul>
+</div>
+
+<h2>Need to Make Changes?</h2>
+<p>
+    If you need to reschedule or cancel this appointment, please contact us as soon as possible:
+    <br>
+    Phone: <strong>{{organizationPhone}}</strong>
+    <br>
+    Email: <strong>{{organizationEmail}}</strong>
+</p>
+
+<p>
+    We're excited to work with you!
+</p>
+
+<p>
+    Best regards,<br>
+    <strong>The {{organizationName}} Team</strong>
+</p>

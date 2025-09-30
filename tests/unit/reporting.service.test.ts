@@ -28,24 +28,13 @@ const mockPrisma = {
 const mockJournalService = {
   getAccountBalance: jest.fn(),
   getAccountTransactions: jest.fn(),
+  validateAccountingEquation: jest.fn(),
 } as any;
 
 describe('ReportingService', () => {
   let reportingService: ReportingService;
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    reportingService = new ReportingService(mockPrisma as PrismaClient, mockJournalService);
-  });
-
-  describe('constructor', () => {
-    it('should initialize service with dependencies', () => {
-      expect(reportingService).toBeInstanceOf(ReportingService);
-    });
-  });
-
-  describe('generateTrialBalanceReport', () => {
-    const mockAccounts = [
+  const mockAccounts = [
       {
         id: 'acc-1',
         number: '1000',
@@ -58,6 +47,7 @@ describe('ReportingService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
+        transactions: [],
       },
       {
         id: 'acc-2',
@@ -71,9 +61,28 @@ describe('ReportingService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
+        transactions: [],
       },
     ];
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+    reportingService = new ReportingService(mockPrisma as PrismaClient, mockJournalService);
+    mockJournalService.validateAccountingEquation.mockResolvedValue({
+      isValid: true,
+      assets: 1000,
+      liabilities: 500,
+      equity: 500,
+    });
+  });
+
+  describe('constructor', () => {
+    it('should initialize service with dependencies', () => {
+      expect(reportingService).toBeInstanceOf(ReportingService);
+    });
+  });
+
+  describe('generateTrialBalanceReport', () => {
     beforeEach(() => {
       mockPrisma.account.findMany.mockResolvedValue(mockAccounts);
     });
@@ -112,6 +121,7 @@ describe('ReportingService', () => {
           createdAt: new Date(),
           updatedAt: new Date(),
           deletedAt: null,
+          transactions: [],
         }
       ];
 
@@ -150,6 +160,10 @@ describe('ReportingService', () => {
   });
 
   describe('generatePeriodSummary', () => {
+    beforeEach(() => {
+      mockPrisma.account.findMany.mockResolvedValue(mockAccounts);
+    });
+
     it('should generate period summary successfully', async () => {
       mockPrisma.journalEntry.findMany.mockResolvedValue([
         {
@@ -178,7 +192,10 @@ describe('ReportingService', () => {
       );
 
       expect(result).toBeDefined();
-      expect(result.organizationId).toBe('org-123');
+      expect(result.startDate).toBeDefined();
+      expect(result.endDate).toBeDefined();
+      expect(result.totalRevenue).toBeDefined();
+      expect(result.netIncome).toBeDefined();
     });
 
     it('should handle period with no activity', async () => {
@@ -194,7 +211,8 @@ describe('ReportingService', () => {
       );
 
       expect(result).toBeDefined();
-      expect(result.organizationId).toBe('org-123');
+      expect(result.totalRevenue).toBe(0);
+      expect(result.totalExpenses).toBe(0);
     });
 
     it('should validate date range', async () => {
@@ -208,8 +226,11 @@ describe('ReportingService', () => {
   });
 
   describe('generateTrialBalanceComparison', () => {
-    it('should generate trial balance comparison', async () => {
+    beforeEach(() => {
       mockPrisma.account.findMany.mockResolvedValue(mockAccounts);
+    });
+
+    it('should generate trial balance comparison', async () => {
 
       const result = await reportingService.generateTrialBalanceComparison(
         'org-123',
@@ -223,8 +244,6 @@ describe('ReportingService', () => {
     });
 
     it('should handle identical periods', async () => {
-      mockPrisma.account.findMany.mockResolvedValue(mockAccounts);
-
       const sameDate = new Date('2023-12-31');
       const result = await reportingService.generateTrialBalanceComparison(
         'org-123',
@@ -238,93 +257,46 @@ describe('ReportingService', () => {
   });
 
   describe('exportTrialBalance', () => {
-    it('should export trial balance in CSV format', async () => {
-      const mockTrialBalance = {
-        organizationId: 'org-123',
-        asOfDate: new Date(),
-        generatedAt: new Date(),
-        periodStartDate: new Date(),
-        summary: {
-          totalDebits: 1000,
-          totalCredits: 1000,
-          difference: 0,
-          isBalanced: true,
-          accountCount: 2,
-          transactionCount: 10,
-        },
-        accounts: [
-          {
-            accountId: 'acc-1',
-            accountNumber: '1000',
-            accountName: 'Cash',
-            accountType: AccountType.ASSET,
-            level: 0,
-            debitBalance: 1000,
-            creditBalance: 0,
-            netBalance: 1000,
-            normalBalance: 'DEBIT' as const,
-            isBalanceNormal: true,
-            transactionCount: 5,
-            yearToDateActivity: {
-              debits: 1000,
-              credits: 0,
-              netChange: 1000,
-            },
-          }
-        ],
-        validation: {
-          errors: [],
-          warnings: [],
-          recommendations: [],
-        },
-      };
+    beforeEach(() => {
+      mockPrisma.account.findMany.mockResolvedValue(mockAccounts);
+    });
 
+    it('should export trial balance in CSV format', async () => {
       const result = await reportingService.exportTrialBalance(
-        mockTrialBalance,
+        'org-123',
+        new Date('2023-12-31'),
         'CSV'
       );
 
       expect(result).toBeDefined();
-      expect(result.format).toBe('CSV');
-      expect(result.data).toContain('Account Number');
-      expect(result.data).toContain('1000');
+      expect(result.filename).toContain('.csv');
+      expect(result.content).toBeDefined();
+      expect(result.mimeType).toBe('text/csv');
     });
 
     it('should export trial balance in JSON format', async () => {
-      const mockTrialBalance = {
-        organizationId: 'org-123',
-        asOfDate: new Date(),
-        generatedAt: new Date(),
-        periodStartDate: new Date(),
-        summary: {
-          totalDebits: 1000,
-          totalCredits: 1000,
-          difference: 0,
-          isBalanced: true,
-          accountCount: 1,
-          transactionCount: 5,
-        },
-        accounts: [],
-        validation: {
-          errors: [],
-          warnings: [],
-          recommendations: [],
-        },
-      };
-
       const result = await reportingService.exportTrialBalance(
-        mockTrialBalance,
+        'org-123',
+        new Date('2023-12-31'),
         'JSON'
       );
 
       expect(result).toBeDefined();
-      expect(result.format).toBe('JSON');
-      expect(JSON.parse(result.data)).toEqual(mockTrialBalance);
+      expect(result.filename).toContain('.json');
+      expect(typeof result.content).toBe('string');
+      expect(result.mimeType).toBe('application/json');
+      const parsedData = JSON.parse(result.content);
+      expect(parsedData.organizationId).toBe('org-123');
     });
   });
 
   describe('error handling and validation', () => {
+    beforeEach(() => {
+      mockPrisma.account.findMany.mockResolvedValue(mockAccounts);
+    });
+
     it('should handle invalid organization ID', async () => {
+      mockPrisma.account.findMany.mockResolvedValue([]);
       await expect(
         reportingService.generateTrialBalanceReport('', new Date(), new Date())
       ).rejects.toThrow();
@@ -367,6 +339,7 @@ describe('ReportingService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
+        transactions: [],
       }));
 
       mockPrisma.account.findMany.mockResolvedValue(largeAccountList);

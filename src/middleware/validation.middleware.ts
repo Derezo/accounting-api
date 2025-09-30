@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
+import { ZodSchema, ZodError } from 'zod';
 
 /**
  * Validation middleware that processes express-validator results
@@ -58,3 +59,42 @@ declare global {
 
 // Alias for compatibility
 export const validate = validateRequest;
+
+/**
+ * Zod validation middleware that validates request body, query, or params
+ * @param schema - Zod schema to validate against
+ * @param source - Which part of request to validate ('body', 'query', 'params')
+ */
+export const validateZod = (schema: ZodSchema, source: 'body' | 'query' | 'params' = 'body') => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    try {
+      const data = source === 'body' ? req.body : source === 'query' ? req.query : req.params;
+      const validated = schema.parse(data);
+
+      // Replace request data with validated data
+      if (source === 'body') {
+        req.body = validated;
+      } else if (source === 'query') {
+        req.query = validated as any;
+      } else {
+        req.params = validated as any;
+      }
+
+      next();
+    } catch (error) {
+      if (error instanceof ZodError) {
+        res.status(400).json({
+          error: 'Validation failed',
+          message: 'Request validation errors occurred',
+          details: error.errors.map(err => ({
+            field: err.path.join('.'),
+            message: err.message,
+            code: err.code
+          }))
+        });
+        return;
+      }
+      next(error);
+    }
+  };
+};

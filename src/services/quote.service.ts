@@ -26,6 +26,8 @@ interface CreateQuoteData {
   validUntil?: string;
   notes?: string;
   terms?: string;
+  intakeSessionId?: string; // Link to intake session
+  customFields?: Record<string, any>; // Dynamic custom fields
   items: {
     productId?: string;
     serviceId?: string;
@@ -43,6 +45,7 @@ interface UpdateQuoteData {
   notes?: string;
   terms?: string;
   status?: QuoteStatus;
+  customFields?: Record<string, any>; // Dynamic custom fields
   items?: {
     id?: string;
     productId?: string;
@@ -124,6 +127,8 @@ export class QuoteService {
           validUntil: data.validUntil ? new Date(data.validUntil) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days default
           notes: data.notes,
           terms: data.terms,
+          intakeSessionId: data.intakeSessionId,
+          customFields: data.customFields ? JSON.stringify(data.customFields) : null,
           subtotal: FinancialMath.toNumber(subtotal),
           taxAmount: FinancialMath.toNumber(taxAmount),
           total: FinancialMath.toNumber(total)
@@ -326,6 +331,7 @@ export class QuoteService {
           notes: data.notes,
           terms: data.terms,
           status: data.status,
+          customFields: data.customFields !== undefined ? JSON.stringify(data.customFields) : undefined,
           subtotal: subtotal instanceof Decimal ? FinancialMath.toNumber(subtotal) : subtotal,
           taxAmount: taxAmount instanceof Decimal ? FinancialMath.toNumber(taxAmount) : taxAmount,
           total: total instanceof Decimal ? FinancialMath.toNumber(total) : total,

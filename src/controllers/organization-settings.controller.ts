@@ -154,9 +154,9 @@ export class OrganizationSettingsController {
       const updatedBranding = await organizationSettingsService.updateLogo(
         organizationId,
         logoUrl,
+        auditContext,
         logoWidth ? parseInt(logoWidth) : undefined,
-        logoHeight ? parseInt(logoHeight) : undefined,
-        auditContext
+        logoHeight ? parseInt(logoHeight) : undefined
       );
 
       res.status(201).json(successResponse('Logo uploaded successfully', {
@@ -231,8 +231,8 @@ export class OrganizationSettingsController {
       const updatedBranding = await organizationSettingsService.updateTaxSettings(
         organizationId,
         taxesEnabled,
-        defaultTaxExempt,
-        auditContext
+        auditContext,
+        defaultTaxExempt
       );
 
       res.json(successResponse('Tax settings updated successfully', {
@@ -266,9 +266,9 @@ export class OrganizationSettingsController {
 
       const updatedBranding = await organizationSettingsService.setDefaultTemplateAndStyle(
         organizationId,
+        auditContext,
         defaultTemplateId,
-        defaultStyleId,
-        auditContext
+        defaultStyleId
       );
 
       res.json(successResponse('Default template and style updated successfully', {
@@ -372,6 +372,547 @@ export class OrganizationSettingsController {
     } catch (error) {
       logger.error('Failed to save logo file:', error);
       throw new Error('Failed to save logo file');
+    }
+  }
+
+  // ==================== SYSTEM PREFERENCES CONTROLLER METHODS ====================
+
+  /**
+   * @route   GET /api/v1/organizations/:organizationId/settings/system
+   * @desc    Get all system preferences
+   * @access  Private (All authenticated users)
+   */
+  async getSystemPreferences(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+
+      const preferences = await organizationSettingsService.getSystemPreferences(organizationId);
+
+      res.json(successResponse('System preferences retrieved successfully', preferences));
+
+    } catch (error) {
+      logger.error('Failed to get system preferences:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to retrieve system preferences'
+      ));
+    }
+  }
+
+  /**
+   * @route   PUT /api/v1/organizations/:organizationId/settings/system/general
+   * @desc    Update general settings
+   * @access  Private (Admin only)
+   */
+  async updateGeneralSettings(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const data = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const updatedPreferences = await organizationSettingsService.updateGeneralSettings(
+        organizationId,
+        data,
+        auditContext
+      );
+
+      res.json(successResponse('General settings updated successfully', updatedPreferences));
+
+    } catch (error) {
+      logger.error('Failed to update general settings:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to update general settings'
+      ));
+    }
+  }
+
+  /**
+   * @route   PUT /api/v1/organizations/:organizationId/settings/system/regional
+   * @desc    Update regional settings
+   * @access  Private (Admin only)
+   */
+  async updateRegionalSettings(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const data = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const updatedPreferences = await organizationSettingsService.updateRegionalSettings(
+        organizationId,
+        data,
+        auditContext
+      );
+
+      res.json(successResponse('Regional settings updated successfully', updatedPreferences));
+
+    } catch (error) {
+      logger.error('Failed to update regional settings:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to update regional settings'
+      ));
+    }
+  }
+
+  /**
+   * @route   PUT /api/v1/organizations/:organizationId/settings/system/data-management
+   * @desc    Update data management settings
+   * @access  Private (Admin only)
+   */
+  async updateDataManagementSettings(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const data = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const updatedPreferences = await organizationSettingsService.updateDataManagementSettings(
+        organizationId,
+        data,
+        auditContext
+      );
+
+      res.json(successResponse('Data management settings updated successfully', updatedPreferences));
+
+    } catch (error) {
+      logger.error('Failed to update data management settings:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to update data management settings'
+      ));
+    }
+  }
+
+  /**
+   * @route   PUT /api/v1/organizations/:organizationId/settings/system/performance
+   * @desc    Update performance settings
+   * @access  Private (Admin only)
+   */
+  async updatePerformanceSettings(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const data = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const updatedPreferences = await organizationSettingsService.updatePerformanceSettings(
+        organizationId,
+        data,
+        auditContext
+      );
+
+      res.json(successResponse('Performance settings updated successfully', updatedPreferences));
+
+    } catch (error) {
+      logger.error('Failed to update performance settings:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to update performance settings'
+      ));
+    }
+  }
+
+  /**
+   * @route   PUT /api/v1/organizations/:organizationId/settings/system/api
+   * @desc    Update API settings
+   * @access  Private (Admin only)
+   */
+  async updateApiSettings(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const data = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const updatedPreferences = await organizationSettingsService.updateApiSettings(
+        organizationId,
+        data,
+        auditContext
+      );
+
+      res.json(successResponse('API settings updated successfully', updatedPreferences));
+
+    } catch (error) {
+      logger.error('Failed to update API settings:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to update API settings'
+      ));
+    }
+  }
+
+  /**
+   * @route   PUT /api/v1/organizations/:organizationId/settings/system/integrations
+   * @desc    Update integration settings
+   * @access  Private (Admin only)
+   */
+  async updateIntegrationSettings(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const data = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const updatedPreferences = await organizationSettingsService.updateIntegrationSettings(
+        organizationId,
+        data,
+        auditContext
+      );
+
+      res.json(successResponse('Integration settings updated successfully', updatedPreferences));
+
+    } catch (error) {
+      logger.error('Failed to update integration settings:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to update integration settings'
+      ));
+    }
+  }
+
+  /**
+   * @route   PUT /api/v1/organizations/:organizationId/settings/system/feature-flags
+   * @desc    Update feature flags
+   * @access  Private (Admin only)
+   */
+  async updateFeatureFlags(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const data = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const updatedPreferences = await organizationSettingsService.updateFeatureFlags(
+        organizationId,
+        data,
+        auditContext
+      );
+
+      res.json(successResponse('Feature flags updated successfully', updatedPreferences));
+
+    } catch (error) {
+      logger.error('Failed to update feature flags:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to update feature flags'
+      ));
+    }
+  }
+
+  /**
+   * @route   PUT /api/v1/organizations/:organizationId/settings/system/logging
+   * @desc    Update logging settings
+   * @access  Private (Admin only)
+   */
+  async updateLoggingSettings(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const data = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const updatedPreferences = await organizationSettingsService.updateLoggingSettings(
+        organizationId,
+        data,
+        auditContext
+      );
+
+      res.json(successResponse('Logging settings updated successfully', updatedPreferences));
+
+    } catch (error) {
+      logger.error('Failed to update logging settings:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to update logging settings'
+      ));
+    }
+  }
+
+  // ==================== NOTIFICATION SETTINGS CONTROLLER METHODS ====================
+
+  /**
+   * @route   GET /api/v1/organizations/:organizationId/settings/notifications
+   * @desc    Get all notification settings
+   * @access  Private (All authenticated users)
+   */
+  async getNotificationSettings(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+
+      const settings = await organizationSettingsService.getNotificationSettings(organizationId);
+
+      res.json(successResponse('Notification settings retrieved successfully', settings));
+
+    } catch (error) {
+      logger.error('Failed to get notification settings:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to retrieve notification settings'
+      ));
+    }
+  }
+
+  /**
+   * @route   PUT /api/v1/organizations/:organizationId/settings/notifications/email
+   * @desc    Update email notification settings
+   * @access  Private (Admin, Manager)
+   */
+  async updateEmailNotificationSettings(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const data = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const updatedSettings = await organizationSettingsService.updateEmailNotificationSettings(
+        organizationId,
+        data,
+        auditContext
+      );
+
+      res.json(successResponse('Email notification settings updated successfully', updatedSettings));
+
+    } catch (error) {
+      logger.error('Failed to update email notification settings:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to update email notification settings'
+      ));
+    }
+  }
+
+  /**
+   * @route   PUT /api/v1/organizations/:organizationId/settings/notifications/sms
+   * @desc    Update SMS notification settings
+   * @access  Private (Admin, Manager)
+   */
+  async updateSmsNotificationSettings(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const data = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const updatedSettings = await organizationSettingsService.updateSmsNotificationSettings(
+        organizationId,
+        data,
+        auditContext
+      );
+
+      res.json(successResponse('SMS notification settings updated successfully', updatedSettings));
+
+    } catch (error) {
+      logger.error('Failed to update SMS notification settings:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to update SMS notification settings'
+      ));
+    }
+  }
+
+  /**
+   * @route   PUT /api/v1/organizations/:organizationId/settings/notifications/push
+   * @desc    Update push notification settings
+   * @access  Private (Admin, Manager)
+   */
+  async updatePushNotificationSettings(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const data = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const updatedSettings = await organizationSettingsService.updatePushNotificationSettings(
+        organizationId,
+        data,
+        auditContext
+      );
+
+      res.json(successResponse('Push notification settings updated successfully', updatedSettings));
+
+    } catch (error) {
+      logger.error('Failed to update push notification settings:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to update push notification settings'
+      ));
+    }
+  }
+
+  /**
+   * @route   PUT /api/v1/organizations/:organizationId/settings/notifications/in-app
+   * @desc    Update in-app notification settings
+   * @access  Private (Admin, Manager)
+   */
+  async updateInAppNotificationSettings(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const data = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const updatedSettings = await organizationSettingsService.updateInAppNotificationSettings(
+        organizationId,
+        data,
+        auditContext
+      );
+
+      res.json(successResponse('In-app notification settings updated successfully', updatedSettings));
+
+    } catch (error) {
+      logger.error('Failed to update in-app notification settings:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to update in-app notification settings'
+      ));
+    }
+  }
+
+  /**
+   * @route   PUT /api/v1/organizations/:organizationId/settings/notifications/webhooks
+   * @desc    Update webhook notification settings
+   * @access  Private (Admin, Manager)
+   */
+  async updateWebhookNotificationSettings(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const data = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const updatedSettings = await organizationSettingsService.updateWebhookNotificationSettings(
+        organizationId,
+        data,
+        auditContext
+      );
+
+      res.json(successResponse('Webhook notification settings updated successfully', updatedSettings));
+
+    } catch (error) {
+      logger.error('Failed to update webhook notification settings:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to update webhook notification settings'
+      ));
+    }
+  }
+
+  /**
+   * @route   PUT /api/v1/organizations/:organizationId/settings/notifications/preferences
+   * @desc    Update notification preferences
+   * @access  Private (Admin, Manager)
+   */
+  async updateNotificationPreferences(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const data = req.body;
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const updatedSettings = await organizationSettingsService.updateNotificationPreferences(
+        organizationId,
+        data,
+        auditContext
+      );
+
+      res.json(successResponse('Notification preferences updated successfully', updatedSettings));
+
+    } catch (error) {
+      logger.error('Failed to update notification preferences:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to update notification preferences'
+      ));
+    }
+  }
+
+  /**
+   * @route   POST /api/v1/organizations/:organizationId/settings/notifications/test
+   * @desc    Test notification configuration
+   * @access  Private (Admin, Manager)
+   */
+  async testNotificationConfiguration(req: Request, res: Response): Promise<void> {
+    try {
+      const organizationId = getOrganizationIdFromRequest(req);
+      const { type, recipientAddress } = req.body;
+
+      if (!type || !recipientAddress) {
+        res.status(400).json(errorResponse('Missing required fields: type and recipientAddress'));
+        return;
+      }
+
+      if (!['email', 'sms', 'push'].includes(type)) {
+        res.status(400).json(errorResponse('Invalid notification type. Must be: email, sms, or push'));
+        return;
+      }
+
+      const auditContext = {
+        userId: req.user?.id || '',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+
+      const result = await organizationSettingsService.testNotificationConfiguration(
+        organizationId,
+        type,
+        recipientAddress,
+        auditContext
+      );
+
+      if (result.success) {
+        res.json(successResponse(result.message, result));
+      } else {
+        res.status(400).json(errorResponse(result.message));
+      }
+
+    } catch (error) {
+      logger.error('Failed to test notification configuration:', error);
+      res.status(500).json(errorResponse(
+        error instanceof Error ? error.message : 'Failed to test notification configuration'
+      ));
     }
   }
 }

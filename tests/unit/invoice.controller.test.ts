@@ -143,31 +143,28 @@ describe('InvoiceController', () => {
 
       await invoiceController.createInvoice(mockRequest as AuthenticatedRequest, mockResponse as Response);
 
-      expect(mockInvoiceService.createInvoice).toHaveBeenCalledWith(
-        expect.objectContaining({
-          customerId: 'customer-123',
-          dueDate: new Date('2024-01-31'),
-          depositRequired: new Decimal(565),
-          currency: 'CAD',
-          exchangeRate: 1,
-          terms: 'Net 30',
-          notes: 'Test invoice',
-          items: expect.arrayContaining([
-            expect.objectContaining({
-              description: 'Test service',
-              quantity: new Decimal(1),
-              unitPrice: new Decimal(1000),
-              taxRate: new Decimal(13)
-            })
-          ])
-        }),
-        'org-123',
-        expect.objectContaining({
-          userId: 'user-123',
-          ipAddress: '127.0.0.1',
-          userAgent: 'test-agent'
-        })
-      );
+      const call = mockInvoiceService.createInvoice.mock.calls[0];
+      expect(call[0]).toMatchObject({
+        customerId: 'customer-123',
+        dueDate: new Date('2024-01-31'),
+        currency: 'CAD',
+        exchangeRate: 1,
+        terms: 'Net 30',
+        notes: 'Test invoice',
+        issueDate: undefined,
+        quoteId: undefined
+      });
+      expect(call[0].depositRequired.toNumber()).toBe(565);
+      expect(call[0].items[0].description).toBe('Test service');
+      expect(call[0].items[0].quantity.toNumber()).toBe(1);
+      expect(call[0].items[0].unitPrice.toNumber()).toBe(1000);
+      expect(call[0].items[0].taxRate.toNumber()).toBe(13);
+      expect(call[1]).toBe('org-123');
+      expect(call[2]).toMatchObject({
+        userId: 'user-123',
+        ipAddress: '127.0.0.1',
+        userAgent: 'test-agent'
+      });
 
       expect(mockStatus).toHaveBeenCalledWith(201);
       expect(mockJson).toHaveBeenCalledWith(
@@ -365,37 +362,37 @@ describe('InvoiceController', () => {
 
     it('should update invoice successfully', async () => {
       mockRequest.body = updateData;
-      const updatedInvoice = { ...mockInvoice, terms: 'Net 15', notes: 'Updated notes' };
+      const updatedInvoice = {
+        ...mockInvoice,
+        dueDate: new Date('2024-02-15'),
+        depositRequired: new Decimal(600),
+        terms: 'Net 15',
+        notes: 'Updated notes'
+      };
       mockInvoiceService.updateInvoice.mockResolvedValue(updatedInvoice as any);
 
       await invoiceController.updateInvoice(mockRequest as AuthenticatedRequest, mockResponse as Response);
 
-      expect(mockInvoiceService.updateInvoice).toHaveBeenCalledWith(
-        'invoice-123',
-        expect.objectContaining({
-          dueDate: new Date('2024-02-15'),
-          depositRequired: new Decimal(600),
-          terms: 'Net 15',
-          notes: 'Updated notes'
-        }),
-        'org-123',
-        expect.objectContaining({
-          userId: 'user-123',
-          ipAddress: '127.0.0.1',
-          userAgent: 'test-agent'
-        })
-      );
+      const call = mockInvoiceService.updateInvoice.mock.calls[0];
+      expect(call[0]).toBe('invoice-123');
+      expect(call[1]).toMatchObject({
+        dueDate: new Date('2024-02-15'),
+        terms: 'Net 15',
+        notes: 'Updated notes'
+      });
+      expect(call[1].depositRequired.toNumber()).toBe(600);
+      expect(call[2]).toBe('org-123');
+      expect(call[3]).toMatchObject({
+        userId: 'user-123',
+        ipAddress: '127.0.0.1',
+        userAgent: 'test-agent'
+      });
 
-      expect(mockJson).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Invoice updated successfully',
-          invoice: expect.objectContaining({
-            id: 'invoice-123',
-            terms: 'Net 15',
-            notes: 'Updated notes'
-          })
-        })
-      );
+      const response = mockJson.mock.calls[0][0];
+      expect(response.message).toBe('Invoice updated successfully');
+      expect(response.invoice.id).toBe('invoice-123');
+      expect(response.invoice.invoiceNumber).toBe('INV-001');
+      expect(response.invoice.status).toBe(InvoiceStatus.DRAFT);
     });
 
     it('should return 404 when invoice not found', async () => {

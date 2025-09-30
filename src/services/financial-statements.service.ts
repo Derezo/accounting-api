@@ -112,14 +112,15 @@ export interface AccountWithBalance {
   accountNumber: string;
   name: string;
   type: string;
-  parentId?: string;
-  description?: string;
+  parentId?: string | null;
+  description?: string | null;
   isActive: boolean;
   isSystemAccount: boolean;
   balance: number;
+  periodActivity?: number;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt?: Date;
+  deletedAt?: Date | null;
 }
 
 export interface BalanceSheetAccount {
@@ -664,9 +665,12 @@ export class FinancialStatementsService {
       where: {
         organizationId,
         OR: [
-          { name: { contains: 'cash', mode: 'insensitive' } },
-          { name: { contains: 'checking', mode: 'insensitive' } },
-          { name: { contains: 'savings', mode: 'insensitive' } },
+          { name: { contains: 'cash' } },
+          { name: { contains: 'Cash' } },
+          { name: { contains: 'checking' } },
+          { name: { contains: 'Checking' } },
+          { name: { contains: 'savings' } },
+          { name: { contains: 'Savings' } },
           { accountNumber: { startsWith: '101' } }
         ],
         deletedAt: null

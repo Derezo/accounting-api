@@ -347,11 +347,16 @@ export class UserService {
         };
       }
 
-      // Generate invite token
-      const inviteToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      // Generate cryptographically secure invite token
+      const crypto = await import('crypto');
+      const inviteToken = crypto.randomBytes(32).toString('hex');
 
       // Create placeholder user with invite status
-      const tempPassword = Math.random().toString(36).substring(2, 15);
+      // Generate cryptographically secure temporary password
+      const tempPassword = crypto.randomBytes(16)
+        .toString('base64')
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .substring(0, 16);
       const passwordHash = await hashPassword(tempPassword);
 
       await prisma.user.create({
@@ -419,8 +424,9 @@ export class UserService {
         };
       }
 
-      // Generate new invite token
-      const inviteToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      // Generate cryptographically secure invite token
+      const crypto = await import('crypto');
+      const inviteToken = crypto.randomBytes(32).toString('hex');
 
       await prisma.user.update({
         where: { id: userId },

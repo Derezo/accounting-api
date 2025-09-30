@@ -70,7 +70,7 @@ export class JournalEntryValidator {
     const { organizationId, entries } = request;
 
     // Validate all accounts exist and belong to organization
-    const accountIds = entries.map((e: any) => e.accountId);
+    const accountIds = entries.map((e: any) => e.accountId) as string[];
     const uniqueAccountIds = [...new Set(accountIds)]; // Get unique account IDs
     const accounts = await this.prisma.account.findMany({
       where: {
@@ -83,7 +83,7 @@ export class JournalEntryValidator {
 
     if (accounts.length !== uniqueAccountIds.length) {
       const foundIds = accounts.map(a => a.id);
-      const missingIds = uniqueAccountIds.filter((id: string) => !foundIds.includes(id));
+      const missingIds = uniqueAccountIds.filter((id) => !foundIds.includes(id));
       errors.push(`Invalid or inactive account IDs: ${missingIds.join(', ')}`);
     }
 

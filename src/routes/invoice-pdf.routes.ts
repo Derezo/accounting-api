@@ -443,6 +443,207 @@ router.post(
 
 /**
  * @swagger
+ * /api/v1/organizations/{organizationId}/invoice-templates/{templateId}:
+ *   put:
+ *     tags: [Invoice Templates]
+ *     summary: Update invoice template
+ *     description: Updates an existing custom invoice template. System templates cannot be modified. Requires Admin or Manager role.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         description: Organization ID
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: templateId
+ *         required: true
+ *         description: Template ID
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Template name
+ *               description:
+ *                 type: string
+ *                 description: Template description
+ *               templateType:
+ *                 type: string
+ *                 enum: [STANDARD, MINIMAL, MODERN, CUSTOM]
+ *               htmlTemplate:
+ *                 type: string
+ *                 description: Handlebars HTML template content
+ *               isDefault:
+ *                 type: boolean
+ *                 description: Set as organization default template
+ *               tags:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Template updated successfully
+ *       400:
+ *         description: Invalid template data or system template modification attempted
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Insufficient permissions
+ *       404:
+ *         description: Template not found
+ *       500:
+ *         description: Failed to update template
+ */
+router.put(
+  '/templates/:templateId',
+  authorize(UserRole.ADMIN, UserRole.MANAGER),
+  invoicePDFController.updateInvoiceTemplate.bind(invoicePDFController)
+);
+
+/**
+ * @swagger
+ * /api/v1/organizations/{organizationId}/invoice-templates/{templateId}:
+ *   delete:
+ *     tags: [Invoice Templates]
+ *     summary: Delete invoice template
+ *     description: Soft deletes an invoice template. System templates and default templates cannot be deleted. Requires Admin role.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         description: Organization ID
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: templateId
+ *         required: true
+ *         description: Template ID
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Template deleted successfully
+ *       400:
+ *         description: Cannot delete system or default template
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Insufficient permissions
+ *       404:
+ *         description: Template not found
+ *       500:
+ *         description: Failed to delete template
+ */
+router.delete(
+  '/templates/:templateId',
+  authorize(UserRole.ADMIN),
+  invoicePDFController.deleteInvoiceTemplate.bind(invoicePDFController)
+);
+
+/**
+ * @swagger
+ * /api/v1/organizations/{organizationId}/invoice-templates/{templateId}/duplicate:
+ *   post:
+ *     tags: [Invoice Templates]
+ *     summary: Duplicate invoice template
+ *     description: Creates a copy of an existing template with a new name. Requires Admin or Manager role.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         description: Organization ID
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: templateId
+ *         required: true
+ *         description: Template ID to duplicate
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Name for the duplicated template (optional, will auto-generate if not provided)
+ *                 example: "My Custom Copy"
+ *     responses:
+ *       201:
+ *         description: Template duplicated successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Insufficient permissions
+ *       404:
+ *         description: Template not found
+ *       500:
+ *         description: Failed to duplicate template
+ */
+router.post(
+  '/templates/:templateId/duplicate',
+  authorize(UserRole.ADMIN, UserRole.MANAGER),
+  invoicePDFController.duplicateInvoiceTemplate.bind(invoicePDFController)
+);
+
+/**
+ * @swagger
+ * /api/v1/organizations/{organizationId}/invoice-templates/{templateId}/set-default:
+ *   put:
+ *     tags: [Invoice Templates]
+ *     summary: Set template as default
+ *     description: Sets the specified template as the organization's default invoice template. Requires Admin or Manager role.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         description: Organization ID
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: templateId
+ *         required: true
+ *         description: Template ID to set as default
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Template set as default successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Insufficient permissions
+ *       404:
+ *         description: Template not found
+ *       500:
+ *         description: Failed to set default template
+ */
+router.put(
+  '/templates/:templateId/set-default',
+  authorize(UserRole.ADMIN, UserRole.MANAGER),
+  invoicePDFController.setDefaultInvoiceTemplate.bind(invoicePDFController)
+);
+
+/**
+ * @swagger
  * /api/v1/organizations/{organizationId}/invoice-styles:
  *   get:
  *     tags: [Invoice Styles]

@@ -1,5 +1,6 @@
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { Payment } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { config } from '../config/config';
 import { auditService } from './audit.service';
 import { PaymentMethod, PaymentStatus } from '../types/enums';
@@ -121,8 +122,9 @@ export class ETransferService {
 
       // Verify payment amount doesn't exceed remaining balance
       const remainingBalance = invoice.balance;
-      if (data.amount > remainingBalance) {
-        throw new Error(`Payment amount (${data.amount}) exceeds remaining balance (${remainingBalance})`);
+      const remainingBalanceNum = remainingBalance instanceof Decimal ? remainingBalance.toNumber() : Number(remainingBalance);
+      if (data.amount > remainingBalanceNum) {
+        throw new Error(`Payment amount (${data.amount}) exceeds remaining balance (${remainingBalanceNum})`);
       }
     }
 
@@ -309,16 +311,21 @@ export class ETransferService {
     }
 
     const depositedAt = data.depositedAt || new Date();
-    const actualAmount = data.actualAmount || payment.amount;
+    // Convert payment.amount from Decimal to number if needed
+    const paymentAmount = payment.amount instanceof Decimal ? payment.amount.toNumber() : Number(payment.amount);
+    const actualAmount = data.actualAmount ?
+      (typeof data.actualAmount === 'number' ? data.actualAmount : Number(data.actualAmount)) :
+      paymentAmount;
     const fees = data.fees || 0;
 
     // Update payment status to completed
+    const netAmountValue = actualAmount - fees;
     const updatedPayment = await prisma.payment.update({
       where: { id: payment.id },
       data: {
         status: PaymentStatus.COMPLETED,
         processedAt: depositedAt,
-        netAmount: actualAmount - fees,
+        netAmount: netAmountValue,
         adminNotes: `${payment.adminNotes}\nDeposited at ${depositedAt.toISOString()}${data.confirmationCode ? ` (Confirmation: ${data.confirmationCode})` : ''}`,
         metadata: JSON.stringify({
           ...metadata,
@@ -336,6 +343,7 @@ export class ETransferService {
     // Update invoice if payment is linked to one
     if (payment.invoiceId) {
       const invoiceService = await import('./invoice.service');
+      // actualAmount is already a number from the conversion above
       await invoiceService.invoiceService.recordPayment(
         payment.invoiceId,
         actualAmount,
@@ -487,9 +495,9 @@ export class ETransferService {
     if (filter.customerId) where.customerId = filter.customerId;
     if (filter.status) where.status = filter.status;
     if (filter.startDate || filter.endDate) {
-      where.paymentDate = {};
-      if (filter.startDate) where.paymentDate.gte = filter.startDate;
-      if (filter.endDate) where.paymentDate.lte = filter.endDate;
+      where.paymentDate = {} as any;
+      if (filter.startDate) (where.paymentDate as any).gte = filter.startDate;
+      if (filter.endDate) (where.paymentDate as any).lte = filter.endDate;
     }
 
     // Handle recipient email filter (stored in metadata)
@@ -617,7 +625,8 @@ export class ETransferService {
       }
 
       stats.totalSent++;
-      stats.totalFees += etransfer.processorFee || 0;
+      const fee = typeof etransfer.processorFee === 'number' ? etransfer.processorFee : Number(etransfer.processorFee) || 0;
+      stats.totalFees += fee;
     });
 
     stats.averageDepositTime = depositedCount > 0 ? totalDepositTime / depositedCount : 0;

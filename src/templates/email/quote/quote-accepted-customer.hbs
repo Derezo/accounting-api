@@ -1,0 +1,50 @@
+<h1>🎉 Quote Accepted - Thank You!</h1>
+
+<p>Hi {{customerName}},</p>
+
+<p>
+    Thank you for accepting our quote! We're excited to get started on your project.
+</p>
+
+<div class="info-box">
+    <h3>Quote Details</h3>
+    <p><strong>Quote Number:</strong> {{quoteNumber}}</p>
+    <p><strong>Total Amount:</strong> {{formatCurrency quoteTotal "CAD"}}</p>
+    <p><strong>Status:</strong> <span style="color: #059669; font-weight: 600;">ACCEPTED</span></p>
+</div>
+
+<h2>Next Step: Book Your Appointment</h2>
+<p>
+    To proceed with your project, please book an appointment that works for your schedule.
+    We'll finalize the details and get everything ready for you.
+</p>
+
+{{> button text="Book Appointment Now" url=bookingUrl}}
+
+<h2>What Happens Next?</h2>
+<ul>
+    <li><strong>Step 1:</strong> Book your appointment using the link above</li>
+    <li><strong>Step 2:</strong> We'll send you a confirmation with meeting details</li>
+    <li><strong>Step 3:</strong> Meet with our team to finalize everything</li>
+    <li><strong>Step 4:</strong> We'll send you an invoice and begin work!</li>
+</ul>
+
+<div class="info-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
+    <h3>Need Help?</h3>
+    <p>
+        If you have any questions or need assistance booking your appointment:
+        <br>
+        Phone: <strong>{{organizationPhone}}</strong>
+        <br>
+        Email: <strong>{{organizationEmail}}</strong>
+    </p>
+</div>
+
+<p>
+    We're looking forward to working with you!
+</p>
+
+<p>
+    Best regards,<br>
+    <strong>The {{organizationName}} Team</strong>
+</p>

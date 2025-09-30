@@ -1,6 +1,7 @@
 
 import { PaymentMethod, PaymentStatus } from '../types/enums';
-
+import { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
 
 
 import { prisma } from '../config/database';
@@ -229,7 +230,7 @@ export class PaymentAnalyticsService {
         return acc;
       }, {} as Record<string, number>);
       const preferredPaymentMethod = Object.entries(methodCounts)
-        .sort(([,a], [,b]) => b - a)[0][0] as PaymentMethod;
+        .sort(([,a], [,b]) => (b as number) - (a as number))[0][0] as PaymentMethod;
 
       // Calculate payment delays
       const paymentDelays = customerPayments
@@ -424,14 +425,23 @@ export class PaymentAnalyticsService {
 
       const confirmedInflow = dayPendingPayments
         .filter(p => p.status === PaymentStatus.PROCESSING)
-        .reduce((sum, p) => sum + p.amount, 0);
+        .reduce((sum, p) => {
+          const amount = p.amount instanceof Decimal ? p.amount.toNumber() : Number(p.amount);
+          return sum + amount;
+        }, 0);
 
       const pendingInflow = dayPendingPayments
         .filter(p => p.status === PaymentStatus.PENDING)
-        .reduce((sum, p) => sum + p.amount, 0);
+        .reduce((sum, p) => {
+          const amount = p.amount instanceof Decimal ? p.amount.toNumber() : Number(p.amount);
+          return sum + amount;
+        }, 0);
 
       const expectedInflow = dayOutstandingInvoices
-        .reduce((sum, inv) => sum + inv.balance, 0);
+        .reduce((sum, inv) => {
+          const balance = inv.balance instanceof Decimal ? inv.balance.toNumber() : Number(inv.balance);
+          return sum + balance;
+        }, 0);
 
       const totalInflow = confirmedInflow + (pendingInflow * 0.8) + (expectedInflow * 0.6); // Apply probability weights
       runningBalance += totalInflow;
@@ -475,16 +485,17 @@ export class PaymentAnalyticsService {
     };
 
     outstandingInvoices.forEach(invoice => {
-      aging.totalOutstanding += invoice.balance;
+      const balance = invoice.balance instanceof Decimal ? invoice.balance.toNumber() : Number(invoice.balance);
+      aging.totalOutstanding += balance;
 
       if (invoice.dueDate >= thirty) {
-        aging.current += invoice.balance;
+        aging.current += balance;
       } else if (invoice.dueDate >= sixty) {
-        aging.thirtyDays += invoice.balance;
+        aging.thirtyDays += balance;
       } else if (invoice.dueDate >= ninety) {
-        aging.sixtyDays += invoice.balance;
+        aging.sixtyDays += balance;
       } else {
-        aging.ninetyDays += invoice.balance;
+        aging.ninetyDays += balance;
       }
     });
 
@@ -551,12 +562,14 @@ export class PaymentAnalyticsService {
     return alerts.sort((a, b) => b.riskScore - a.riskScore);
   }
 
-  private findDuplicatePayments(payments: unknown[]): unknown[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private findDuplicatePayments(payments: any[]): any[] {
     const seen = new Map();
     const duplicates = [];
 
     for (const payment of payments) {
-      const key = `${payment.customerId}-${payment.amount.toNumber()}-${payment.paymentMethod}`;
+      const amount = payment.amount instanceof Decimal ? payment.amount.toNumber() : Number(payment.amount);
+      const key = `${payment.customerId}-${amount}-${payment.paymentMethod}`;
       if (seen.has(key)) {
         const existing = seen.get(key);
         const timeDiff = Math.abs(payment.paymentDate.getTime() - existing.paymentDate.getTime());
@@ -571,21 +584,29 @@ export class PaymentAnalyticsService {
     return duplicates;
   }
 
-  private findUnusualAmounts(payments: unknown[]): unknown[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private findUnusualAmounts(payments: any[]): any[] {
     if (payments.length < 10) return []; // Need sufficient data
 
-    const amounts = payments.map(p => p.amount);
+    const amounts = payments.map((p: any) => {
+      const amt = p.amount;
+      return amt instanceof Decimal ? amt.toNumber() : Number(amt);
+    });
     const mean = amounts.reduce((sum, amount) => sum + amount, 0) / amounts.length;
     const variance = amounts.reduce((sum, amount) => sum + Math.pow(amount - mean, 2), 0) / amounts.length;
     const stdDev = Math.sqrt(variance);
 
     const threshold = mean + (2 * stdDev); // 2 standard deviations above mean
 
-    return payments.filter(payment => payment.amount.toNumber() > threshold);
+    return payments.filter((payment: any) => {
+      const amt = payment.amount instanceof Decimal ? payment.amount.toNumber() : Number(payment.amount);
+      return amt > threshold;
+    });
   }
 
-  private findRapidSuccessionPayments(payments: unknown[]): unknown[] {
-    const customerPayments = payments.reduce((acc, payment) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private findRapidSuccessionPayments(payments: any[]): any[] {
+    const customerPayments = payments.reduce((acc: any, payment: any) => {
       if (!acc[payment.customerId]) {
         acc[payment.customerId] = [];
       }
@@ -593,12 +614,12 @@ export class PaymentAnalyticsService {
       return acc;
     }, {} as Record<string, any[]>);
 
-    const rapidPayments = [];
+    const rapidPayments: any[] = [];
 
-    for (const [customerId, customerPaymentList] of Object.entries(customerPayments)) {
+    for (const [customerId, customerPaymentList] of Object.entries(customerPayments) as [string, any[]][]) {
       if (customerPaymentList.length < 3) continue;
 
-      customerPaymentList.sort((a, b) => a.paymentDate.getTime() - b.paymentDate.getTime());
+      customerPaymentList.sort((a: any, b: any) => a.paymentDate.getTime() - b.paymentDate.getTime());
 
       for (let i = 0; i < customerPaymentList.length - 2; i++) {
         const payment1 = customerPaymentList[i];
@@ -615,11 +636,11 @@ export class PaymentAnalyticsService {
       }
     }
 
-    return [...new Set(rapidPayments)]; // Remove duplicates
+    return Array.from(new Set(rapidPayments)); // Remove duplicates
   }
 
-  private buildWhereClause(organizationId: string, filter: PaymentAnalyticsFilter): unknown {
-    const where: Record<string, unknown> = {
+  private buildWhereClause(organizationId: string, filter: PaymentAnalyticsFilter): Prisma.PaymentWhereInput {
+    const where: Prisma.PaymentWhereInput = {
       organizationId,
       deletedAt: null
     };
@@ -644,8 +665,9 @@ export class PaymentAnalyticsService {
     return where;
   }
 
-  private groupPaymentsByPeriod(payments: unknown[], groupBy: 'DAY' | 'WEEK' | 'MONTH' | 'QUARTER'): Record<string, any[]> {
-    return payments.reduce((acc, payment) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private groupPaymentsByPeriod(payments: any[], groupBy: 'DAY' | 'WEEK' | 'MONTH' | 'QUARTER'): Record<string, any[]> {
+    return payments.reduce((acc: any, payment: any) => {
       const period = this.formatPeriod(payment.paymentDate, groupBy);
       if (!acc[period]) {
         acc[period] = [];

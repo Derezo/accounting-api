@@ -1,0 +1,42 @@
+<h1>🎉 Quote Accepted!</h1>
+
+<p>
+    Great news! {{customerName}} has accepted quote #{{quoteNumber}}.
+</p>
+
+<div class="info-box" style="background-color: #d1fae5; border-left-color: #059669;">
+    <h3>✅ Quote Accepted</h3>
+    <p style="color: #065f46; font-weight: 600;">
+        The customer is ready to proceed with the project!
+    </p>
+</div>
+
+<div class="info-box">
+    <h3>Quote Details</h3>
+    <p><strong>Quote Number:</strong> {{quoteNumber}}</p>
+    <p><strong>Total Amount:</strong> {{formatCurrency quoteTotal "CAD"}}</p>
+    <p><strong>Customer:</strong> {{customerName}}</p>
+    <p><strong>Email:</strong> <a href="mailto:{{customerEmail}}">{{customerEmail}}</a></p>
+</div>
+
+<h2>Next Actions Required</h2>
+<ul>
+    <li><strong>Customer must book an appointment</strong> - They've been sent a booking link</li>
+    <li><strong>Review the quote</strong> in the dashboard to finalize details</li>
+    <li><strong>Prepare invoice</strong> once appointment is scheduled</li>
+    <li><strong>Follow up</strong> if appointment isn't booked within 48 hours</li>
+</ul>
+
+<h2>Quick Actions</h2>
+
+{{> button text="View Quote in Dashboard" url=dashboardUrl}}
+
+<div style="margin-top: 20px;">
+    <a href="mailto:{{customerEmail}}" style="color: #2563eb; text-decoration: none; margin-right: 20px;">📧 Email Customer</a>
+</div>
+
+<div class="divider"></div>
+
+<p style="font-size: 14px; color: #6b7280;">
+    <strong>Tip:</strong> Follow up with the customer to ensure they book their appointment promptly.
+</p>
