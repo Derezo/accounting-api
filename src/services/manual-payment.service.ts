@@ -97,6 +97,18 @@ export interface PaymentPlanResult {
 }
 
 export class ManualPaymentService {
+  /**
+   * Helper to safely log audit actions without blocking operations
+   * Audit failures should never prevent financial operations from completing
+   */
+  private async safeAuditLog(auditData: any): Promise<void> {
+    try {
+      await auditService.logAction(auditData);
+    } catch (error) {
+      console.error('Audit logging failed (non-blocking):', error);
+    }
+  }
+
   private generatePaymentNumber(paymentMethod: PaymentMethod): string {
     const methodPrefix = this.getMethodPrefix(paymentMethod);
     const timestamp = Date.now().toString();
@@ -270,8 +282,8 @@ export class ManualPaymentService {
       }
     }
 
-    // Log payment creation
-    await auditService.logAction({
+    // Log payment creation (non-blocking)
+    await this.safeAuditLog({
       action: 'CREATE',
       entityType: 'ManualPayment',
       entityId: payment.id,
@@ -372,7 +384,7 @@ export class ManualPaymentService {
     }
 
     // Log batch processing
-    await auditService.logAction({
+    await this.safeAuditLog({
       action: 'CREATE',
       entityType: 'BatchPayment',
       entityId: batchId,
@@ -459,7 +471,7 @@ export class ManualPaymentService {
     }
 
     // Log reconciliation
-    await auditService.logAction({
+    await this.safeAuditLog({
       action: 'UPDATE',
       entityType: 'PaymentReconciliation',
       entityId: reconciliationData.bankStatementReference,
@@ -584,7 +596,7 @@ export class ManualPaymentService {
     }
 
     // Log payment plan creation
-    await auditService.logAction({
+    await this.safeAuditLog({
       action: 'CREATE',
       entityType: 'PaymentPlan',
       entityId: planId,
@@ -672,7 +684,7 @@ export class ManualPaymentService {
     }
 
     // Log partial payment allocation
-    await auditService.logAction({
+    await this.safeAuditLog({
       action: 'UPDATE',
       entityType: 'PartialPaymentAllocation',
       entityId: payment.id,
@@ -745,7 +757,7 @@ export class ManualPaymentService {
 
     // Log cheque status update
     if (auditContext) {
-      await auditService.logAction({
+      await this.safeAuditLog({
         action: 'UPDATE',
         entityType: 'ChequeStatus',
         entityId: paymentId,

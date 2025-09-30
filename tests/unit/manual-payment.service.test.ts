@@ -17,8 +17,9 @@ const mockPrismaInstance = {
   }
 };
 
-jest.mock('@prisma/client', () => ({
-  PrismaClient: jest.fn(() => mockPrismaInstance)
+// Mock the database config module which exports the prisma instance
+jest.mock('../../src/config/database', () => ({
+  prisma: mockPrismaInstance
 }));
 
 // Mock config
