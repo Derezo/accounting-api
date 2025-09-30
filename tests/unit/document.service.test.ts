@@ -6,11 +6,8 @@ jest.mock('sharp', () => {
     toBuffer: jest.fn().mockResolvedValue(Buffer.from('mocked-image-data')),
     metadata: jest.fn().mockResolvedValue({ width: 1920, height: 1080, format: 'png' })
   }));
-  return {
-    __esModule: true,
-    default: mockSharp
-  };
-});
+  return mockSharp;
+}, { virtual: true });
 
 import { PrismaClient } from '@prisma/client';
 import { DocumentService } from '../../src/services/document.service';

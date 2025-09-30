@@ -172,8 +172,8 @@ export class ManualPaymentService {
       }
 
       // Verify payment amount doesn't exceed remaining balance
-      const remainingBalance = invoice.balance;
-      if (data.amount > remainingBalance.toNumber()) {
+      const remainingBalance = invoice.balance.toNumber();
+      if (data.amount > remainingBalance) {
         throw new Error(`Payment amount (${data.amount}) exceeds remaining balance (${remainingBalance})`);
       }
     }

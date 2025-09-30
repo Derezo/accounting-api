@@ -164,14 +164,18 @@ export class CanadianTaxService {
       isQuickMethod
     );
 
-    // For compound tax provinces (Quebec), use the accurate breakdown total
-    // because TaxService doesn't handle compound taxes correctly
-    const totalTax = provincialConfig.compound ? canadianBreakdown.totalTax : result.totalTax;
+    // Always use Canadian breakdown for accurate tax calculations
+    // The base TaxService uses database tax rates which may differ from
+    // the precise Canadian provincial rates defined in this service
+    const totalTax = canadianBreakdown.totalTax;
+
     // Use FinancialMath for precise calculation to avoid floating point errors
-    const grandTotal = add(
-      add(result.subtotal, -result.totalDiscount),
-      totalTax
-    ).toNumber();
+    const grandTotal = FinancialMath.toNumber(
+      FinancialMath.add(
+        FinancialMath.subtract(result.subtotal, result.totalDiscount),
+        totalTax
+      )
+    );
 
     return {
       ...result,
