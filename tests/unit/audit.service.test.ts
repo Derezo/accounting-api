@@ -383,7 +383,7 @@ describe('AuditService', () => {
 
       expect(logs).toHaveLength(5); // All logs created today
       expect(logs.every(log => {
-        const logDate = new Date(log.createdAt);
+        const logDate = new Date(log.timestamp);
         return logDate >= startDate && logDate <= endDate;
       })).toBe(true);
     });
@@ -406,10 +406,10 @@ describe('AuditService', () => {
 
       expect(logs).toHaveLength(5);
 
-      // Check that logs are ordered by createdAt DESC
+      // Check that logs are ordered by timestamp DESC
       for (let i = 1; i < logs.length; i++) {
-        const prevDate = new Date(logs[i - 1].createdAt);
-        const currDate = new Date(logs[i].createdAt);
+        const prevDate = new Date(logs[i - 1].timestamp);
+        const currDate = new Date(logs[i].timestamp);
         expect(prevDate.getTime()).toBeGreaterThanOrEqual(currDate.getTime());
       }
     });
