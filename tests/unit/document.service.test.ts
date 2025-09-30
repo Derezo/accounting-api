@@ -1,3 +1,17 @@
+// Mock sharp image processing library
+jest.mock('sharp', () => {
+  const mockSharp = jest.fn(() => ({
+    resize: jest.fn().mockReturnThis(),
+    toFormat: jest.fn().mockReturnThis(),
+    toBuffer: jest.fn().mockResolvedValue(Buffer.from('mocked-image-data')),
+    metadata: jest.fn().mockResolvedValue({ width: 1920, height: 1080, format: 'png' })
+  }));
+  return {
+    __esModule: true,
+    default: mockSharp
+  };
+});
+
 import { PrismaClient } from '@prisma/client';
 import { DocumentService } from '../../src/services/document.service';
 import { DocumentCategory, ProcessingStatus, AccessLevel } from '../../src/types/enums';

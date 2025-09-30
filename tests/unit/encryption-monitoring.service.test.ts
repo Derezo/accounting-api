@@ -181,7 +181,7 @@ describe('EncryptionMonitoringService', () => {
         },
         performance: {
           memoryUsage: 100 * 1024 * 1024,
-          cpuUsage: 1.5, // (1000000 + 500000) / 1000 = 1500ms
+          cpuUsage: 1500, // CPU usage in microseconds: (1000000 + 500000) = 1500000 µs = 1500 ms
           diskUsage: 0,
           networkLatency: 0
         }
