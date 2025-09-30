@@ -71,8 +71,12 @@ describe('Tax Calculation Accuracy Test Suite', () => {
     ];
 
     for (const rateConfig of provincialRates) {
-      await prisma.taxRate.create({
-        data: {
+      await prisma.taxRate.upsert({
+        where: {
+          code: `${rateConfig.code}_${rateConfig.stateProvinceCode}`
+        },
+        update: {},
+        create: {
           code: `${rateConfig.code}_${rateConfig.stateProvinceCode}`,
           name: rateConfig.name,
           rate: new Prisma.Decimal(rateConfig.rate),

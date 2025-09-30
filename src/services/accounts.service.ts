@@ -51,6 +51,11 @@ export class AccountsService {
   async createAccount(request: CreateAccountRequest): Promise<Account> {
     const { organizationId, accountNumber, name, type, parentId, description, isSystemAccount = false, userId } = request;
 
+    // Validate account name is not empty
+    if (!name || name.trim() === '') {
+      throw new Error('Account name is required');
+    }
+
     // Validate account number is unique within organization
     await this.validateAccountNumberUnique(organizationId, accountNumber);
 
@@ -162,11 +167,12 @@ export class AccountsService {
   /**
    * Gets complete chart of accounts for organization
    */
-  async getChartOfAccounts(organizationId: string): Promise<ChartOfAccountsResponse> {
+  async getChartOfAccounts(organizationId: string, includeInactive: boolean = false): Promise<ChartOfAccountsResponse> {
     const accounts = await this.prisma.account.findMany({
       where: {
         organizationId,
-        deletedAt: null
+        deletedAt: null,
+        ...(includeInactive ? {} : { isActive: true })
       },
       orderBy: [
         { type: 'asc' },

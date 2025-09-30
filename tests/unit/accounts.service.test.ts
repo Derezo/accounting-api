@@ -190,24 +190,19 @@ describe('AccountsService', () => {
     it('should return all accounts for organization', async () => {
       const result = await accountsService.getChartOfAccounts(testOrganizationId);
 
-      expect(result).toHaveLength(8);
-      expect(result[0].accountNumber).toBe('1000'); // Should be sorted by account number
+      expect(result.accounts).toHaveLength(8);
+      expect(result.totalAccounts).toBe(8);
+      expect(result.accounts[0].accountNumber).toBe('1000'); // Should be sorted by account number
     });
 
     it('should group accounts by type', async () => {
       const result = await accountsService.getChartOfAccounts(testOrganizationId);
 
-      const assetAccounts = result.filter(a => a.type === AccountType.ASSET);
-      const liabilityAccounts = result.filter(a => a.type === AccountType.LIABILITY);
-      const equityAccounts = result.filter(a => a.type === AccountType.EQUITY);
-      const revenueAccounts = result.filter(a => a.type === AccountType.REVENUE);
-      const expenseAccounts = result.filter(a => a.type === AccountType.EXPENSE);
-
-      expect(assetAccounts).toHaveLength(2);
-      expect(liabilityAccounts).toHaveLength(2);
-      expect(equityAccounts).toHaveLength(1);
-      expect(revenueAccounts).toHaveLength(1);
-      expect(expenseAccounts).toHaveLength(2);
+      expect(result.accountsByType.ASSET).toHaveLength(2);
+      expect(result.accountsByType.LIABILITY).toHaveLength(2);
+      expect(result.accountsByType.EQUITY).toHaveLength(1);
+      expect(result.accountsByType.REVENUE).toHaveLength(1);
+      expect(result.accountsByType.EXPENSE).toHaveLength(2);
     });
 
     it('should only return active accounts by default', async () => {
@@ -222,8 +217,9 @@ describe('AccountsService', () => {
 
       const result = await accountsService.getChartOfAccounts(testOrganizationId);
 
-      expect(result).toHaveLength(7); // One less due to inactive account
-      expect(result.find(a => a.accountNumber === '1000')).toBeUndefined();
+      expect(result.accounts).toHaveLength(7); // One less due to inactive account
+      expect(result.totalAccounts).toBe(7);
+      expect(result.accounts.find(a => a.accountNumber === '1000')).toBeUndefined();
     });
   });
 
@@ -304,7 +300,7 @@ describe('AccountsService', () => {
 
       // Account should not appear in normal queries
       const result = await accountsService.getChartOfAccounts(testOrganizationId);
-      expect(result.find(a => a.id === accountId)).toBeUndefined();
+      expect(result.accounts.find(a => a.id === accountId)).toBeUndefined();
 
       // But should still exist in database with deletedAt set
       const deletedAccount = await prisma.account.findUnique({
@@ -390,11 +386,11 @@ describe('AccountsService', () => {
         accountNumber: '1100',
         name: 'Cash',
         type: AccountType.ASSET,
-        parentAccountId: parentAccount.id,
+        parentId: parentAccount.id,
         isActive: true,
       }, testUserId);
 
-      expect(childAccount.parentAccountId).toBe(parentAccount.id);
+      expect(childAccount.parentId).toBe(parentAccount.id);
 
       // Get hierarchy
       const hierarchy = await accountsService.getAccountHierarchy(testOrganizationId);

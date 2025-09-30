@@ -41,11 +41,15 @@ module.exports = async () => {
 
   // Push schema to test database
   try {
-    execSync('npx prisma db push --skip-generate', {
+    execSync('npx prisma db push --skip-generate --accept-data-loss', {
       stdio: 'ignore',
       env: { ...process.env, DATABASE_URL: 'file:./test.db', NODE_ENV: 'test' }
     });
     console.log('Test database schema created successfully');
+
+    // Seed reference data after schema is created
+    const { seedReferenceData } = require('./seedReferenceData');
+    await seedReferenceData();
   } catch (error) {
     console.error('Failed to create test database schema:', error);
     throw error;
