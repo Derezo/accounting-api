@@ -1,55 +1,45 @@
-// Mock nodemailer first
-const mockTransporter = {
-  sendMail: jest.fn(),
-  verify: jest.fn()
+// Mock Resend email service
+const mockResendSend = jest.fn();
+const mockResend = {
+  emails: {
+    send: mockResendSend
+  }
 };
 
-jest.mock('nodemailer', () => ({
-  createTransport: jest.fn(() => mockTransporter)
+jest.mock('resend', () => ({
+  Resend: jest.fn(() => mockResend)
 }));
 
 jest.mock('../../src/config/config', () => ({
   config: {
-    SMTP_HOST: 'smtp.example.com',
-    SMTP_PORT: 587,
-    SMTP_USER: 'test@example.com',
-    SMTP_PASSWORD: 'password123',
+    RESEND_API_KEY: 'test-resend-api-key',
     EMAIL_FROM: 'noreply@accounting.com'
   }
 }));
 
 import { EmailService } from '../../src/services/email.service';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-const mockCreateTransport = nodemailer.createTransport as jest.MockedFunction<typeof nodemailer.createTransport>;
+const MockedResend = Resend as jest.MockedClass<typeof Resend>;
 
 describe('EmailService', () => {
   let emailService: EmailService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockCreateTransport.mockReturnValue(mockTransporter as any);
     emailService = new EmailService();
   });
 
   describe('constructor', () => {
-    it('should initialize transporter with correct SMTP settings', () => {
-      expect(mockCreateTransport).toHaveBeenCalledWith({
-        host: 'smtp.example.com',
-        port: 587,
-        secure: false,
-        auth: {
-          user: 'test@example.com',
-          pass: 'password123'
-        }
-      });
+    it('should initialize Resend with correct API key', () => {
+      expect(MockedResend).toHaveBeenCalledWith('test-resend-api-key');
     });
 
-    it('should handle missing SMTP configuration gracefully', () => {
+    it('should handle missing Resend configuration gracefully', () => {
       // This test verifies that EmailService can be instantiated even with missing config
       // The actual config is already mocked at module level, so we just verify it was created
       expect(emailService).toBeDefined();
-      expect(mockCreateTransport).toHaveBeenCalled();
+      expect(MockedResend).toHaveBeenCalled();
     });
   });
 
@@ -62,7 +52,7 @@ describe('EmailService', () => {
     };
 
     beforeEach(() => {
-      mockTransporter.sendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      mockResendSend.mockResolvedValue({ id: 'test-message-id' });
     });
 
     it('should send email successfully with single recipient', async () => {
@@ -73,9 +63,9 @@ describe('EmailService', () => {
         mockEmailData.text
       );
 
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith({
+      expect(mockResendSend).toHaveBeenCalledWith({
         from: 'noreply@accounting.com',
-        to: 'recipient@example.com',
+        to: ['recipient@example.com'],
         subject: 'Test Subject',
         html: '<h1>Test HTML</h1>',
         text: 'Test Text',
@@ -93,9 +83,9 @@ describe('EmailService', () => {
         mockEmailData.text
       );
 
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith({
+      expect(mockResendSend).toHaveBeenCalledWith({
         from: 'noreply@accounting.com',
-        to: 'user1@example.com, user2@example.com',
+        to: ['user1@example.com', 'user2@example.com'],
         subject: 'Test Subject',
         html: '<h1>Test HTML</h1>',
         text: 'Test Text',
@@ -110,9 +100,9 @@ describe('EmailService', () => {
         '<h1>Test HTML</h1><p>Paragraph text</p>'
       );
 
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith({
+      expect(mockResendSend).toHaveBeenCalledWith({
         from: 'noreply@accounting.com',
-        to: 'recipient@example.com',
+        to: ['recipient@example.com'],
         subject: 'Test Subject',
         html: '<h1>Test HTML</h1><p>Paragraph text</p>',
         text: 'Test HTML Paragraph text',
@@ -133,9 +123,9 @@ describe('EmailService', () => {
         attachments
       );
 
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith({
+      expect(mockResendSend).toHaveBeenCalledWith({
         from: 'noreply@accounting.com',
-        to: 'recipient@example.com',
+        to: ['recipient@example.com'],
         subject: 'Test Subject',
         html: '<h1>Test HTML</h1>',
         text: 'Test Text',
@@ -143,10 +133,10 @@ describe('EmailService', () => {
       });
     });
 
-    it('should throw error if transporter is not configured', async () => {
+    it('should throw error if Resend is not configured', async () => {
       const unconfiguredEmailService = new EmailService();
-      // Force transporter to be null
-      (unconfiguredEmailService as any).transporter = null;
+      // Force resend to be null
+      (unconfiguredEmailService as any).resend = null;
 
       await expect(
         unconfiguredEmailService.sendEmail(
@@ -158,7 +148,7 @@ describe('EmailService', () => {
     });
 
     it('should throw error if sending email fails', async () => {
-      mockTransporter.sendMail.mockRejectedValue(new Error('SMTP Error'));
+      mockResendSend.mockRejectedValue(new Error('Resend API Error'));
 
       await expect(
         emailService.sendEmail(
@@ -183,7 +173,7 @@ describe('EmailService', () => {
     };
 
     beforeEach(() => {
-      mockTransporter.sendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      mockResendSend.mockResolvedValue({ id: 'test-message-id' });
     });
 
     it('should send e-transfer notification email successfully', async () => {
@@ -192,10 +182,10 @@ describe('EmailService', () => {
         mockETransferData
       );
 
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
+      expect(mockResendSend).toHaveBeenCalledWith(
         expect.objectContaining({
           from: 'noreply@accounting.com',
-          to: 'recipient@example.com',
+          to: ['recipient@example.com'],
           subject: "You've received an Interac e-Transfer from John Smith",
           html: expect.stringContaining('ET-123456789'),
           text: expect.stringContaining('ET-123456789')
@@ -209,9 +199,9 @@ describe('EmailService', () => {
         mockETransferData
       );
 
-      const sendMailCall = mockTransporter.sendMail.mock.calls[0][0];
-      expect(sendMailCall.html).toContain('What is your favorite color?');
-      expect(sendMailCall.text).toContain('What is your favorite color?');
+      const sendCall = mockResendSend.mock.calls[0][0];
+      expect(sendCall.html).toContain('What is your favorite color?');
+      expect(sendCall.text).toContain('What is your favorite color?');
     });
 
     it('should format amount correctly in Canadian currency', async () => {
@@ -220,9 +210,9 @@ describe('EmailService', () => {
         mockETransferData
       );
 
-      const sendMailCall = mockTransporter.sendMail.mock.calls[0][0];
-      expect(sendMailCall.html).toContain('$500.00');
-      expect(sendMailCall.text).toContain('$500.00');
+      const sendCall = mockResendSend.mock.calls[0][0];
+      expect(sendCall.html).toContain('$500.00');
+      expect(sendCall.text).toContain('$500.00');
     });
 
     it('should include deposit URL in email', async () => {
@@ -231,9 +221,9 @@ describe('EmailService', () => {
         mockETransferData
       );
 
-      const sendMailCall = mockTransporter.sendMail.mock.calls[0][0];
-      expect(sendMailCall.html).toContain('https://banking.example.com/deposit');
-      expect(sendMailCall.text).toContain('https://banking.example.com/deposit');
+      const sendCall = mockResendSend.mock.calls[0][0];
+      expect(sendCall.html).toContain('https://banking.example.com/deposit');
+      expect(sendCall.text).toContain('https://banking.example.com/deposit');
     });
   });
 
@@ -247,7 +237,7 @@ describe('EmailService', () => {
     };
 
     beforeEach(() => {
-      mockTransporter.sendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      mockResendSend.mockResolvedValue({ id: 'test-message-id' });
     });
 
     it('should send deposit confirmation email successfully', async () => {
@@ -256,10 +246,10 @@ describe('EmailService', () => {
         mockDepositData
       );
 
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
+      expect(mockResendSend).toHaveBeenCalledWith(
         expect.objectContaining({
           from: 'noreply@accounting.com',
-          to: 'recipient@example.com',
+          to: ['recipient@example.com'],
           subject: 'e-Transfer Deposited Successfully - ET-123456789',
           html: expect.stringContaining('ET-123456789'),
           text: expect.stringContaining('ET-123456789')
@@ -273,9 +263,9 @@ describe('EmailService', () => {
         mockDepositData
       );
 
-      const sendMailCall = mockTransporter.sendMail.mock.calls[0][0];
-      expect(sendMailCall.html).toContain('CONF123456');
-      expect(sendMailCall.text).toContain('CONF123456');
+      const sendCall = mockResendSend.mock.calls[0][0];
+      expect(sendCall.html).toContain('CONF123456');
+      expect(sendCall.text).toContain('CONF123456');
     });
 
     it('should work without confirmation code', async () => {
@@ -291,9 +281,9 @@ describe('EmailService', () => {
         dataWithoutCode
       );
 
-      const sendMailCall = mockTransporter.sendMail.mock.calls[0][0];
-      expect(sendMailCall.html).not.toContain('Confirmation Code:');
-      expect(sendMailCall.text).not.toContain('Confirmation Code:');
+      const sendCall = mockResendSend.mock.calls[0][0];
+      expect(sendCall.html).not.toContain('Confirmation Code:');
+      expect(sendCall.text).not.toContain('Confirmation Code:');
     });
   });
 
@@ -310,7 +300,7 @@ describe('EmailService', () => {
     };
 
     beforeEach(() => {
-      mockTransporter.sendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      mockResendSend.mockResolvedValue({ id: 'test-message-id' });
     });
 
     it('should send payment receipt email successfully', async () => {
@@ -319,10 +309,10 @@ describe('EmailService', () => {
         mockReceiptData
       );
 
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
+      expect(mockResendSend).toHaveBeenCalledWith(
         expect.objectContaining({
           from: 'noreply@accounting.com',
-          to: 'customer@example.com',
+          to: ['customer@example.com'],
           subject: 'Payment Receipt - PAY-123456789',
           html: expect.stringContaining('PAY-123456789'),
           text: expect.stringContaining('PAY-123456789')
@@ -336,9 +326,9 @@ describe('EmailService', () => {
         mockReceiptData
       );
 
-      const sendMailCall = mockTransporter.sendMail.mock.calls[0][0];
-      expect(sendMailCall.html).toContain('INV-2024-001');
-      expect(sendMailCall.text).toContain('INV-2024-001');
+      const sendCall = mockResendSend.mock.calls[0][0];
+      expect(sendCall.html).toContain('INV-2024-001');
+      expect(sendCall.text).toContain('INV-2024-001');
     });
 
     it('should work without invoice number', async () => {
@@ -357,9 +347,9 @@ describe('EmailService', () => {
         dataWithoutInvoice
       );
 
-      const sendMailCall = mockTransporter.sendMail.mock.calls[0][0];
-      expect(sendMailCall.html).not.toContain('Invoice Number:');
-      expect(sendMailCall.text).not.toContain('Invoice Number:');
+      const sendCall = mockResendSend.mock.calls[0][0];
+      expect(sendCall.html).not.toContain('Invoice Number:');
+      expect(sendCall.text).not.toContain('Invoice Number:');
     });
 
     it('should format payment amount correctly', async () => {
@@ -368,9 +358,9 @@ describe('EmailService', () => {
         mockReceiptData
       );
 
-      const sendMailCall = mockTransporter.sendMail.mock.calls[0][0];
-      expect(sendMailCall.html).toContain('$1,500.00');
-      expect(sendMailCall.text).toContain('$1,500.00');
+      const sendCall = mockResendSend.mock.calls[0][0];
+      expect(sendCall.html).toContain('$1,500.00');
+      expect(sendCall.text).toContain('$1,500.00');
     });
   });
 
@@ -382,7 +372,7 @@ describe('EmailService', () => {
     beforeEach(() => {
       jest.useFakeTimers();
       jest.setSystemTime(currentDate);
-      mockTransporter.sendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      mockResendSend.mockResolvedValue({ id: 'test-message-id' });
     });
 
     afterEach(() => {
@@ -404,10 +394,10 @@ describe('EmailService', () => {
         { ...mockReminderData, dueDate: futureDate }
       );
 
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
+      expect(mockResendSend).toHaveBeenCalledWith(
         expect.objectContaining({
           from: 'noreply@accounting.com',
-          to: 'customer@example.com',
+          to: ['customer@example.com'],
           subject: 'Payment Reminder - Invoice INV-2024-001',
           html: expect.stringContaining('Payment Reminder'),
           text: expect.stringContaining('Payment Reminder')
@@ -421,10 +411,10 @@ describe('EmailService', () => {
         { ...mockReminderData, dueDate: pastDate }
       );
 
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
+      expect(mockResendSend).toHaveBeenCalledWith(
         expect.objectContaining({
           from: 'noreply@accounting.com',
-          to: 'customer@example.com',
+          to: ['customer@example.com'],
           subject: 'Overdue Payment Reminder - Invoice INV-2024-001',
           html: expect.stringContaining('Overdue Payment'),
           text: expect.stringContaining('Overdue Payment')
@@ -438,9 +428,9 @@ describe('EmailService', () => {
         { ...mockReminderData, dueDate: futureDate }
       );
 
-      const sendMailCall = mockTransporter.sendMail.mock.calls[0][0];
-      expect(sendMailCall.html).toContain('https://payments.example.com/pay/12345');
-      expect(sendMailCall.text).toContain('https://payments.example.com/pay/12345');
+      const sendCall = mockResendSend.mock.calls[0][0];
+      expect(sendCall.html).toContain('https://payments.example.com/pay/12345');
+      expect(sendCall.text).toContain('https://payments.example.com/pay/12345');
     });
 
     it('should work without payment URL', async () => {
@@ -458,9 +448,9 @@ describe('EmailService', () => {
         dataWithoutUrl
       );
 
-      const sendMailCall = mockTransporter.sendMail.mock.calls[0][0];
-      expect(sendMailCall.html).not.toContain('Pay Now');
-      expect(sendMailCall.text).not.toContain('Pay online:');
+      const sendCall = mockResendSend.mock.calls[0][0];
+      expect(sendCall.html).not.toContain('Pay Now');
+      expect(sendCall.text).not.toContain('Pay online:');
     });
   });
 
@@ -485,27 +475,14 @@ describe('EmailService', () => {
   });
 
   describe('testConnection', () => {
-    it('should return true when connection is successful', async () => {
-      mockTransporter.verify.mockResolvedValue(true);
+    it('should return true when Resend is configured', async () => {
       const result = await emailService.testConnection();
       expect(result).toBe(true);
-      expect(mockTransporter.verify).toHaveBeenCalled();
     });
 
-    it('should return false when connection fails', async () => {
-      mockTransporter.verify.mockRejectedValue(new Error('Connection failed'));
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-
-      const result = await emailService.testConnection();
-
-      expect(result).toBe(false);
-      expect(consoleSpy).toHaveBeenCalledWith('Email service test failed:', expect.any(Error));
-      consoleSpy.mockRestore();
-    });
-
-    it('should return false when transporter is not configured', async () => {
+    it('should return false when Resend is not configured', async () => {
       const unconfiguredEmailService = new EmailService();
-      (unconfiguredEmailService as any).transporter = null;
+      (unconfiguredEmailService as any).resend = null;
 
       const result = await unconfiguredEmailService.testConnection();
       expect(result).toBe(false);
