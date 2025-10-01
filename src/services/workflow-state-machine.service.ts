@@ -388,11 +388,13 @@ export class WorkflowStateMachineService {
       });
 
       if (payment && payment.invoice) {
-        // Calculate total paid
-        const totalPaid = payment.invoice.payments.reduce(
-          (sum, p) => sum + Number(p.amount),
-          0
-        ) + Number(payment.amount);
+        // Calculate total paid (exclude current payment to avoid double-counting)
+        const totalPaid = payment.invoice.payments
+          .filter(p => p.id !== payment.id)
+          .reduce(
+            (sum, p) => sum + Number(p.amount),
+            0
+          ) + Number(payment.amount);
 
         const invoiceTotal = Number(payment.invoice.total);
         const depositThreshold = invoiceTotal * 0.25;
@@ -477,8 +479,8 @@ export class WorkflowStateMachineService {
       };
     }
 
-    // Stage 1: Request Quote
-    if (customer.status === 'PROSPECT' && customer.quotes.length === 0) {
+    // Stage 1: Request Quote (only if no quotes AND no invoices)
+    if (customer.status === 'PROSPECT' && customer.quotes.length === 0 && customer.invoices.length === 0) {
       return {
         stage: 1,
         stageName: 'Request Quote',
@@ -498,6 +500,17 @@ export class WorkflowStateMachineService {
       };
     }
 
+    // Stage 4: Appointment Scheduled (check before stage 3 for priority)
+    const scheduledAppointments = customer.appointments.filter(a => (a.confirmed || (!a.confirmed && !a.cancelled && !a.completed)));
+    if (scheduledAppointments.length > 0 && customer.invoices.length === 0) {
+      return {
+        stage: 4,
+        stageName: 'Appointment Scheduled',
+        completed: false,
+        nextAction: 'Generate invoice after appointment'
+      };
+    }
+
     // Stage 3: Quote Accepted
     const acceptedQuotes = customer.quotes.filter(q => q.status === 'ACCEPTED');
     if (acceptedQuotes.length > 0 && customer.invoices.length === 0) {
@@ -506,17 +519,6 @@ export class WorkflowStateMachineService {
         stageName: 'Quote Accepted',
         completed: false,
         nextAction: 'Schedule appointment or generate invoice'
-      };
-    }
-
-    // Stage 4: Appointment Scheduled
-    const scheduledAppointments = customer.appointments.filter(a => ['SCHEDULED', 'CONFIRMED'].includes(a.status));
-    if (scheduledAppointments.length > 0 && customer.invoices.length === 0) {
-      return {
-        stage: 4,
-        stageName: 'Appointment Scheduled',
-        completed: false,
-        nextAction: 'Generate invoice after appointment'
       };
     }
 

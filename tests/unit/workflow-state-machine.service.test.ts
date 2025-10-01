@@ -313,7 +313,7 @@ describe('WorkflowStateMachineService', () => {
           organizationId,
           invoiceNumber: 'INV-001',
           customerId,
-          createdById: userId,
+          createdBy: userId,
           status: 'SENT',
           dueDate: new Date(Date.now() + 86400000 * 30),
           subtotal: 1000,
@@ -329,12 +329,13 @@ describe('WorkflowStateMachineService', () => {
       const payment = await prisma.payment.create({
         data: {
           organizationId,
+          paymentNumber: 'PAY-001',
           invoiceId: invoice.id,
           customerId,
-          amount: 565,
-          method: 'CREDIT_CARD',
+          amount: 500,
+          paymentMethod: 'CREDIT_CARD',
+          paymentDate: new Date(),
           status: 'PROCESSING',
-          transactionDate: new Date(),
         },
       });
 
@@ -352,7 +353,7 @@ describe('WorkflowStateMachineService', () => {
         where: { id: invoice.id },
       });
       expect(updatedInvoice!.status).toBe('PARTIAL');
-      expect(Number(updatedInvoice!.amountPaid)).toBe(565);
+      expect(Number(updatedInvoice!.amountPaid)).toBe(500);
     });
 
     test('should mark invoice as PAID when full amount received', async () => {
@@ -361,7 +362,7 @@ describe('WorkflowStateMachineService', () => {
           organizationId,
           invoiceNumber: 'INV-002',
           customerId,
-          createdById: userId,
+          createdBy: userId,
           status: 'SENT',
           dueDate: new Date(Date.now() + 86400000 * 30),
           subtotal: 1000,
@@ -376,12 +377,13 @@ describe('WorkflowStateMachineService', () => {
       const payment = await prisma.payment.create({
         data: {
           organizationId,
+          paymentNumber: 'PAY-002',
           invoiceId: invoice.id,
           customerId,
           amount: 1130,
-          method: 'CREDIT_CARD',
+          paymentMethod: 'CREDIT_CARD',
+          paymentDate: new Date(),
           status: 'PROCESSING',
-          transactionDate: new Date(),
         },
       });
 
@@ -402,27 +404,13 @@ describe('WorkflowStateMachineService', () => {
     });
 
     test('should mark deposit as paid when threshold met', async () => {
-      // Create project
-      const project = await prisma.project.create({
-        data: {
-          organizationId,
-          projectNumber: 'PRJ-001',
-          customerId,
-          name: 'Test Project',
-          status: 'DRAFT',
-          startDate: new Date(),
-          depositPaid: false,
-        },
-      });
-
-      // Create invoice linked to project
+      // Create invoice first
       const invoice = await prisma.invoice.create({
         data: {
           organizationId,
           invoiceNumber: 'INV-003',
           customerId,
-          projectId: project.id,
-          createdById: userId,
+          createdBy: userId,
           status: 'SENT',
           dueDate: new Date(Date.now() + 86400000 * 30),
           subtotal: 1000,
@@ -434,16 +422,31 @@ describe('WorkflowStateMachineService', () => {
         },
       });
 
+      // Create project linked to invoice
+      const project = await prisma.project.create({
+        data: {
+          organizationId,
+          projectNumber: 'PRJ-001',
+          customerId,
+          invoiceId: invoice.id,
+          name: 'Test Project',
+          status: 'DRAFT',
+          startDate: new Date(),
+          depositPaid: false,
+        },
+      });
+
       // Create payment for 30% (above 25% threshold)
       const payment = await prisma.payment.create({
         data: {
           organizationId,
+          paymentNumber: 'PAY-003',
           invoiceId: invoice.id,
           customerId,
           amount: 340,
-          method: 'CREDIT_CARD',
+          paymentMethod: 'CREDIT_CARD',
+          paymentDate: new Date(),
           status: 'PROCESSING',
-          transactionDate: new Date(),
         },
       });
 
@@ -534,14 +537,18 @@ describe('WorkflowStateMachineService', () => {
         },
       });
 
+      const appointmentStart = new Date(Date.now() + 86400000);
+      const appointmentEnd = new Date(appointmentStart.getTime() + 60 * 60000); // 60 minutes later
+
       await prisma.appointment.create({
         data: {
           organizationId,
           customerId,
-          scheduledFor: new Date(Date.now() + 86400000),
+          title: 'HVAC Consultation',
+          startTime: appointmentStart,
+          endTime: appointmentEnd,
           duration: 60,
-          status: 'SCHEDULED',
-          appointmentType: 'CONSULTATION',
+          confirmed: true,
         },
       });
 
@@ -557,7 +564,7 @@ describe('WorkflowStateMachineService', () => {
           organizationId,
           invoiceNumber: 'INV-004',
           customerId,
-          createdById: userId,
+          createdBy: userId,
           status: 'SENT',
           dueDate: new Date(Date.now() + 86400000 * 30),
           subtotal: 1000,
@@ -577,25 +584,13 @@ describe('WorkflowStateMachineService', () => {
     });
 
     test('should return stage 8 when project completed and paid', async () => {
-      const project = await prisma.project.create({
-        data: {
-          organizationId,
-          projectNumber: 'PRJ-002',
-          customerId,
-          name: 'Completed Project',
-          status: 'COMPLETED',
-          startDate: new Date(),
-          depositPaid: true,
-        },
-      });
-
-      await prisma.invoice.create({
+      // Create invoice first
+      const invoice = await prisma.invoice.create({
         data: {
           organizationId,
           invoiceNumber: 'INV-005',
           customerId,
-          projectId: project.id,
-          createdById: userId,
+          createdBy: userId,
           status: 'PAID',
           dueDate: new Date(Date.now() + 86400000 * 30),
           subtotal: 1000,
@@ -604,6 +599,20 @@ describe('WorkflowStateMachineService', () => {
           amountPaid: 1130,
           depositRequired: 0,
           balance: 0,
+        },
+      });
+
+      // Create project linked to invoice
+      const project = await prisma.project.create({
+        data: {
+          organizationId,
+          projectNumber: 'PRJ-002',
+          customerId,
+          invoiceId: invoice.id,
+          name: 'Completed Project',
+          status: 'COMPLETED',
+          startDate: new Date(),
+          depositPaid: true,
         },
       });
 
