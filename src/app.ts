@@ -35,6 +35,7 @@ import inventoryRoutes from "./routes/inventory.routes";
 import publicIntakeRoutes from "./routes/public-intake.routes";
 import publicQuoteRoutes from "./routes/public-quote.routes";
 import publicAppointmentRoutes from "./routes/public-appointment.routes";
+import intakeFormV2Routes from "./routes/intake-form-v2.routes";
 
 import { prisma } from "./config/database";
 import { logger } from "./utils/logger";
@@ -222,6 +223,9 @@ app.use(`/api/${config.API_VERSION}/public/quotes`, publicQuoteRoutes);
 
 // Public appointment routes (no authentication required, secured with tokens)
 app.use(`/api/${config.API_VERSION}/public/appointments`, publicAppointmentRoutes);
+
+// V2 Intake Form routes (template-based, mixed auth)
+app.use(`/api/v2`, intakeFormV2Routes);
 
 // NEW: Multi-tenant routes with organizationId in URL (preferred pattern)
 app.use(

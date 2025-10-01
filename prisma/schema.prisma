@@ -38,48 +38,49 @@ model Organization {
   deletedAt DateTime?
 
   // Relationships
-  users                  User[]
-  persons                Person[]
-  businesses             Business[]
-  customers              Customer[]
-  vendors                Vendor[]
-  employees              Employee[]
-  contractors            Contractor[]
-  locations              Location[]
-  products               Product[]
-  services               Service[]
-  accounts               Account[]
-  quotes                 Quote[]
-  invoices               Invoice[]
-  payments               Payment[]
-  expenses               Expense[]
-  projects               Project[]
-  appointments           Appointment[]
-  addresses              Address[]
-  documents              Document[]
-  auditLogs              AuditLog[]
-  apiKeys                ApiKey[]
-  taxRecords             TaxRecord[]
-  bankAccounts           BankAccount[]
-  bankTransactions       BankTransaction[]
-  securityEvents         SecurityEvent[]
-  recurringInvoices      RecurringInvoice[]
-  customerPaymentMethods CustomerPaymentMethod[]
-  contractorPayments     ContractorPayment[]
-  notifications          Notification[]
-  webhooks               Webhook[]
-  invoiceTemplates       InvoiceTemplate[]
-  invoiceStyles          InvoiceStyle[]
-  branding               OrganizationBranding?
-  generatedPDFs          GeneratedPDF[]
-  purchaseOrders         PurchaseOrder[]
-  bills                  Bill[]
-  vendorPayments         VendorPayment[]
-  inventoryItems         InventoryItem[]
-  inventoryTransactions  InventoryTransaction[]
-  employeeTimeEntries    EmployeeTimeEntry[]
-  quoteAcceptanceTokens  QuoteAcceptanceToken[]
+  users                    User[]
+  persons                  Person[]
+  businesses               Business[]
+  customers                Customer[]
+  vendors                  Vendor[]
+  employees                Employee[]
+  contractors              Contractor[]
+  locations                Location[]
+  products                 Product[]
+  services                 Service[]
+  accounts                 Account[]
+  quotes                   Quote[]
+  invoices                 Invoice[]
+  payments                 Payment[]
+  expenses                 Expense[]
+  projects                 Project[]
+  appointments             Appointment[]
+  addresses                Address[]
+  documents                Document[]
+  auditLogs                AuditLog[]
+  apiKeys                  ApiKey[]
+  taxRecords               TaxRecord[]
+  bankAccounts             BankAccount[]
+  bankTransactions         BankTransaction[]
+  securityEvents           SecurityEvent[]
+  recurringInvoices        RecurringInvoice[]
+  customerPaymentMethods   CustomerPaymentMethod[]
+  contractorPayments       ContractorPayment[]
+  notifications            Notification[]
+  webhooks                 Webhook[]
+  invoiceTemplates         InvoiceTemplate[]
+  invoiceStyles            InvoiceStyle[]
+  branding                 OrganizationBranding?
+  generatedPDFs            GeneratedPDF[]
+  purchaseOrders           PurchaseOrder[]
+  bills                    Bill[]
+  vendorPayments           VendorPayment[]
+  inventoryItems           InventoryItem[]
+  inventoryTransactions    InventoryTransaction[]
+  employeeTimeEntries      EmployeeTimeEntry[]
+  quoteAcceptanceTokens    QuoteAcceptanceToken[]
   appointmentBookingTokens AppointmentBookingToken[]
+  intakeFormTemplates      IntakeFormTemplate[]
 
   @@index([domain])
   @@index([isActive])
@@ -604,14 +605,14 @@ model Quote {
   deletedAt DateTime?
 
   // Relationships
-  organization      Organization           @relation(fields: [organizationId], references: [id])
-  customer          Customer               @relation(fields: [customerId], references: [id])
-  createdBy         User                   @relation("QuoteCreator", fields: [createdById], references: [id])
-  items             QuoteItem[]
-  invoice           Invoice?
-  acceptanceTokens  QuoteAcceptanceToken[]
-  appointments      Appointment[]
-  bookingTokens     AppointmentBookingToken[]
+  organization     Organization              @relation(fields: [organizationId], references: [id])
+  customer         Customer                  @relation(fields: [customerId], references: [id])
+  createdBy        User                      @relation("QuoteCreator", fields: [createdById], references: [id])
+  items            QuoteItem[]
+  invoice          Invoice?
+  acceptanceTokens QuoteAcceptanceToken[]
+  appointments     Appointment[]
+  bookingTokens    AppointmentBookingToken[]
 
   @@unique([organizationId, quoteNumber])
   @@index([organizationId])
@@ -660,7 +661,7 @@ model QuoteItem {
 }
 
 model QuoteAcceptanceToken {
-  id             String  @id @default(cuid())
+  id             String @id @default(cuid())
   quoteId        String
   organizationId String
 
@@ -669,9 +670,9 @@ model QuoteAcceptanceToken {
   tokenVersion Int    @default(1)
 
   // Status
-  status      String   @default("ACTIVE") // ACTIVE, USED, EXPIRED, INVALIDATED
+  status      String    @default("ACTIVE") // ACTIVE, USED, EXPIRED, INVALIDATED
   usedAt      DateTime?
-  invalidated Boolean  @default(false)
+  invalidated Boolean   @default(false)
 
   // Security Context (when token was generated)
   generatedBy   String? // User ID who generated the token
@@ -1085,13 +1086,13 @@ model Appointment {
   deletedAt DateTime?
 
   // Relationships
-  organization    Organization             @relation(fields: [organizationId], references: [id])
-  customer        Customer                 @relation(fields: [customerId], references: [id])
-  quote           Quote?                   @relation(fields: [quoteId], references: [id])
-  project         Project?                 @relation(fields: [projectId], references: [id])
-  location        Location?                @relation(fields: [locationId], references: [id])
-  creator         User?                    @relation("AppointmentCreator", fields: [createdBy], references: [id])
-  bookingTokens   AppointmentBookingToken[]
+  organization  Organization              @relation(fields: [organizationId], references: [id])
+  customer      Customer                  @relation(fields: [customerId], references: [id])
+  quote         Quote?                    @relation(fields: [quoteId], references: [id])
+  project       Project?                  @relation(fields: [projectId], references: [id])
+  location      Location?                 @relation(fields: [locationId], references: [id])
+  creator       User?                     @relation("AppointmentCreator", fields: [createdBy], references: [id])
+  bookingTokens AppointmentBookingToken[]
 
   @@index([organizationId])
   @@index([customerId])
@@ -1112,14 +1113,14 @@ model AppointmentBookingToken {
   tokenVersion Int    @default(1)
 
   // Status
-  status      String   @default("ACTIVE") // ACTIVE, USED, EXPIRED, INVALIDATED
+  status      String    @default("ACTIVE") // ACTIVE, USED, EXPIRED, INVALIDATED
   usedAt      DateTime?
-  invalidated Boolean  @default(false)
+  invalidated Boolean   @default(false)
 
   // Booking Details
-  bookedBy      String? // Customer email who booked
-  bookedIp      String? // IP address when token was used
-  bookingNotes  String? // Optional notes from customer
+  bookedBy     String? // Customer email who booked
+  bookedIp     String? // IP address when token was used
+  bookingNotes String? // Optional notes from customer
 
   // Expiration
   expiresAt DateTime
@@ -2390,7 +2391,8 @@ model IntakeSecurityEvent {
   timestamp DateTime @default(now())
 
   // Relationships
-  session IntakeSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  session     IntakeSession?     @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  formSession IntakeFormSession? @relation("FormSessionEvents", fields: [sessionId], references: [id], onDelete: SetNull)
 
   @@index([sessionId])
   @@index([eventType])
@@ -2399,4 +2401,305 @@ model IntakeSecurityEvent {
   @@index([timestamp])
   @@index([blocked])
   @@map("intake_security_events")
+}
+
+// ==================== TEMPLATE-BASED INTAKE SYSTEM (V2) ====================
+
+model IntakeFormTemplate {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Template Identification
+  name        String
+  description String?
+  version     String  @default("1.0.0")
+
+  // Template Type & Status
+  templateType String  @default("CUSTOM") // SYSTEM, CUSTOM, INDUSTRY
+  industry     String? // HVAC, PLUMBING, ELECTRICAL, LEGAL, MEDICAL, etc.
+  isActive     Boolean @default(true)
+  isDefault    Boolean @default(false)
+  isPublic     Boolean @default(false) // Available to all organizations
+
+  // Form Configuration
+  config String // JSON: { theme, layout, branding, notifications }
+
+  // Completion Rules
+  completionRules String // JSON: Defines what makes the form "complete"
+
+  // Conversion Settings
+  autoConvert        Boolean @default(false) // Auto-create customer/quote on completion
+  conversionSettings String? // JSON: Mapping rules for conversion
+
+  // Analytics
+  submissionCount Int @default(0)
+  conversionCount Int @default(0)
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization        @relation(fields: [organizationId], references: [id])
+  steps        IntakeFormStep[]
+  fields       IntakeFormField[]
+  sessions     IntakeFormSession[]
+
+  @@unique([organizationId, name, version])
+  @@index([organizationId])
+  @@index([templateType])
+  @@index([industry])
+  @@index([isActive])
+  @@index([isDefault])
+  @@map("intake_form_templates")
+}
+
+model IntakeFormStep {
+  id         String @id @default(cuid())
+  templateId String
+
+  // Step Identification
+  stepKey     String // Unique key within template (e.g., "email_capture", "service_details")
+  name        String // Display name
+  description String?
+
+  // Ordering & Flow
+  sortOrder Int
+
+  // Step Behavior
+  isRequired      Boolean @default(true)
+  canSkip         Boolean @default(false)
+  skipCondition   String? // JSON: Conditional logic for skipping
+  completionRules String? // JSON: Rules to mark step as complete
+
+  // UI Configuration
+  layout       String  @default("SINGLE_COLUMN") // SINGLE_COLUMN, TWO_COLUMN, GRID
+  displayStyle String? // JSON: Custom styling
+  helpText     String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  template    IntakeFormTemplate     @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  fields      IntakeFormField[]
+  transitions IntakeFormTransition[] @relation("FromStep")
+
+  @@unique([templateId, stepKey])
+  @@index([templateId])
+  @@index([sortOrder])
+  @@map("intake_form_steps")
+}
+
+model IntakeFormField {
+  id         String  @id @default(cuid())
+  templateId String
+  stepId     String?
+
+  // Field Identification
+  fieldKey    String // Unique key within template
+  label       String
+  placeholder String?
+  helpText    String?
+
+  // Field Type
+  fieldType String // text, email, phone, number, select, multiselect, radio, checkbox, textarea, date, datetime, file, signature, rating, scale, matrix, address, custom
+  dataType  String @default("string") // string, number, boolean, date, array, object
+
+  // Validation
+  isRequired      Boolean @default(false)
+  validationRules String? // JSON: { min, max, pattern, custom }
+  validationError String? // Custom error message
+
+  // Field Options (for select, radio, etc.)
+  options      String? // JSON array of options
+  defaultValue String? // Default value (JSON-encoded)
+
+  // Conditional Display
+  showIf    String? // JSON: Conditional logic
+  requireIf String? // JSON: Conditional requirement
+
+  // UI Configuration
+  sortOrder    Int
+  width        String  @default("FULL") // FULL, HALF, THIRD, QUARTER
+  displayStyle String? // JSON: Custom styling
+  autocomplete String? // HTML autocomplete attribute
+
+  // Data Mapping
+  mappingPath String? // Dot notation path for data storage (e.g., "customer.email")
+  encrypted   Boolean @default(false)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  template IntakeFormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  step     IntakeFormStep?    @relation(fields: [stepId], references: [id], onDelete: SetNull)
+
+  @@unique([templateId, fieldKey])
+  @@index([templateId])
+  @@index([stepId])
+  @@index([sortOrder])
+  @@map("intake_form_fields")
+}
+
+model IntakeFormTransition {
+  id         String @id @default(cuid())
+  templateId String
+  fromStepId String
+  toStepKey  String // Key of next step (allows dynamic routing)
+
+  // Transition Logic
+  condition String? // JSON: Conditional logic for this transition
+  priority  Int     @default(0) // Higher priority transitions evaluated first
+
+  // Transition Behavior
+  action       String? // JSON: Actions to perform during transition
+  requirements String? // JSON: Requirements that must be met
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  fromStep IntakeFormStep @relation("FromStep", fields: [fromStepId], references: [id], onDelete: Cascade)
+
+  @@index([fromStepId])
+  @@index([priority])
+  @@map("intake_form_transitions")
+}
+
+model IntakeFormAction {
+  id         String @id @default(cuid())
+  templateId String
+
+  // Action Configuration
+  actionType String // webhook, email, slack, custom
+  trigger    String // on_submit, on_step_complete, on_field_change, on_conversion
+
+  // Action Details
+  config   String // JSON: Action-specific configuration
+  priority Int     @default(0)
+  isActive Boolean @default(true)
+
+  // Conditional Execution
+  condition String? // JSON: When to execute this action
+
+  // Retry & Error Handling
+  retryCount Int @default(3)
+  timeout    Int @default(30000) // milliseconds
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([templateId])
+  @@index([trigger])
+  @@index([isActive])
+  @@map("intake_form_actions")
+}
+
+model IntakeFormSession {
+  id         String @id @default(cuid())
+  templateId String
+
+  // Token Management
+  tokenHash    String @unique
+  tokenVersion Int    @default(1)
+
+  // Session Metadata
+  status         String @default("ACTIVE") // ACTIVE, COMPLETED, EXPIRED, ABANDONED, BLOCKED
+  currentStepKey String // Current step key
+  visitedSteps   String @default("[]") // JSON array of visited step keys
+  completedSteps String @default("[]") // JSON array of completed step keys
+
+  // Security Context
+  ipAddress   String
+  userAgent   String?
+  fingerprint String?
+  origin      String?
+
+  // Bot Detection
+  suspicionScore    Int     @default(0)
+  botFlags          String? // JSON array
+  honeypotTriggered Boolean @default(false)
+
+  // Timing
+  sessionStartedAt DateTime @default(now())
+  lastActivityAt   DateTime @default(now())
+  stepTimings      String? // JSON object
+
+  // Request Tracking
+  requestCount       Int @default(0)
+  submissionAttempts Int @default(0)
+
+  // Data Storage
+  formDataId String? @unique
+
+  // Conversion
+  convertedAt           DateTime?
+  convertedToCustomerId String?
+  convertedToQuoteId    String?
+
+  // Compliance
+  privacyPolicyAccepted Boolean @default(false)
+  termsAccepted         Boolean @default(false)
+  marketingConsent      Boolean @default(false)
+
+  // Expiration
+  expiresAt DateTime
+  deletedAt DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  template       IntakeFormTemplate    @relation(fields: [templateId], references: [id])
+  formData       IntakeFormData?
+  securityEvents IntakeSecurityEvent[] @relation("FormSessionEvents")
+
+  @@index([tokenHash])
+  @@index([templateId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([suspicionScore])
+  @@map("intake_form_sessions")
+}
+
+model IntakeFormData {
+  id        String @id @default(cuid())
+  sessionId String @unique
+
+  // EAV (Entity-Attribute-Value) Storage
+  data String // JSON: Complete form data
+
+  // Metadata
+  completionPercentage Int     @default(0)
+  isValid              Boolean @default(false)
+  validationErrors     String? // JSON array of validation errors
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  session IntakeFormSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("intake_form_data")
+}
+
+// Add relationship to Organization model
+model IntakeFormTemplateOrganization {
+  id             String   @id @default(cuid())
+  organizationId String
+  templateId     String
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, templateId])
+  @@map("intake_form_template_organizations")
 }

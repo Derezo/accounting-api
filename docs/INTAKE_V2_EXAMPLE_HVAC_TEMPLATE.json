@@ -1,0 +1,406 @@
+{
+  "template": {
+    "name": "HVAC Service Request",
+    "description": "Comprehensive intake form for HVAC service requests",
+    "templateType": "INDUSTRY",
+    "industry": "HVAC",
+    "isActive": true,
+    "isDefault": true,
+    "autoConvert": true,
+    "config": {
+      "theme": {
+        "primaryColor": "#007bff",
+        "secondaryColor": "#6c757d",
+        "fontFamily": "Inter, sans-serif"
+      },
+      "layout": {
+        "maxWidth": "800px",
+        "spacing": "comfortable"
+      },
+      "branding": {
+        "companyName": "Your HVAC Company",
+        "logoUrl": "/logo.png",
+        "showPoweredBy": true
+      },
+      "notifications": {
+        "enableEmail": true,
+        "recipients": ["support@yourcompany.com"]
+      }
+    },
+    "completionRules": {
+      "minimumPercentage": 80,
+      "requiredFields": [
+        "customer_email",
+        "customer_phone",
+        "service_type",
+        "urgency"
+      ]
+    },
+    "conversionSettings": {
+      "customerMapping": {
+        "customer_email": "email",
+        "customer_firstName": "firstName",
+        "customer_lastName": "lastName",
+        "customer_phone": "phone",
+        "customer_type": "profileType",
+        "business_name": "businessName"
+      },
+      "quoteMapping": {
+        "service_type": "serviceType",
+        "urgency": "urgency",
+        "description": "description",
+        "estimated_budget": "estimatedBudget"
+      }
+    }
+  },
+  "steps": [
+    {
+      "stepKey": "email_capture",
+      "name": "Contact Information",
+      "description": "Let's start with your contact details",
+      "sortOrder": 0,
+      "isRequired": true,
+      "canSkip": false,
+      "layout": "SINGLE_COLUMN",
+      "helpText": "We'll use this information to send you a quote and schedule service"
+    },
+    {
+      "stepKey": "customer_type",
+      "name": "Customer Type",
+      "description": "Are you a residential or commercial customer?",
+      "sortOrder": 1,
+      "isRequired": true,
+      "canSkip": false,
+      "layout": "SINGLE_COLUMN"
+    },
+    {
+      "stepKey": "service_details",
+      "name": "Service Details",
+      "description": "Tell us about your HVAC needs",
+      "sortOrder": 2,
+      "isRequired": true,
+      "canSkip": false,
+      "layout": "TWO_COLUMN",
+      "helpText": "Please provide as much detail as possible to help us prepare an accurate quote"
+    },
+    {
+      "stepKey": "property_details",
+      "name": "Property Information",
+      "description": "Tell us about your property",
+      "sortOrder": 3,
+      "isRequired": false,
+      "canSkip": true,
+      "layout": "TWO_COLUMN"
+    },
+    {
+      "stepKey": "scheduling",
+      "name": "Preferred Schedule",
+      "description": "When would you like us to visit?",
+      "sortOrder": 4,
+      "isRequired": false,
+      "canSkip": true,
+      "layout": "SINGLE_COLUMN"
+    }
+  ],
+  "fields": [
+    {
+      "stepKey": "email_capture",
+      "fieldKey": "customer_email",
+      "label": "Email Address",
+      "placeholder": "john@example.com",
+      "helpText": "We'll send your quote to this email",
+      "fieldType": "email",
+      "dataType": "string",
+      "isRequired": true,
+      "sortOrder": 1,
+      "width": "FULL",
+      "autocomplete": "email",
+      "mappingPath": "customer.email",
+      "validationRules": {
+        "email": true
+      },
+      "validationError": "Please enter a valid email address"
+    },
+    {
+      "stepKey": "email_capture",
+      "fieldKey": "customer_phone",
+      "label": "Phone Number",
+      "placeholder": "(555) 123-4567",
+      "helpText": "In case we need to reach you quickly",
+      "fieldType": "phone",
+      "dataType": "string",
+      "isRequired": true,
+      "sortOrder": 2,
+      "width": "FULL",
+      "autocomplete": "tel",
+      "mappingPath": "customer.phone",
+      "validationRules": {
+        "phone": true
+      }
+    },
+    {
+      "stepKey": "email_capture",
+      "fieldKey": "customer_firstName",
+      "label": "First Name",
+      "placeholder": "John",
+      "fieldType": "text",
+      "dataType": "string",
+      "isRequired": true,
+      "sortOrder": 3,
+      "width": "HALF",
+      "autocomplete": "given-name",
+      "mappingPath": "customer.firstName",
+      "validationRules": {
+        "minLength": 2,
+        "maxLength": 50
+      }
+    },
+    {
+      "stepKey": "email_capture",
+      "fieldKey": "customer_lastName",
+      "label": "Last Name",
+      "placeholder": "Doe",
+      "fieldType": "text",
+      "dataType": "string",
+      "isRequired": true,
+      "sortOrder": 4,
+      "width": "HALF",
+      "autocomplete": "family-name",
+      "mappingPath": "customer.lastName",
+      "validationRules": {
+        "minLength": 2,
+        "maxLength": 50
+      }
+    },
+    {
+      "stepKey": "customer_type",
+      "fieldKey": "customer_type",
+      "label": "I am a",
+      "fieldType": "radio",
+      "dataType": "string",
+      "isRequired": true,
+      "sortOrder": 1,
+      "width": "FULL",
+      "mappingPath": "customer.type",
+      "options": [
+        {"label": "Residential Customer", "value": "RESIDENTIAL"},
+        {"label": "Commercial/Business Customer", "value": "COMMERCIAL"}
+      ]
+    },
+    {
+      "stepKey": "customer_type",
+      "fieldKey": "business_name",
+      "label": "Business Name",
+      "placeholder": "ABC Corp",
+      "fieldType": "text",
+      "dataType": "string",
+      "isRequired": false,
+      "sortOrder": 2,
+      "width": "FULL",
+      "mappingPath": "customer.businessName",
+      "showIf": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "field": "customer_type",
+            "operator": "equals",
+            "value": "COMMERCIAL"
+          }
+        ]
+      },
+      "requireIf": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "field": "customer_type",
+            "operator": "equals",
+            "value": "COMMERCIAL"
+          }
+        ]
+      }
+    },
+    {
+      "stepKey": "service_details",
+      "fieldKey": "service_type",
+      "label": "Type of Service Needed",
+      "fieldType": "select",
+      "dataType": "string",
+      "isRequired": true,
+      "sortOrder": 1,
+      "width": "FULL",
+      "mappingPath": "quote.serviceType",
+      "options": [
+        {"label": "Repair", "value": "REPAIR"},
+        {"label": "Maintenance", "value": "MAINTENANCE"},
+        {"label": "Installation", "value": "INSTALLATION"},
+        {"label": "Inspection", "value": "INSPECTION"},
+        {"label": "Emergency Service", "value": "EMERGENCY"}
+      ]
+    },
+    {
+      "stepKey": "service_details",
+      "fieldKey": "urgency",
+      "label": "How urgent is this?",
+      "fieldType": "radio",
+      "dataType": "string",
+      "isRequired": true,
+      "sortOrder": 2,
+      "width": "FULL",
+      "mappingPath": "quote.urgency",
+      "options": [
+        {"label": "Emergency - No heat/cooling", "value": "EMERGENCY"},
+        {"label": "Urgent - Within 24 hours", "value": "URGENT"},
+        {"label": "Normal - Within a week", "value": "NORMAL"},
+        {"label": "Can wait - Routine maintenance", "value": "ROUTINE"}
+      ]
+    },
+    {
+      "stepKey": "service_details",
+      "fieldKey": "description",
+      "label": "Describe the issue or service needed",
+      "placeholder": "Please provide details about what you're experiencing...",
+      "helpText": "The more detail you provide, the better we can prepare",
+      "fieldType": "textarea",
+      "dataType": "string",
+      "isRequired": true,
+      "sortOrder": 3,
+      "width": "FULL",
+      "mappingPath": "quote.description",
+      "validationRules": {
+        "minLength": 20,
+        "maxLength": 1000
+      }
+    },
+    {
+      "stepKey": "service_details",
+      "fieldKey": "estimated_budget",
+      "label": "Estimated Budget",
+      "helpText": "Optional - helps us provide appropriate options",
+      "fieldType": "select",
+      "dataType": "string",
+      "isRequired": false,
+      "sortOrder": 4,
+      "width": "HALF",
+      "mappingPath": "quote.estimatedBudget",
+      "options": [
+        {"label": "Under $500", "value": "UNDER_500"},
+        {"label": "$500 - $1,000", "value": "500_1000"},
+        {"label": "$1,000 - $2,500", "value": "1000_2500"},
+        {"label": "$2,500 - $5,000", "value": "2500_5000"},
+        {"label": "Over $5,000", "value": "OVER_5000"},
+        {"label": "Not sure", "value": "UNKNOWN"}
+      ]
+    },
+    {
+      "stepKey": "property_details",
+      "fieldKey": "property_type",
+      "label": "Property Type",
+      "fieldType": "select",
+      "dataType": "string",
+      "isRequired": false,
+      "sortOrder": 1,
+      "width": "HALF",
+      "options": [
+        {"label": "Single Family Home", "value": "SINGLE_FAMILY"},
+        {"label": "Townhouse", "value": "TOWNHOUSE"},
+        {"label": "Condo/Apartment", "value": "CONDO"},
+        {"label": "Office Building", "value": "OFFICE"},
+        {"label": "Retail Space", "value": "RETAIL"},
+        {"label": "Industrial", "value": "INDUSTRIAL"},
+        {"label": "Other", "value": "OTHER"}
+      ]
+    },
+    {
+      "stepKey": "property_details",
+      "fieldKey": "property_size",
+      "label": "Approximate Square Footage",
+      "placeholder": "2000",
+      "fieldType": "number",
+      "dataType": "number",
+      "isRequired": false,
+      "sortOrder": 2,
+      "width": "HALF",
+      "validationRules": {
+        "min": 100,
+        "max": 100000
+      }
+    },
+    {
+      "stepKey": "property_details",
+      "fieldKey": "property_age",
+      "label": "Age of HVAC System",
+      "fieldType": "select",
+      "dataType": "string",
+      "isRequired": false,
+      "sortOrder": 3,
+      "width": "HALF",
+      "options": [
+        {"label": "Less than 5 years", "value": "0_5"},
+        {"label": "5-10 years", "value": "5_10"},
+        {"label": "10-15 years", "value": "10_15"},
+        {"label": "15-20 years", "value": "15_20"},
+        {"label": "Over 20 years", "value": "OVER_20"},
+        {"label": "Don't know", "value": "UNKNOWN"}
+      ]
+    },
+    {
+      "stepKey": "scheduling",
+      "fieldKey": "preferred_date",
+      "label": "Preferred Visit Date",
+      "helpText": "We'll do our best to accommodate your preference",
+      "fieldType": "date",
+      "dataType": "date",
+      "isRequired": false,
+      "sortOrder": 1,
+      "width": "HALF"
+    },
+    {
+      "stepKey": "scheduling",
+      "fieldKey": "preferred_time",
+      "label": "Preferred Time",
+      "fieldType": "select",
+      "dataType": "string",
+      "isRequired": false,
+      "sortOrder": 2,
+      "width": "HALF",
+      "options": [
+        {"label": "Morning (8AM-12PM)", "value": "MORNING"},
+        {"label": "Afternoon (12PM-5PM)", "value": "AFTERNOON"},
+        {"label": "Any time", "value": "ANY"}
+      ]
+    },
+    {
+      "stepKey": "scheduling",
+      "fieldKey": "marketing_consent",
+      "label": "I'd like to receive maintenance reminders and special offers",
+      "fieldType": "checkbox",
+      "dataType": "boolean",
+      "isRequired": false,
+      "sortOrder": 3,
+      "width": "FULL",
+      "defaultValue": false
+    }
+  ],
+  "transitions": [
+    {
+      "fromStepKey": "email_capture",
+      "toStepKey": "customer_type",
+      "priority": 0
+    },
+    {
+      "fromStepKey": "customer_type",
+      "toStepKey": "service_details",
+      "priority": 0
+    },
+    {
+      "fromStepKey": "service_details",
+      "toStepKey": "property_details",
+      "priority": 0
+    },
+    {
+      "fromStepKey": "property_details",
+      "toStepKey": "scheduling",
+      "priority": 0
+    }
+  ]
+}
