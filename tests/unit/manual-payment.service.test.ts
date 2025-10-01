@@ -44,7 +44,7 @@ jest.mock('../../src/services/email.service', () => ({
 
 // Mock crypto
 jest.mock('crypto', () => ({
-  randomBytes: jest.fn(() => Buffer.from('abcd1234', 'hex')),
+  randomBytes: jest.fn((size: number) => Buffer.from('AB12'.slice(0, size * 2), 'hex')),
   randomUUID: jest.fn(() => 'mock-uuid-12345')
 }));
 
@@ -788,6 +788,11 @@ describe('ManualPaymentService', () => {
         ]
       };
 
+      // Mock only one invoice since allocation only specifies one
+      mockPrisma.invoice.findMany.mockResolvedValueOnce([
+        { id: 'invoice-1', organizationId }
+      ]);
+
       await expect(
         manualPaymentService.allocatePartialPayment(invalidAllocation, organizationId, auditContext)
       ).rejects.toThrow('Total allocated amount does not match payment amount');
@@ -967,6 +972,7 @@ describe('ManualPaymentService', () => {
     describe('generateReferenceNumber', () => {
       it('should generate reference numbers with correct format', () => {
         const ref = (manualPaymentService as any).generateReferenceNumber(PaymentMethod.CASH);
+        // Format: PREFIX + timestamp(8 digits) + randomBytes(2).hex (4 hex chars)
         expect(ref).toMatch(/^CASH\d{8}[A-Z0-9]{4}$/);
       });
     });

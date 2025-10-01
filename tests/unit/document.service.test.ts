@@ -9,6 +9,20 @@ jest.mock('sharp', () => {
   return mockSharp;
 }, { virtual: true });
 
+// Mock fs/promises
+jest.mock('fs/promises', () => ({
+  readFile: jest.fn().mockResolvedValue(Buffer.from('mock file content')),
+  writeFile: jest.fn().mockResolvedValue(undefined),
+  unlink: jest.fn().mockResolvedValue(undefined)
+}));
+
+// Mock upload middleware functions
+jest.mock('../../src/middleware/upload.middleware', () => ({
+  calculateFileHash: jest.fn().mockResolvedValue('mock-hash-' + Date.now()),
+  validateFileContents: jest.fn().mockResolvedValue(true),
+  cleanupFile: jest.fn().mockResolvedValue(undefined)
+}));
+
 import { PrismaClient } from '@prisma/client';
 import { DocumentService } from '../../src/services/document.service';
 import { DocumentCategory, ProcessingStatus, AccessLevel } from '../../src/types/enums';
@@ -105,21 +119,26 @@ describe('DocumentService', () => {
 
       for (let i = 0; i < categories.length; i++) {
         const mockFile = {
+          fieldname: 'file',
           originalname: `test-doc-${i}.pdf`,
+          encoding: '7bit',
           mimetype: 'application/pdf',
           size: 1024,
-          buffer: Buffer.from(`test content ${i}`),
+          destination: '/tmp',
+          filename: `test-doc-${i}.pdf`,
           path: `/tmp/test-doc-${i}.pdf`,
-        };
+          buffer: Buffer.from(`test content ${i}`),
+          stream: {} as any
+        } as Express.Multer.File;
 
         const result = await documentService.uploadDocument(
-          testOrganizationId,
-          testUserId,
+          mockFile,
           {
             title: `Test Document ${i}`,
             category: categories[i],
           },
-          mockFile
+          testOrganizationId,
+          { userId: testUserId }
         );
 
         expect(result.category).toBe(categories[i]);
