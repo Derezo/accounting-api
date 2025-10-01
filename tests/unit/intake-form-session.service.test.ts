@@ -518,7 +518,7 @@ describe('IntakeFormSessionService', () => {
         await service.updateSuspicionScore(session.token, 25, 'SUSPICIOUS');
 
         const events = await prisma.intakeSecurityEvent.findMany({
-          where: { sessionId: session.id },
+          where: { formSessionId: session.id },
         });
 
         expect(events.length).toBe(1);
@@ -536,7 +536,7 @@ describe('IntakeFormSessionService', () => {
         await service.updateSuspicionScore(session.token, 90, 'CRITICAL');
 
         const events = await prisma.intakeSecurityEvent.findMany({
-          where: { sessionId: session.id },
+          where: { formSessionId: session.id },
         });
 
         expect(events[0].severity).toBe('HIGH');
@@ -572,7 +572,7 @@ describe('IntakeFormSessionService', () => {
         await service.triggerHoneypot(session.token);
 
         const events = await prisma.intakeSecurityEvent.findMany({
-          where: { sessionId: session.id },
+          where: { formSessionId: session.id },
         });
 
         expect(events.length).toBe(1);

@@ -2364,8 +2364,9 @@ model IntakeQuoteData {
 }
 
 model IntakeSecurityEvent {
-  id        String  @id @default(cuid())
-  sessionId String? // Null for pre-session events
+  id              String  @id @default(cuid())
+  intakeSessionId String? // V1 intake session (legacy)
+  formSessionId   String? // V2 form session (template-based)
 
   // Event Classification
   eventType String // BOT_DETECTED, RATE_LIMIT_EXCEEDED, HONEYPOT_TRIGGERED, etc.
@@ -2391,10 +2392,11 @@ model IntakeSecurityEvent {
   timestamp DateTime @default(now())
 
   // Relationships
-  session     IntakeSession?     @relation(fields: [sessionId], references: [id], onDelete: SetNull)
-  formSession IntakeFormSession? @relation("FormSessionEvents", fields: [sessionId], references: [id], onDelete: SetNull)
+  intakeSession IntakeSession?     @relation(fields: [intakeSessionId], references: [id], onDelete: SetNull)
+  formSession   IntakeFormSession? @relation("FormSessionEvents", fields: [formSessionId], references: [id], onDelete: SetNull)
 
-  @@index([sessionId])
+  @@index([intakeSessionId])
+  @@index([formSessionId])
   @@index([eventType])
   @@index([severity])
   @@index([ipAddress])

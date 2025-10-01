@@ -181,19 +181,27 @@ export class IntakeFormSessionService {
     const session = await this.getSessionByToken(token);
 
     // Verify step exists in template
-    const template = await this.templateService.getTemplateById(
-      '', // We don't have orgId in token context
-      session.templateId
-    );
+    const template = await this.prisma.intakeFormTemplate.findUnique({
+      where: { id: session.templateId },
+      include: {
+        steps: {
+          orderBy: { sortOrder: 'asc' },
+        },
+      },
+    });
+
+    if (!template) {
+      throw new NotFoundError('Template not found');
+    }
 
     const step = template.steps.find((s) => s.stepKey === stepKey);
     if (!step) {
       throw new ValidationError(`Invalid step key: ${stepKey}`);
     }
 
-    // Get visited and completed steps
-    const visitedSteps = JSON.parse(session.visitedSteps as unknown as string);
-    const completedSteps = JSON.parse(session.completedSteps as unknown as string);
+    // Get visited and completed steps (already parsed in DTO)
+    const visitedSteps = session.visitedSteps;
+    const completedSteps = session.completedSteps;
 
     // Add current step to completed if not already there
     if (!completedSteps.includes(session.currentStepKey)) {
@@ -205,10 +213,8 @@ export class IntakeFormSessionService {
       visitedSteps.push(stepKey);
     }
 
-    // Update step timings
-    const stepTimings: StepTimings = session.stepTimings
-      ? JSON.parse(session.stepTimings as unknown as string)
-      : {};
+    // Update step timings (already parsed in DTO)
+    const stepTimings: StepTimings = session.stepTimings || {};
 
     if (!stepTimings[stepKey]) {
       stepTimings[stepKey] = {
@@ -406,7 +412,7 @@ export class IntakeFormSessionService {
     // Log security event
     await this.prisma.intakeSecurityEvent.create({
       data: {
-        sessionId: session.id,
+        formSessionId: session.id,
         eventType: 'BOT_DETECTED',
         severity: newScore >= 80 ? 'HIGH' : 'MEDIUM',
         description: `Suspicion score increased to ${newScore}. Flag: ${botFlag}`,
@@ -437,7 +443,7 @@ export class IntakeFormSessionService {
     // Log security event
     await this.prisma.intakeSecurityEvent.create({
       data: {
-        sessionId: session.id,
+        formSessionId: session.id,
         eventType: 'HONEYPOT_TRIGGERED',
         severity: 'CRITICAL',
         description: 'Honeypot field was filled',

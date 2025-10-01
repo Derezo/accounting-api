@@ -360,7 +360,7 @@ export class IntakeBotDetectionService {
     try {
       await prisma.intakeSecurityEvent.create({
         data: {
-          sessionId: data.sessionId || null,
+          intakeSessionId: data.sessionId || null,
           eventType: data.eventType,
           severity: data.severity,
           description: data.description,
