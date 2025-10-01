@@ -172,7 +172,10 @@ export class ManualPaymentService {
       }
 
       // Verify payment amount doesn't exceed remaining balance
-      const remainingBalance = invoice.balance.toNumber();
+      // Handle both Decimal (from Prisma) and number (from tests/conversions)
+      const remainingBalance = typeof invoice.balance === 'number'
+        ? invoice.balance
+        : invoice.balance.toNumber();
       if (data.amount > remainingBalance) {
         throw new Error(`Payment amount (${data.amount}) exceeds remaining balance (${remainingBalance})`);
       }
@@ -252,9 +255,13 @@ export class ManualPaymentService {
     // Update invoice if payment is linked to one
     if (payment.invoiceId) {
       const invoiceService = await import('./invoice.service');
+      // Handle both Decimal (from Prisma) and number (from tests/conversions)
+      const paymentAmount = typeof payment.amount === 'number'
+        ? payment.amount
+        : payment.amount.toNumber();
       await invoiceService.invoiceService.recordPayment(
         payment.invoiceId,
-        payment.amount.toNumber(),
+        paymentAmount,
         organizationId,
         { userId: auditContext.userId || 'system', ipAddress: auditContext.ipAddress, userAgent: auditContext.userAgent }
       );
@@ -264,9 +271,13 @@ export class ManualPaymentService {
     const customerEmail = customer.person?.email || customer.business?.email;
     if (customerEmail && emailService) {
       try {
+        // Handle both Decimal (from Prisma) and number (from tests/conversions)
+        const paymentAmountForEmail = typeof payment.amount === 'number'
+          ? payment.amount
+          : payment.amount.toNumber();
         await emailService.sendPaymentReceipt(customerEmail, {
           paymentNumber: payment.paymentNumber,
-          amount: payment.amount.toNumber(),
+          amount: paymentAmountForEmail,
           currency: payment.currency,
           paymentMethod: this.formatPaymentMethod(payment.paymentMethod as PaymentMethod),
           paymentDate: payment.paymentDate,
@@ -435,7 +446,10 @@ export class ManualPaymentService {
     const reconciledPayments: unknown[] = [];
     const discrepancies: unknown[] = [];
 
-    const totalPaymentAmount = payments.reduce((sum, payment) => sum + payment.amount.toNumber(), 0);
+    const totalPaymentAmount = payments.reduce((sum, payment) => {
+      const amount = typeof payment.amount === 'number' ? payment.amount : payment.amount.toNumber();
+      return sum + amount;
+    }, 0);
 
     // Check for amount discrepancies
     if (Math.abs(totalPaymentAmount - reconciliationData.bankAmount) > 0.01) {
@@ -652,7 +666,8 @@ export class ManualPaymentService {
 
     // Validate allocation amounts
     const totalAllocated = allocationData.allocations.reduce((sum, allocation) => sum + allocation.amount, 0);
-    if (Math.abs(totalAllocated - payment.amount.toNumber()) > 0.01) {
+    const paymentAmount = typeof payment.amount === 'number' ? payment.amount : payment.amount.toNumber();
+    if (Math.abs(totalAllocated - paymentAmount) > 0.01) {
       throw new Error('Total allocated amount does not match payment amount');
     }
 

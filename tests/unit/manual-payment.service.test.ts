@@ -259,8 +259,28 @@ describe('ManualPaymentService', () => {
       };
 
       const paymentResult = {
-        ...mockPrisma.payment.create.mockResolvedValue,
-        invoiceId: 'invoice-123'
+        id: 'payment-123',
+        organizationId,
+        paymentNumber: 'CASH-1640995200000-ABCD1234',
+        customerId: 'customer-123',
+        amount: 100.00,
+        currency: 'CAD',
+        paymentMethod: PaymentMethod.CASH,
+        status: PaymentStatus.COMPLETED,
+        customer: mockCustomer,
+        invoice: mockInvoice,
+        invoiceId: 'invoice-123',
+        paymentDate: new Date('2022-01-01T00:00:00.000Z'),
+        referenceNumber: 'CASH12345678AB',
+        customerNotes: 'Cash payment for services',
+        adminNotes: null,
+        processorFee: 0,
+        netAmount: 100.00,
+        processedAt: new Date('2022-01-01T00:00:00.000Z'),
+        metadata: JSON.stringify({
+          manualPayment: true,
+          receiptDocuments: []
+        })
       };
       mockPrisma.payment.create.mockResolvedValue(paymentResult);
 
