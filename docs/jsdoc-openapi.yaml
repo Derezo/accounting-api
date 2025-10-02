@@ -82,6 +82,11 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    IntakeToken:
+      type: apiKey
+      in: header
+      name: X-Intake-Token
+      description: Token obtained from /initialize endpoint
   schemas:
     Error:
       type: object
@@ -95,10 +100,286 @@ components:
         details:
           type: object
           description: Additional error details
+        timestamp:
+          type: string
+          format: date-time
+    NotFoundError:
+      type: object
+      properties:
+        error:
+          type: string
+          enum:
+            - RESOURCE_NOT_FOUND
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    ConflictError:
+      type: object
+      properties:
+        error:
+          type: string
+          enum:
+            - RESOURCE_CONFLICT
+            - DUPLICATE_ENTRY
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
     Timestamp:
       type: string
       format: date-time
       description: ISO 8601 timestamp
+    Currency:
+      type: string
+      enum:
+        - CAD
+        - USD
+        - EUR
+        - GBP
+      description: ISO 4217 currency code
+    CustomerTier:
+      type: string
+      enum:
+        - PERSONAL
+        - SMALL_BUSINESS
+        - ENTERPRISE
+      description: Customer service tier
+    CustomerStatus:
+      type: string
+      enum:
+        - PROSPECT
+        - ACTIVE
+        - INACTIVE
+        - SUSPENDED
+      description: Customer account status
+    PaymentMethod:
+      type: string
+      enum:
+        - STRIPE_CARD
+        - E_TRANSFER
+        - CASH
+        - BANK_TRANSFER
+        - CHECK
+      description: Payment processing method
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique user identifier
+        organizationId:
+          type: string
+          description: Organization the user belongs to
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum:
+            - VIEWER
+            - EMPLOYEE
+            - ACCOUNTANT
+            - MANAGER
+            - ADMIN
+            - SUPER_ADMIN
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Customer:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique customer identifier
+        organizationId:
+          type: string
+        customerNumber:
+          type: string
+          description: Organization-specific customer number
+        tier:
+          type: string
+          enum:
+            - PERSONAL
+            - SMALL_BUSINESS
+            - ENTERPRISE
+        status:
+          type: string
+          enum:
+            - PROSPECT
+            - ACTIVE
+            - INACTIVE
+            - SUSPENDED
+        creditLimit:
+          type: number
+          format: decimal
+        paymentTerms:
+          type: integer
+          description: Payment terms in days
+        preferredCurrency:
+          type: string
+          enum:
+            - CAD
+            - USD
+            - EUR
+            - GBP
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Quote:
+      type: object
+      properties:
+        id:
+          type: string
+        organizationId:
+          type: string
+        customerId:
+          type: string
+        quoteNumber:
+          type: string
+        status:
+          type: string
+          enum:
+            - DRAFT
+            - SENT
+            - VIEWED
+            - ACCEPTED
+            - REJECTED
+            - EXPIRED
+        subtotal:
+          type: number
+          format: decimal
+        taxTotal:
+          type: number
+          format: decimal
+        total:
+          type: number
+          format: decimal
+        validUntil:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+        organizationId:
+          type: string
+        customerId:
+          type: string
+        amount:
+          type: number
+          format: decimal
+        currency:
+          type: string
+          enum:
+            - CAD
+            - USD
+            - EUR
+            - GBP
+        method:
+          type: string
+          enum:
+            - STRIPE_CARD
+            - E_TRANSFER
+            - CASH
+            - BANK_TRANSFER
+            - CHECK
+        status:
+          type: string
+          enum:
+            - PENDING
+            - COMPLETED
+            - FAILED
+            - REFUNDED
+            - CANCELLED
+        createdAt:
+          type: string
+          format: date-time
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+        organizationId:
+          type: string
+        name:
+          type: string
+        filename:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+          description: File size in bytes
+        encrypted:
+          type: boolean
+        url:
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
     JournalEntry:
       type: object
       required:
@@ -602,6 +883,16 @@ tags:
     description: Manual payment processing
   - name: Payment Analytics
     description: Payment analytics and reporting
+  - name: Public Intake
+    description: Public customer and quote intake workflow (no authentication required)
+  - name: Bills
+    description: Vendor bill management endpoints
+  - name: Inventory
+    description: Inventory management endpoints
+  - name: Purchase Orders
+    description: Purchase order management endpoints
+  - name: Vendors
+    description: Vendor management endpoints
 paths:
   /api/v1/organizations/{organizationId}/accounting/transactions:
     post:
@@ -609,7 +900,7 @@ paths:
       tags:
         - Accounting
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
       requestBody:
@@ -647,7 +938,7 @@ paths:
       tags:
         - Accounting
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
       requestBody:
@@ -687,7 +978,7 @@ paths:
       tags:
         - Accounting
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
       responses:
@@ -721,7 +1012,7 @@ paths:
       tags:
         - Accounting
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
         - name: transactionId
@@ -756,7 +1047,7 @@ paths:
       tags:
         - Accounting
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
         - name: asOfDate
@@ -784,7 +1075,7 @@ paths:
       tags:
         - Accounting
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
         - name: asOfDate
@@ -806,7 +1097,7 @@ paths:
       tags:
         - Accounting
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
         - name: format
@@ -839,7 +1130,7 @@ paths:
       tags:
         - Accounting
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
       responses:
@@ -871,7 +1162,7 @@ paths:
       tags:
         - Accounts
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
       responses:
@@ -892,7 +1183,7 @@ paths:
       tags:
         - Accounts
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
       requestBody:
@@ -912,7 +1203,7 @@ paths:
       tags:
         - Accounts
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
       responses:
@@ -924,7 +1215,7 @@ paths:
       tags:
         - Accounts
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
       requestBody:
@@ -954,7 +1245,7 @@ paths:
       tags:
         - Accounts
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
         - name: accountId
@@ -973,7 +1264,7 @@ paths:
       tags:
         - Accounts
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
         - name: accountId
@@ -1016,7 +1307,7 @@ paths:
       tags:
         - Accounts
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
         - name: accountId
@@ -1038,7 +1329,7 @@ paths:
       tags:
         - Accounts
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/OrganizationId'
         - name: accountId
@@ -5117,6 +5408,257 @@ paths:
           description: Unauthorized
         '403':
           description: Forbidden
+  /organizations/verify-domain:
+    post:
+      tags:
+        - Organizations
+        - Domain Verification
+      summary: Request domain ownership verification
+      description: >
+        Initiates the domain verification process for a new organization.
+
+        Generates a unique CNAME record that must be added to the domain's DNS.
+
+
+        **Master Organization Only**: This endpoint requires SUPER_ADMIN role
+        from lifestreamdynamics.com
+
+
+        **Verification Process**:
+
+        1. Submit domain for verification
+
+        2. Receive CNAME record to add to DNS
+
+        3. Add record: `_accounting-verify.domain.com CNAME
+        token.verify.lifestreamdynamics.com`
+
+        4. Wait for DNS propagation (may take up to 24 hours)
+
+        5. Call verification endpoint to confirm
+
+
+        **Security**: Prevents unauthorized organizations from claiming domains
+        they don't own
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - domain
+              properties:
+                domain:
+                  type: string
+                  description: Domain name to verify (without www or protocol)
+                  example: newclient.com
+                  pattern: ^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$
+      responses:
+        '200':
+          description: Verification request created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  domain:
+                    type: string
+                    example: newclient.com
+                  verificationToken:
+                    type: string
+                    example: accounting-verify-abc123def456
+                  cnameRecord:
+                    type: string
+                    example: >-
+                      _accounting-verify.newclient.com CNAME
+                      accounting-verify-abc123def456.verify.lifestreamdynamics.com
+                  instructions:
+                    type: string
+                    description: Step-by-step instructions for adding DNS record
+                  expiresAt:
+                    type: string
+                    format: date-time
+                    description: Verification token expires after 24 hours
+                  status:
+                    type: string
+                    enum:
+                      - PENDING
+                      - VERIFIED
+                      - FAILED
+                      - EXPIRED
+                    example: PENDING
+        '400':
+          description: Invalid domain format or reserved domain
+        '403':
+          description: Forbidden - Requires SUPER_ADMIN from master organization
+        '409':
+          description: Domain already registered to another organization
+        '500':
+          description: Internal server error
+  /organizations/verify-domain/{domain}:
+    get:
+      tags:
+        - Organizations
+        - Domain Verification
+      summary: Check domain verification status
+      description: >
+        Retrieves the current verification status for a domain.
+
+        Use this to check if the DNS CNAME record has been added and verified.
+
+
+        **Master Organization Only**: This endpoint requires SUPER_ADMIN role
+        from lifestreamdynamics.com
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: domain
+          required: true
+          description: Domain name to check
+          schema:
+            type: string
+            example: newclient.com
+      responses:
+        '200':
+          description: Verification status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  domain:
+                    type: string
+                    example: newclient.com
+                  status:
+                    type: string
+                    enum:
+                      - PENDING
+                      - VERIFIED
+                      - FAILED
+                      - EXPIRED
+                    example: VERIFIED
+                  verificationToken:
+                    type: string
+                    example: accounting-verify-abc123def456
+                  attempts:
+                    type: integer
+                    description: Number of verification attempts
+                  lastAttemptAt:
+                    type: string
+                    format: date-time
+                  verifiedAt:
+                    type: string
+                    format: date-time
+                  expiresAt:
+                    type: string
+                    format: date-time
+                  createdAt:
+                    type: string
+                    format: date-time
+        '403':
+          description: Forbidden - Requires SUPER_ADMIN from master organization
+        '404':
+          description: No verification request found for this domain
+        '500':
+          description: Internal server error
+  /organizations/verify-domain/{domain}/verify:
+    post:
+      tags:
+        - Organizations
+        - Domain Verification
+      summary: Verify domain ownership via DNS
+      description: >
+        Performs DNS lookup to verify the CNAME record has been added correctly.
+
+        Uses multiple DNS resolvers (Google, Cloudflare, Quad9) for redundancy.
+
+
+        **Master Organization Only**: This endpoint requires SUPER_ADMIN role
+        from lifestreamdynamics.com
+
+
+        **What it checks**:
+
+        - DNS CNAME record exists at `_accounting-verify.domain.com`
+
+        - Record value matches the expected verification token
+
+        - Uses multiple DNS servers to prevent spoofing
+
+        - Verification token has not expired
+
+
+        **After verification**:
+
+        - Domain status changes to VERIFIED
+
+        - Domain can be used to create new organization
+
+        - Audit log entry created
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: domain
+          required: true
+          description: Domain name to verify
+          schema:
+            type: string
+            example: newclient.com
+      responses:
+        '200':
+          description: Verification completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  verified:
+                    type: boolean
+                    example: true
+                    description: Whether domain was successfully verified
+                  recordFound:
+                    type: boolean
+                    example: true
+                    description: Whether DNS record was found
+                  expectedValue:
+                    type: string
+                    example: >-
+                      accounting-verify-abc123def456.verify.lifestreamdynamics.com
+                    description: Expected CNAME target
+                  actualValue:
+                    type: string
+                    example: >-
+                      accounting-verify-abc123def456.verify.lifestreamdynamics.com
+                    description: Actual CNAME value found in DNS
+                  timestamp:
+                    type: string
+                    format: date-time
+                    description: When verification was performed
+                  nameservers:
+                    type: array
+                    items:
+                      type: string
+                    description: DNS resolvers used for verification
+                    example:
+                      - 8.8.8.8
+                      - 1.1.1.1
+        '400':
+          description: Verification token expired
+        '403':
+          description: Forbidden - Requires SUPER_ADMIN from master organization
+        '404':
+          description: No pending verification request found
+        '422':
+          description: DNS record not found or incorrect value
+        '500':
+          description: Internal server error
   /etransfers:
     post:
       tags:
@@ -7119,6 +7661,220 @@ paths:
           description: Forbidden - Insufficient permissions
         '500':
           description: Failed to create template
+  /api/v1/organizations/{organizationId}/invoice-templates/{id}:
+    get:
+      tags:
+        - Invoice Templates
+      summary: Get single invoice template by ID
+      description: >-
+        Retrieves a specific invoice template with full details including
+        associated styles.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+        - in: path
+          name: id
+          required: true
+          description: Template ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template retrieved successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Template not found
+        '500':
+          description: Failed to retrieve template
+  /api/v1/organizations/{organizationId}/invoice-templates/{templateId}:
+    put:
+      tags:
+        - Invoice Templates
+      summary: Update invoice template
+      description: >-
+        Updates an existing custom invoice template. System templates cannot be
+        modified. Requires Admin or Manager role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+        - in: path
+          name: templateId
+          required: true
+          description: Template ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Template name
+                description:
+                  type: string
+                  description: Template description
+                templateType:
+                  type: string
+                  enum:
+                    - STANDARD
+                    - MINIMAL
+                    - MODERN
+                    - CUSTOM
+                htmlTemplate:
+                  type: string
+                  description: Handlebars HTML template content
+                isDefault:
+                  type: boolean
+                  description: Set as organization default template
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Template updated successfully
+        '400':
+          description: Invalid template data or system template modification attempted
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Template not found
+        '500':
+          description: Failed to update template
+    delete:
+      tags:
+        - Invoice Templates
+      summary: Delete invoice template
+      description: >-
+        Soft deletes an invoice template. System templates and default templates
+        cannot be deleted. Requires Admin role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+        - in: path
+          name: templateId
+          required: true
+          description: Template ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template deleted successfully
+        '400':
+          description: Cannot delete system or default template
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Template not found
+        '500':
+          description: Failed to delete template
+  /api/v1/organizations/{organizationId}/invoice-templates/{templateId}/duplicate:
+    post:
+      tags:
+        - Invoice Templates
+      summary: Duplicate invoice template
+      description: >-
+        Creates a copy of an existing template with a new name. Requires Admin
+        or Manager role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+        - in: path
+          name: templateId
+          required: true
+          description: Template ID to duplicate
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: >-
+                    Name for the duplicated template (optional, will
+                    auto-generate if not provided)
+                  example: My Custom Copy
+      responses:
+        '201':
+          description: Template duplicated successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Template not found
+        '500':
+          description: Failed to duplicate template
+  /api/v1/organizations/{organizationId}/invoice-templates/{templateId}/set-default:
+    put:
+      tags:
+        - Invoice Templates
+      summary: Set template as default
+      description: >-
+        Sets the specified template as the organization's default invoice
+        template. Requires Admin or Manager role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+        - in: path
+          name: templateId
+          required: true
+          description: Template ID to set as default
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template set as default successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Template not found
+        '500':
+          description: Failed to set default template
   /api/v1/organizations/{organizationId}/invoice-styles:
     get:
       tags:
@@ -7244,6 +8000,155 @@ paths:
           description: Forbidden
         '500':
           description: Failed to create style
+  /api/v1/organizations/{organizationId}/invoice-styles/{id}:
+    get:
+      tags:
+        - Invoice Styles
+      summary: Get single invoice style by ID
+      description: >-
+        Retrieves a specific invoice style with full details including
+        associated template information.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+        - in: path
+          name: id
+          required: true
+          description: Style ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Style retrieved successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Style not found
+        '500':
+          description: Failed to retrieve style
+    put:
+      tags:
+        - Invoice Styles
+      summary: Update invoice style
+      description: >-
+        Updates an existing custom invoice style. System styles cannot be
+        modified. Requires Admin or Manager role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+        - in: path
+          name: id
+          required: true
+          description: Style ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Updated Blue Theme
+                description:
+                  type: string
+                  example: Updated blue color scheme
+                templateId:
+                  type: string
+                  description: Associated template ID (optional)
+                cssContent:
+                  type: string
+                  description: CSS stylesheet content
+                colorScheme:
+                  type: object
+                  properties:
+                    primary:
+                      type: string
+                      example: '#2563eb'
+                    secondary:
+                      type: string
+                      example: '#64748b'
+                    accent:
+                      type: string
+                      example: '#3b82f6'
+                    background:
+                      type: string
+                      example: '#ffffff'
+                    text:
+                      type: string
+                      example: '#1e293b'
+                fontFamily:
+                  type: string
+                  example: Arial, sans-serif
+                isDefault:
+                  type: boolean
+                  description: Set as organization default style
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Style updated successfully
+        '400':
+          description: Invalid style data or system style modification attempted
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Style not found
+        '500':
+          description: Failed to update style
+    delete:
+      tags:
+        - Invoice Styles
+      summary: Delete invoice style
+      description: >-
+        Soft deletes an invoice style. System styles and default styles cannot
+        be deleted. Requires Admin role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+        - in: path
+          name: id
+          required: true
+          description: Style ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Style deleted successfully
+        '400':
+          description: Cannot delete system or default style
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Style not found
+        '500':
+          description: Failed to delete style
   /invoices:
     post:
       tags:
@@ -10487,6 +11392,1108 @@ paths:
           description: Forbidden - Admin role required
         '500':
           description: Failed to initialize settings
+  /api/v1/organizations/{organizationId}/settings/system:
+    get:
+      tags:
+        - System Preferences
+      summary: Get all system preferences
+      description: >-
+        Retrieves complete system preferences including general, regional, data
+        management, performance, API, integrations, feature flags, and logging
+        settings. Auto-creates defaults if not exist.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+            example: org_1234567890
+      responses:
+        '200':
+          description: System preferences retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: System preferences retrieved successfully
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      organizationId:
+                        type: string
+                      general:
+                        type: object
+                        properties:
+                          systemName:
+                            type: string
+                            example: Acme Corporation
+                          systemVersion:
+                            type: string
+                            example: 1.0.0
+                          environment:
+                            type: string
+                            enum:
+                              - development
+                              - staging
+                              - production
+                            example: production
+                          defaultUserRole:
+                            type: string
+                            example: EMPLOYEE
+                          maintenanceMode:
+                            type: boolean
+                            example: false
+                          maintenanceMessage:
+                            type: string
+                      regional:
+                        type: object
+                        properties:
+                          timezone:
+                            type: string
+                            example: America/Toronto
+                          language:
+                            type: string
+                            example: en
+                          country:
+                            type: string
+                            example: CA
+                          currency:
+                            type: string
+                            example: CAD
+                          dateFormat:
+                            type: string
+                            example: YYYY-MM-DD
+                          timeFormat:
+                            type: string
+                            example: 24h
+                          numberFormat:
+                            type: string
+                            example: en-CA
+                          fiscalYearStart:
+                            type: string
+                            example: 01-01
+                      dataManagement:
+                        type: object
+                      performance:
+                        type: object
+                      apiSettings:
+                        type: object
+                      integrations:
+                        type: object
+                      featureFlags:
+                        type: object
+                      logging:
+                        type: object
+                      createdAt:
+                        type: string
+                        format: date-time
+                      updatedAt:
+                        type: string
+                        format: date-time
+        '401':
+          description: Unauthorized
+        '404':
+          description: Organization not found
+        '500':
+          description: Failed to retrieve system preferences
+  /api/v1/organizations/{organizationId}/settings/system/general:
+    put:
+      tags:
+        - System Preferences
+      summary: Update general settings
+      description: >-
+        Updates system-wide general settings including system name, version,
+        environment, and maintenance mode. Requires Admin role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                systemName:
+                  type: string
+                  example: Acme Corporation
+                systemVersion:
+                  type: string
+                  example: 1.0.0
+                environment:
+                  type: string
+                  enum:
+                    - development
+                    - staging
+                    - production
+                  example: production
+                defaultUserRole:
+                  type: string
+                  example: EMPLOYEE
+                maintenanceMode:
+                  type: boolean
+                  example: false
+                maintenanceMessage:
+                  type: string
+                  example: System maintenance in progress
+      responses:
+        '200':
+          description: General settings updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    description: Complete updated SystemPreferences object
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Admin role required
+        '500':
+          description: Failed to update general settings
+  /api/v1/organizations/{organizationId}/settings/system/regional:
+    put:
+      tags:
+        - System Preferences
+      summary: Update regional settings
+      description: >-
+        Updates regional localization settings including timezone, language,
+        currency, date/time formats, and fiscal year start. Requires Admin role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                timezone:
+                  type: string
+                  example: America/Toronto
+                language:
+                  type: string
+                  example: en
+                country:
+                  type: string
+                  example: CA
+                currency:
+                  type: string
+                  example: CAD
+                dateFormat:
+                  type: string
+                  example: YYYY-MM-DD
+                timeFormat:
+                  type: string
+                  example: 24h
+                numberFormat:
+                  type: string
+                  example: en-CA
+                fiscalYearStart:
+                  type: string
+                  description: MM-DD format
+                  example: 04-01
+      responses:
+        '200':
+          description: Regional settings updated successfully
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Admin role required
+        '500':
+          description: Failed to update regional settings
+  /api/v1/organizations/{organizationId}/settings/system/data-management:
+    put:
+      tags:
+        - System Preferences
+      summary: Update data management settings
+      description: >-
+        Updates backup, retention, and file upload settings. Requires Admin
+        role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                backupEnabled:
+                  type: boolean
+                  example: true
+                backupFrequency:
+                  type: string
+                  enum:
+                    - daily
+                    - weekly
+                    - monthly
+                  example: daily
+                retentionDays:
+                  type: integer
+                  example: 90
+                autoExportEnabled:
+                  type: boolean
+                  example: false
+                maxFileUploadSize:
+                  type: integer
+                  description: Maximum file size in MB
+                  example: 10
+                allowedFileTypes:
+                  type: array
+                  items:
+                    type: string
+                  example:
+                    - pdf
+                    - jpg
+                    - png
+                    - xlsx
+      responses:
+        '200':
+          description: Data management settings updated successfully
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Failed to update data management settings
+  /api/v1/organizations/{organizationId}/settings/system/performance:
+    put:
+      tags:
+        - System Preferences
+      summary: Update performance settings
+      description: >-
+        Updates caching, optimization, CDN, rate limiting, and concurrency
+        settings. Requires Admin role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cachingEnabled:
+                  type: boolean
+                  example: true
+                cacheExpiryMinutes:
+                  type: integer
+                  example: 60
+                optimizationsEnabled:
+                  type: boolean
+                  example: true
+                cdnEnabled:
+                  type: boolean
+                  example: false
+                maxConcurrentUsers:
+                  type: integer
+                  example: 100
+                rateLimitEnabled:
+                  type: boolean
+                  example: true
+                rateLimitPerMinute:
+                  type: integer
+                  example: 60
+      responses:
+        '200':
+          description: Performance settings updated successfully
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Failed to update performance settings
+  /api/v1/organizations/{organizationId}/settings/system/api:
+    put:
+      tags:
+        - System Preferences
+      summary: Update API settings
+      description: >-
+        Updates API keys, webhooks, and rate limiting settings. Requires Admin
+        role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                apiKeysEnabled:
+                  type: boolean
+                  example: true
+                webhooksEnabled:
+                  type: boolean
+                  example: true
+                rateLimitPerMinute:
+                  type: integer
+                  example: 60
+                maxWebhooksPerOrg:
+                  type: integer
+                  example: 10
+                webhookRetryAttempts:
+                  type: integer
+                  example: 3
+      responses:
+        '200':
+          description: API settings updated successfully
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Failed to update API settings
+  /api/v1/organizations/{organizationId}/settings/system/integrations:
+    put:
+      tags:
+        - System Preferences
+      summary: Update integration settings
+      description: >-
+        Enables/disables third-party integrations (QuickBooks, Stripe, Twilio,
+        SendGrid, Slack, OAuth providers). Requires Admin role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quickbooksEnabled:
+                  type: boolean
+                  example: false
+                stripeEnabled:
+                  type: boolean
+                  example: true
+                twilioEnabled:
+                  type: boolean
+                  example: false
+                sendgridEnabled:
+                  type: boolean
+                  example: true
+                slackEnabled:
+                  type: boolean
+                  example: false
+                oauthProvidersEnabled:
+                  type: array
+                  items:
+                    type: string
+                  example:
+                    - google
+                    - microsoft
+      responses:
+        '200':
+          description: Integration settings updated successfully
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Failed to update integration settings
+  /api/v1/organizations/{organizationId}/settings/system/feature-flags:
+    put:
+      tags:
+        - System Preferences
+      summary: Update feature flags
+      description: >-
+        Enables/disables beta, experimental, and optional features. Requires
+        Admin role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                betaFeaturesEnabled:
+                  type: boolean
+                  example: false
+                experimentalFeaturesEnabled:
+                  type: boolean
+                  example: false
+                newDashboardEnabled:
+                  type: boolean
+                  example: true
+                advancedReportsEnabled:
+                  type: boolean
+                  example: true
+                aiAssistantEnabled:
+                  type: boolean
+                  example: false
+                mobileAppEnabled:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: Feature flags updated successfully
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Failed to update feature flags
+  /api/v1/organizations/{organizationId}/settings/system/logging:
+    put:
+      tags:
+        - System Preferences
+      summary: Update logging settings
+      description: >-
+        Updates log level, audit logging, error tracking, and log retention
+        settings. Requires Admin role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                logLevel:
+                  type: string
+                  enum:
+                    - debug
+                    - info
+                    - warn
+                    - error
+                  example: info
+                auditLoggingEnabled:
+                  type: boolean
+                  example: true
+                errorTrackingEnabled:
+                  type: boolean
+                  example: true
+                performanceMonitoringEnabled:
+                  type: boolean
+                  example: false
+                logRetentionDays:
+                  type: integer
+                  example: 90
+      responses:
+        '200':
+          description: Logging settings updated successfully
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Failed to update logging settings
+  /api/v1/organizations/{organizationId}/settings/notifications:
+    get:
+      tags:
+        - Notification Settings
+      summary: Get all notification settings
+      description: >-
+        Retrieves complete notification settings including email, SMS, push,
+        in-app, webhooks, and preferences. Auto-creates defaults if not exist.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+            example: org_1234567890
+      responses:
+        '200':
+          description: Notification settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Notification settings retrieved successfully
+                  data:
+                    type: object
+                    description: Complete NotificationSettings object
+        '401':
+          description: Unauthorized
+        '404':
+          description: Organization not found
+        '500':
+          description: Failed to retrieve notification settings
+  /api/v1/organizations/{organizationId}/settings/notifications/email:
+    put:
+      tags:
+        - Notification Settings
+      summary: Update email notification settings
+      description: >-
+        Updates SMTP configuration, sender details, and email notification type
+        toggles. Requires Admin or Manager role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+                smtpHost:
+                  type: string
+                  example: smtp.gmail.com
+                smtpPort:
+                  type: integer
+                  example: 587
+                smtpUsername:
+                  type: string
+                  example: notifications@example.com
+                smtpPassword:
+                  type: string
+                  description: SMTP password (should be encrypted in production)
+                  example: your-password
+                smtpSecure:
+                  type: boolean
+                  example: true
+                senderEmail:
+                  type: string
+                  example: noreply@example.com
+                senderName:
+                  type: string
+                  example: Acme Corporation
+                replyToEmail:
+                  type: string
+                  example: support@example.com
+                notificationTypes:
+                  type: object
+                  properties:
+                    invoiceCreated:
+                      type: boolean
+                    invoicePaid:
+                      type: boolean
+                    invoiceOverdue:
+                      type: boolean
+                    paymentReceived:
+                      type: boolean
+                    quoteCreated:
+                      type: boolean
+                    quoteClosed:
+                      type: boolean
+                    appointmentScheduled:
+                      type: boolean
+                    appointmentReminder:
+                      type: boolean
+                    projectUpdated:
+                      type: boolean
+                    userInvitation:
+                      type: boolean
+                    passwordReset:
+                      type: boolean
+                    systemAlerts:
+                      type: boolean
+      responses:
+        '200':
+          description: Email settings updated successfully
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Admin or Manager role required
+        '500':
+          description: Failed to update email settings
+  /api/v1/organizations/{organizationId}/settings/notifications/sms:
+    put:
+      tags:
+        - Notification Settings
+      summary: Update SMS notification settings
+      description: >-
+        Updates SMS provider configuration, credentials, and SMS notification
+        type toggles. Requires Admin or Manager role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+                provider:
+                  type: string
+                  enum:
+                    - twilio
+                    - nexmo
+                    - aws-sns
+                    - null
+                  example: twilio
+                accountSid:
+                  type: string
+                  description: Twilio Account SID or equivalent
+                  example: AC1234567890abcdef
+                authToken:
+                  type: string
+                  description: Provider auth token (should be encrypted)
+                  example: your-auth-token
+                fromPhoneNumber:
+                  type: string
+                  example: '+15551234567'
+                monthlyCostLimit:
+                  type: number
+                  description: Monthly cost limit in USD
+                  example: 100
+                notificationTypes:
+                  type: object
+                  properties:
+                    invoiceOverdue:
+                      type: boolean
+                    paymentReceived:
+                      type: boolean
+                    appointmentReminder:
+                      type: boolean
+                    criticalAlerts:
+                      type: boolean
+      responses:
+        '200':
+          description: SMS settings updated successfully
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Failed to update SMS settings
+  /api/v1/organizations/{organizationId}/settings/notifications/push:
+    put:
+      tags:
+        - Notification Settings
+      summary: Update push notification settings
+      description: >-
+        Updates web and mobile push notification configuration including VAPID
+        keys and FCM settings. Requires Admin or Manager role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+                webPushEnabled:
+                  type: boolean
+                  example: true
+                mobilePushEnabled:
+                  type: boolean
+                  example: true
+                vapidPublicKey:
+                  type: string
+                  description: VAPID public key for web push
+                vapidPrivateKey:
+                  type: string
+                  description: VAPID private key (should be encrypted)
+                fcmServerKey:
+                  type: string
+                  description: Firebase Cloud Messaging server key
+                notificationTypes:
+                  type: object
+                  properties:
+                    invoiceCreated:
+                      type: boolean
+                    paymentReceived:
+                      type: boolean
+                    appointmentReminder:
+                      type: boolean
+                    projectUpdated:
+                      type: boolean
+                    systemAlerts:
+                      type: boolean
+      responses:
+        '200':
+          description: Push settings updated successfully
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Failed to update push settings
+  /api/v1/organizations/{organizationId}/settings/notifications/in-app:
+    put:
+      tags:
+        - Notification Settings
+      summary: Update in-app notification settings
+      description: >-
+        Updates in-app notification preferences including badges, sounds,
+        retention, and notification type toggles. Requires Admin or Manager
+        role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+                showBadges:
+                  type: boolean
+                  example: true
+                soundEnabled:
+                  type: boolean
+                  example: false
+                retentionDays:
+                  type: integer
+                  description: How many days to keep notifications
+                  example: 30
+                notificationTypes:
+                  type: object
+                  properties:
+                    invoiceCreated:
+                      type: boolean
+                    invoicePaid:
+                      type: boolean
+                    paymentReceived:
+                      type: boolean
+                    quoteCreated:
+                      type: boolean
+                    appointmentScheduled:
+                      type: boolean
+                    projectUpdated:
+                      type: boolean
+                    userMentioned:
+                      type: boolean
+                    systemAlerts:
+                      type: boolean
+      responses:
+        '200':
+          description: In-app settings updated successfully
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Failed to update in-app settings
+  /api/v1/organizations/{organizationId}/settings/notifications/webhooks:
+    put:
+      tags:
+        - Notification Settings
+      summary: Update webhook notification settings
+      description: >-
+        Updates webhook endpoints, retry configuration, and webhook settings.
+        Requires Admin or Manager role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+                endpoints:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      url:
+                        type: string
+                        example: https://example.com/webhooks/invoices
+                      enabled:
+                        type: boolean
+                      secret:
+                        type: string
+                        description: HMAC signature secret
+                      events:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - invoice.created
+                          - payment.received
+                retryAttempts:
+                  type: integer
+                  example: 3
+                retryDelaySeconds:
+                  type: integer
+                  example: 60
+                timeoutSeconds:
+                  type: integer
+                  example: 30
+      responses:
+        '200':
+          description: Webhook settings updated successfully
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Failed to update webhook settings
+  /api/v1/organizations/{organizationId}/settings/notifications/preferences:
+    put:
+      tags:
+        - Notification Settings
+      summary: Update notification preferences
+      description: >-
+        Updates global notification preferences including quiet hours, digest
+        settings, and batching. Requires Admin or Manager role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quietHoursEnabled:
+                  type: boolean
+                  example: true
+                quietHoursStart:
+                  type: string
+                  description: HH:mm format (24-hour)
+                  example: '22:00'
+                quietHoursEnd:
+                  type: string
+                  description: HH:mm format (24-hour)
+                  example: '08:00'
+                digestEnabled:
+                  type: boolean
+                  example: true
+                digestFrequency:
+                  type: string
+                  enum:
+                    - daily
+                    - weekly
+                    - never
+                  example: daily
+                digestTime:
+                  type: string
+                  description: HH:mm format (24-hour)
+                  example: '09:00'
+                batchingEnabled:
+                  type: boolean
+                  example: false
+                batchingWindowMinutes:
+                  type: integer
+                  example: 15
+      responses:
+        '200':
+          description: Notification preferences updated successfully
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Failed to update preferences
+  /api/v1/organizations/{organizationId}/settings/notifications/test:
+    post:
+      tags:
+        - Notification Settings
+      summary: Test notification configuration
+      description: >-
+        Tests notification configuration by validating settings and simulating a
+        test notification. Requires Admin or Manager role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - recipientAddress
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - email
+                    - sms
+                    - push
+                  example: email
+                recipientAddress:
+                  type: string
+                  description: Email address, phone number, or device token
+                  example: test@example.com
+      responses:
+        '200':
+          description: Test completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      message:
+                        type: string
+        '400':
+          description: Invalid request data or configuration incomplete
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Failed to test notification
   /organizations:
     get:
       tags:
@@ -16970,6 +18977,671 @@ paths:
           description: Conflict - User assignment conflicts or capacity issues
         '500':
           description: Internal server error
+  /public/intake/templates:
+    get:
+      tags:
+        - Public Intake
+      summary: Get all available business templates
+      description: |
+        Returns a list of all available industry-specific field templates.
+        Use this to show available categories to users during intake.
+
+        **No authentication required**
+
+        Templates include: HVAC, PLUMBING, ELECTRICAL, GENERAL, LANDSCAPING,
+        CLEANING, CONSTRUCTION, ROOFING
+      responses:
+        '200':
+          description: Templates retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  templates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        category:
+                          type: string
+                          example: HVAC
+                        name:
+                          type: string
+                          example: HVAC Services
+                        description:
+                          type: string
+                          example: Heating, Ventilation, and Air Conditioning
+                        fieldCount:
+                          type: number
+                          example: 7
+                  total:
+                    type: number
+                    example: 8
+  /public/intake/templates/{category}:
+    get:
+      tags:
+        - Public Intake
+      summary: Get field template for specific category
+      description: >
+        Returns the complete field template for a specific service category.
+
+        Use this to dynamically generate form fields based on the selected
+        category.
+
+
+        **No authentication required**
+
+
+        Each field includes:
+
+        - Field type (text, select, number, etc.)
+
+        - Validation rules (required, min, max, pattern)
+
+        - Options for select/radio fields
+
+        - Conditional display rules (showIf)
+
+        - Help text and placeholders
+      parameters:
+        - in: path
+          name: category
+          required: true
+          schema:
+            type: string
+            enum:
+              - HVAC
+              - PLUMBING
+              - ELECTRICAL
+              - GENERAL
+              - LANDSCAPING
+              - CLEANING
+              - CONSTRUCTION
+              - ROOFING
+          description: Service category
+      responses:
+        '200':
+          description: Template retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  category:
+                    type: string
+                    example: HVAC
+                  template:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        example: HVAC Services
+                      description:
+                        type: string
+                        example: Heating, Ventilation, and Air Conditioning
+                      fields:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: systemType
+                            type:
+                              type: string
+                              enum:
+                                - text
+                                - textarea
+                                - number
+                                - select
+                                - multiselect
+                                - date
+                                - radio
+                                - checkbox
+                                - tel
+                                - email
+                              example: select
+                            label:
+                              type: string
+                              example: System Type
+                            required:
+                              type: boolean
+                              example: true
+                            options:
+                              type: array
+                              items:
+                                type: string
+                            helpText:
+                              type: string
+                            placeholder:
+                              type: string
+                            min:
+                              type: number
+                            max:
+                              type: number
+                            showIf:
+                              type: object
+                              properties:
+                                field:
+                                  type: string
+                                value:
+                                  oneOf:
+                                    - type: string
+                                    - type: array
+                                      items:
+                                        type: string
+        '400':
+          description: Invalid category
+        '404':
+          description: Template not found
+  /public/intake/templates/{category}/validate:
+    post:
+      tags:
+        - Public Intake
+      summary: Validate custom fields
+      description: >
+        Validates custom field values against the template for a specific
+        category.
+
+        Use this for client-side validation before submitting the intake form.
+
+
+        **No authentication required**
+
+
+        Returns:
+
+        - Whether validation passed
+
+        - List of validation errors (missing required fields, invalid values,
+        etc.)
+
+        - Warnings for unknown fields
+      parameters:
+        - in: path
+          name: category
+          required: true
+          schema:
+            type: string
+            enum:
+              - HVAC
+              - PLUMBING
+              - ELECTRICAL
+              - GENERAL
+              - LANDSCAPING
+              - CLEANING
+              - CONSTRUCTION
+              - ROOFING
+          description: Service category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customFields
+              properties:
+                customFields:
+                  type: object
+                  description: Key-value pairs of custom field data
+                  example:
+                    systemType: Central Air
+                    systemAge: 10
+                    brandModel: Carrier 24ACC636
+                    issueType:
+                      - Not heating/cooling
+                      - Strange noises
+      responses:
+        '200':
+          description: Validation results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: True if validation passed
+                    example: true
+                  validation:
+                    type: object
+                    properties:
+                      isValid:
+                        type: boolean
+                        example: true
+                      errors:
+                        type: array
+                        items:
+                          type: string
+                        example: []
+                      warnings:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - >-
+                            Unknown field "customNote" provided (will be stored
+                            but not validated)
+        '400':
+          description: Invalid request (missing customFields or invalid category)
+  /public/intake/initialize:
+    post:
+      tags:
+        - Public Intake
+      summary: Initialize new intake session
+      description: >
+        Creates a new intake session and returns a token.
+
+        The token must be included in the X-Intake-Token header for all
+        subsequent requests.
+
+
+        **No authentication required**
+
+
+        **Rate Limits:**
+
+        - 5 initializations per hour per IP address
+
+        - Aggressive bot detection enabled
+
+
+        **Session Duration:** 48 hours
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fingerprint:
+                  type: string
+                  description: Optional browser fingerprint for enhanced security
+                  example: a1b2c3d4e5f6g7h8
+      responses:
+        '201':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Intake session initialized successfully
+                  token:
+                    type: string
+                    description: Session token to use for subsequent requests
+                    example: abcd1234efgh5678ijkl9012mnop3456
+                  sessionId:
+                    type: string
+                    example: cls1a2b3c4d5e6f7g8h9
+                  expiresAt:
+                    type: string
+                    format: date-time
+                    example: '2025-10-02T12:00:00Z'
+                  currentStep:
+                    type: string
+                    example: EMAIL_CAPTURE
+                  instructions:
+                    type: object
+        '403':
+          description: Bot detected or IP banned
+        '429':
+          description: Rate limit exceeded
+  /public/intake/step:
+    post:
+      tags:
+        - Public Intake
+      summary: Update intake session data
+      description: >
+        Submit customer or quote data for the current step.
+
+        Data can be submitted piecemeal - you don't need to complete everything
+        at once.
+
+
+        **Requires X-Intake-Token header**
+
+
+        **Rate Limits:**
+
+        - 10 updates per minute per IP address
+
+        - 50 total updates per session lifetime
+
+        - Bot detection on every request
+
+
+        **Workflow Steps:**
+
+        1. EMAIL_CAPTURE - Submit email address
+
+        2. PROFILE_TYPE - Select RESIDENTIAL or COMMERCIAL
+
+        3. PROFILE_DETAILS - Provide contact info and address
+
+        4. SERVICE_CATEGORY - Select service category
+
+        5. SERVICE_DETAILS - Provide service details
+
+        6. ADDITIONAL_INFO - Optional additional information
+
+        7. REVIEW - Review all data
+
+        8. SUBMIT - Final submission (use /submit endpoint)
+      security:
+        - IntakeToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - step
+              properties:
+                step:
+                  type: string
+                  enum:
+                    - EMAIL_CAPTURE
+                    - PROFILE_TYPE
+                    - PROFILE_DETAILS
+                    - SERVICE_CATEGORY
+                    - SERVICE_DETAILS
+                    - ADDITIONAL_INFO
+                    - REVIEW
+                  example: EMAIL_CAPTURE
+                customerData:
+                  type: object
+                  description: Customer information (residential or commercial)
+                  properties:
+                    email:
+                      type: string
+                      format: email
+                    profileType:
+                      type: string
+                      enum:
+                        - RESIDENTIAL
+                        - COMMERCIAL
+                    firstName:
+                      type: string
+                    lastName:
+                      type: string
+                    businessName:
+                      type: string
+                    phone:
+                      type: string
+                    addressLine1:
+                      type: string
+                    city:
+                      type: string
+                    province:
+                      type: string
+                    postalCode:
+                      type: string
+                quoteData:
+                  type: object
+                  description: Quote/service request information
+                  properties:
+                    category:
+                      type: string
+                      enum:
+                        - HVAC
+                        - PLUMBING
+                        - ELECTRICAL
+                        - GENERAL
+                        - LANDSCAPING
+                        - CLEANING
+                        - CONSTRUCTION
+                        - ROOFING
+                        - OTHER
+                    serviceType:
+                      type: string
+                      enum:
+                        - REPAIR
+                        - INSTALLATION
+                        - MAINTENANCE
+                        - CONSULTATION
+                    urgency:
+                      type: string
+                      enum:
+                        - EMERGENCY
+                        - URGENT
+                        - ROUTINE
+                        - SCHEDULED
+                    description:
+                      type: string
+                    estimatedBudget:
+                      type: string
+                      enum:
+                        - UNDER_1000
+                        - '1000_5000'
+                        - '5000_10000'
+                        - 10000_PLUS
+                        - UNSURE
+                    customFields:
+                      type: object
+                      description: >-
+                        Industry-specific custom fields based on category (use
+                        GET /templates/:category to get field definitions)
+                      additionalProperties: true
+                      example:
+                        systemType: Central Air
+                        systemAge: 10
+                        issueType:
+                          - Not heating/cooling
+                          - Strange noises
+                privacyConsent:
+                  type: boolean
+                termsConsent:
+                  type: boolean
+                marketingConsent:
+                  type: boolean
+      responses:
+        '200':
+          description: Step updated successfully
+        '400':
+          description: Validation error
+        '401':
+          description: Invalid or missing token
+        '403':
+          description: Bot detected or session inactive
+        '429':
+          description: Rate limit exceeded
+  /public/intake/status:
+    get:
+      tags:
+        - Public Intake
+      summary: Get session status
+      description: |
+        Retrieve current session status and completion progress.
+
+        **Requires X-Intake-Token header**
+
+        **Rate Limits:**
+        - 100 requests per hour per IP address
+
+        Returns detailed information about:
+        - Current step and completed steps
+        - Completion percentage for customer and quote data
+        - All submitted data
+        - Whether session is ready for final submission
+      security:
+        - IntakeToken: []
+      responses:
+        '200':
+          description: Session status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  session:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - ACTIVE
+                          - COMPLETED
+                          - EXPIRED
+                          - ABANDONED
+                      currentStep:
+                        type: string
+                      completedSteps:
+                        type: array
+                        items:
+                          type: string
+                      expiresAt:
+                        type: string
+                        format: date-time
+                  completion:
+                    type: object
+                    properties:
+                      overall:
+                        type: number
+                        example: 75
+                      customer:
+                        type: number
+                        example: 80
+                      quote:
+                        type: number
+                        example: 70
+                  data:
+                    type: object
+                    properties:
+                      customer:
+                        type: object
+                      quote:
+                        type: object
+                  canSubmit:
+                    type: boolean
+                    description: Whether session has all required data for submission
+        '401':
+          description: Invalid or missing token
+        '404':
+          description: Session not found
+  /public/intake/submit:
+    post:
+      tags:
+        - Public Intake
+      summary: Submit intake and create customer/quote
+      description: >
+        Finalize the intake process and create actual Customer and Quote
+        records.
+
+        This is the final step that converts temporary intake data to permanent
+        records.
+
+
+        **Requires X-Intake-Token header**
+
+
+        **Rate Limits:**
+
+        - 2 submissions per hour per IP address
+
+        - 1 submission per session (single-use)
+
+        - Maximum bot detection security
+
+
+        **Requirements:**
+
+        - All mandatory customer fields completed
+
+        - All mandatory quote fields completed
+
+        - Privacy policy and terms accepted
+
+        - Session must be in ACTIVE status
+
+
+        **After Submission:**
+
+        - Session marked as COMPLETED
+
+        - Customer and Quote records created
+
+        - Confirmation email sent
+
+        - Internal team notified
+      security:
+        - IntakeToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - organizationId
+              properties:
+                organizationId:
+                  type: string
+                  description: Organization ID to associate the customer and quote with
+                  example: org_1234567890abcdef
+      responses:
+        '201':
+          description: Intake submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: >-
+                      Intake submitted successfully! We will contact you
+                      shortly.
+                  customer:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      email:
+                        type: string
+                      type:
+                        type: string
+                  quote:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      quoteNumber:
+                        type: string
+                      status:
+                        type: string
+                  nextSteps:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Validation error or incomplete data
+        '401':
+          description: Invalid or missing token
+        '403':
+          description: Bot detected or session inactive
+        '429':
+          description: Rate limit exceeded (only 1 submission allowed per session)
   /quotes:
     post:
       tags:
@@ -19060,6 +21732,223 @@ paths:
           description: Insufficient permissions
         '404':
           description: User not found
+  /api/v1/organizations/{organizationId}/vendors:
+    post:
+      summary: Create a new vendor
+      tags:
+        - Vendors
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - vendorNumber
+                - businessId
+                - category
+              properties:
+                vendorNumber:
+                  type: string
+                businessId:
+                  type: string
+                category:
+                  type: string
+                paymentTerms:
+                  type: number
+                taxNumber:
+                  type: string
+                preferredPaymentMethod:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Vendor created successfully
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+    get:
+      summary: Get all vendors
+      tags:
+        - Vendors
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: isActive
+          schema:
+            type: boolean
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: cursor
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of vendors
+        '401':
+          description: Unauthorized
+  /api/v1/organizations/{organizationId}/vendors/{vendorId}:
+    get:
+      summary: Get vendor by ID
+      tags:
+        - Vendors
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: vendorId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Vendor details
+        '404':
+          description: Vendor not found
+    put:
+      summary: Update vendor
+      tags:
+        - Vendors
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: vendorId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Vendor updated successfully
+        '404':
+          description: Vendor not found
+    delete:
+      summary: Delete vendor
+      tags:
+        - Vendors
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: vendorId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Vendor deleted successfully
+        '400':
+          description: Cannot delete vendor with existing records
+        '404':
+          description: Vendor not found
+  /api/v1/organizations/{organizationId}/vendors/{vendorId}/stats:
+    get:
+      summary: Get vendor statistics
+      tags:
+        - Vendors
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: vendorId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Vendor statistics
+        '404':
+          description: Vendor not found
+  /api/v1/organizations/{organizationId}/vendors/{vendorId}/payments:
+    get:
+      summary: Get vendor payment history
+      tags:
+        - Vendors
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: vendorId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Payment history
+        '404':
+          description: Vendor not found
   /organizations/{organizationId}/customers:
     post:
       tags:

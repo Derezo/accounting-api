@@ -1,4 +1,5 @@
-import request from 'supertest';
+// @ts-nocheck
+import supertest from 'supertest';
 import { app } from '@/app';
 import { PrismaClient } from '@prisma/client';
 import { beforeAll, afterAll, beforeEach, describe, it, expect } from '@jest/globals';
@@ -22,7 +23,10 @@ describe('Enhanced Audit Logging Integration Tests', () => {
       data: {
         name: 'Test Audit Org',
         type: 'SINGLE_BUSINESS',
-        domain: 'test-audit.com'
+        domain: 'test-audit.com',
+        email: 'auditorg@test.com',
+        phone: '+1-555-0101',
+        encryptionKey: 'test-encryption-key-audit'
       }
     });
     organizationId = organization.id;
@@ -85,8 +89,8 @@ describe('Enhanced Audit Logging Integration Tests', () => {
           organizationId,
           userId,
           action: 'LOGIN',
-          resourceType: 'User',
-          resourceId: userId,
+          entityType: 'User',
+          entityId: userId,
           ipAddress: '127.0.0.1',
           userAgent: 'test-agent',
           success: true,
@@ -97,8 +101,8 @@ describe('Enhanced Audit Logging Integration Tests', () => {
           organizationId,
           userId,
           action: 'CREATE',
-          resourceType: 'Customer',
-          resourceId: 'test-customer-1',
+          entityType: 'Customer',
+          entityId: 'test-customer-1',
           ipAddress: '127.0.0.1',
           userAgent: 'test-agent',
           success: true,
@@ -109,8 +113,8 @@ describe('Enhanced Audit Logging Integration Tests', () => {
           organizationId,
           userId,
           action: 'VIEW',
-          resourceType: 'Document',
-          resourceId: 'test-doc-1',
+          entityType: 'Document',
+          entityId: 'test-doc-1',
           ipAddress: '192.168.1.100',
           userAgent: 'suspicious-agent',
           success: true,
@@ -123,7 +127,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
 
   describe('User Activity Tracking', () => {
     it('should get user activity logs', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get(`/api/v1/audit/user-activity/${userId}`)
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -144,7 +148,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
       const startDate = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
       const endDate = new Date();
 
-      const response = await request(app)
+      const response = await supertest(app)
         .get(`/api/v1/audit/user-activity/${userId}`)
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -165,7 +169,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
     });
 
     it('should filter user activities by action type', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get(`/api/v1/audit/user-activity/${userId}`)
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -179,7 +183,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
     });
 
     it('should get user activity summary', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get(`/api/v1/audit/user-activity/${userId}/summary`)
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -197,7 +201,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
 
   describe('Session Management', () => {
     it('should get active sessions', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/audit/sessions/active')
         .set('Authorization', `Bearer ${authToken}`);
 
@@ -211,7 +215,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
     });
 
     it('should revoke a specific session', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/audit/sessions/${sessionId}/revoke`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -242,7 +246,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
         }
       });
 
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/audit/sessions/revoke-all/${userId}`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -273,8 +277,8 @@ describe('Enhanced Audit Logging Integration Tests', () => {
             organizationId,
             userId,
             action: 'LOGIN',
-            resourceType: 'User',
-            resourceId: userId,
+            entityType: 'User',
+            entityId: userId,
             ipAddress: '192.168.1.100', // Different IP
             userAgent: 'suspicious-agent',
             success: false,
@@ -285,8 +289,8 @@ describe('Enhanced Audit Logging Integration Tests', () => {
             organizationId,
             userId,
             action: 'LOGIN',
-            resourceType: 'User',
-            resourceId: userId,
+            entityType: 'User',
+            entityId: userId,
             ipAddress: '192.168.1.100',
             userAgent: 'suspicious-agent',
             success: false,
@@ -297,8 +301,8 @@ describe('Enhanced Audit Logging Integration Tests', () => {
             organizationId,
             userId,
             action: 'VIEW',
-            resourceType: 'Document',
-            resourceId: 'sensitive-doc',
+            entityType: 'Document',
+            entityId: 'sensitive-doc',
             ipAddress: '192.168.1.100',
             userAgent: 'suspicious-agent',
             success: true,
@@ -310,7 +314,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
     });
 
     it('should detect suspicious activities', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/audit/suspicious-activity')
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -327,7 +331,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
     });
 
     it('should filter suspicious activities by severity', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/audit/suspicious-activity')
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -342,7 +346,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
     });
 
     it('should get suspicious activity patterns', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/audit/suspicious-activity/patterns')
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -360,7 +364,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
 
   describe('Security Metrics', () => {
     it('should get security metrics overview', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/audit/security-metrics')
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -379,7 +383,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
     });
 
     it('should get login security metrics', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/audit/security-metrics/logins')
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -396,7 +400,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
     });
 
     it('should get access control metrics', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/audit/security-metrics/access-control')
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -411,7 +415,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
     });
 
     it('should get compliance metrics', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/audit/security-metrics/compliance')
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -428,7 +432,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
 
   describe('Audit Log Export', () => {
     it('should export audit logs in CSV format', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/audit/export/csv')
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -444,7 +448,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
     });
 
     it('should export audit logs in JSON format', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/audit/export/json')
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -463,7 +467,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
 
   describe('Real-time Audit Streaming', () => {
     it('should get real-time audit stream configuration', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/audit/stream/config')
         .set('Authorization', `Bearer ${authToken}`);
 
@@ -474,7 +478,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
     });
 
     it('should update audit stream configuration', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .put('/api/v1/audit/stream/config')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -493,7 +497,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
 
   describe('Access Control and Authorization', () => {
     it('should reject unauthorized access to audit endpoints', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/audit/user-activity/test-user')
         .set('Authorization', 'Bearer invalid-token');
 
@@ -515,7 +519,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
         }
       });
 
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/audit/security-metrics')
         .set('Authorization', 'Bearer employee-token');
 

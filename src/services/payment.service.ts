@@ -43,6 +43,18 @@ export interface ProcessStripeWebhookData {
   payload: string | Buffer;
 }
 
+/**
+ * Calculate Stripe processor fees
+ * Standard Stripe pricing: 2.9% + $0.30 per successful card charge
+ * @param amount - Payment amount in dollars
+ * @returns Processor fee in dollars
+ */
+function calculateStripeProcessorFee(amount: number): number {
+  const STRIPE_PERCENTAGE = 0.029; // 2.9%
+  const STRIPE_FIXED_FEE = 0.30; // $0.30
+  return new Decimal(amount).mul(STRIPE_PERCENTAGE).plus(STRIPE_FIXED_FEE).toDecimalPlaces(2).toNumber();
+}
+
 export interface ListPaymentsFilter {
   customerId?: string;
   invoiceId?: string;
@@ -125,8 +137,15 @@ export class PaymentService {
     // Convert amount to Decimal for financial precision
     const paymentAmount = new Decimal(data.amount.toString());
 
-    // Calculate net amount (assuming no processor fee for manual payments)
-    const netAmount = paymentAmount;
+    // HIGH-PRIORITY FIX: Calculate processor fees for Stripe payments
+    let processorFee = new Decimal(0);
+    let netAmount = paymentAmount;
+
+    if (data.paymentMethod === PaymentMethod.STRIPE_CARD) {
+      const feeAmount = calculateStripeProcessorFee(paymentAmount.toNumber());
+      processorFee = new Decimal(feeAmount);
+      netAmount = paymentAmount.minus(processorFee);
+    }
 
     const payment = await prisma.payment.create({
       data: {
@@ -140,7 +159,7 @@ export class PaymentService {
         paymentDate,
         referenceNumber: data.referenceNumber,
         status: data.paymentMethod === PaymentMethod.STRIPE_CARD ? PaymentStatus.PENDING : PaymentStatus.COMPLETED,
-        processorFee: new Decimal(0),
+        processorFee: processorFee,
         netAmount: netAmount,
         customerNotes: data.customerNotes,
         adminNotes: data.adminNotes,
@@ -330,9 +349,10 @@ export class PaymentService {
       return;
     }
 
-    // Calculate processor fees - simplified for now
-    const processorFee = 0;
-    const netAmount = payment.amount.toNumber() - processorFee;
+    // HIGH-PRIORITY FIX: Calculate actual processor fees for Stripe payments
+    const amountInDollars = payment.amount.toNumber();
+    const processorFee = calculateStripeProcessorFee(amountInDollars);
+    const netAmount = amountInDollars - processorFee;
 
     // Update payment status
     await prisma.payment.update({
@@ -565,8 +585,14 @@ export class PaymentService {
       throw new Error('Can only refund completed payments');
     }
 
-    if (amount > payment.amount) {
-      throw new Error('Refund amount cannot exceed payment amount');
+    // CRITICAL FIX: Validate against netAmount to prevent refunding more than actually received
+    // This prevents financial loss from refunding processor fees
+    const maxRefundable = payment.netAmount?.toNumber() ?? payment.amount.toNumber();
+    if (amount > maxRefundable) {
+      throw new Error(
+        `Refund amount ($${amount}) cannot exceed net amount received ($${maxRefundable}). ` +
+        `Original payment: $${payment.amount.toNumber()}, Processor fee: $${payment.processorFee?.toNumber() ?? 0}`
+      );
     }
 
     // Process Stripe refund if it's a Stripe payment
@@ -606,16 +632,23 @@ export class PaymentService {
 
     // Update invoice if payment was linked to one
     if (payment.invoiceId) {
-      // This would require adding a refund tracking mechanism to the invoice service
-      // For now, we'll add a note
       const invoice = await prisma.invoice.findUnique({
         where: { id: payment.invoiceId }
       });
 
       if (invoice) {
+        // CRITICAL FIX: Update invoice balance to reflect refund
+        const refundDecimal = new Decimal(amount);
+        const currentAmountPaid = new Decimal(invoice.amountPaid.toString());
+        const currentBalance = new Decimal(invoice.balance.toString());
+        const newAmountPaid = currentAmountPaid.sub(refundDecimal);
+        const newBalance = currentBalance.add(refundDecimal);
+
         await prisma.invoice.update({
           where: { id: payment.invoiceId },
           data: {
+            amountPaid: newAmountPaid,
+            balance: newBalance,
             notes: `${invoice.notes || ''}\nRefund processed: $${amount} on ${new Date().toLocaleDateString()}`.trim()
           }
         });

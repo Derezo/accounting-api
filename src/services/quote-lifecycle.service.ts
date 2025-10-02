@@ -193,7 +193,7 @@ export class QuoteLifecycleService {
     customerEmail: string,
     notes?: string,
     ipAddress?: string
-  ): Promise<Quote> {
+  ): Promise<{ quote: Quote; bookingToken?: string }> {
     const quote = await prisma.quote.findFirst({
       where: {
         id: quoteId,
@@ -223,11 +223,17 @@ export class QuoteLifecycleService {
     });
 
     if (!quote) {
-      throw new Error('Quote not found');
+      const { NotFoundError } = await import('../utils/errors');
+      throw new NotFoundError('Quote', quoteId);
     }
 
     if (quote.status !== QuoteStatus.SENT) {
-      throw new Error('Quote must be in SENT status to accept');
+      const { BusinessRuleError } = await import('../utils/errors');
+      throw new BusinessRuleError(
+        `Quote must be in SENT status to accept. Current status: ${quote.status}`,
+        'quote_status_validation',
+        { quoteId, currentStatus: quote.status }
+      );
     }
 
     // Verify token
@@ -238,12 +244,18 @@ export class QuoteLifecycleService {
     );
 
     if (!validToken) {
-      throw new Error('Invalid or expired acceptance token');
+      const { NotFoundError } = await import('../utils/errors');
+      throw new NotFoundError('Acceptance token');
     }
 
     // Check expiration
     if (quote.expiresAt && quote.expiresAt < new Date()) {
-      throw new Error('Quote has expired');
+      const { BusinessRuleError } = await import('../utils/errors');
+      throw new BusinessRuleError(
+        'Quote has expired and can no longer be accepted',
+        'quote_expired',
+        { quoteId, expiresAt: quote.expiresAt }
+      );
     }
 
     const acceptedQuote = await prisma.$transaction(async (tx) => {
@@ -316,7 +328,10 @@ export class QuoteLifecycleService {
       customerEmail
     });
 
-    return acceptedQuote;
+    return {
+      quote: acceptedQuote,
+      bookingToken: bookingTokenData?.token
+    };
   }
 
   /**
@@ -352,11 +367,17 @@ export class QuoteLifecycleService {
     });
 
     if (!quote) {
-      throw new Error('Quote not found');
+      const { NotFoundError } = await import('../utils/errors');
+      throw new NotFoundError('Quote', quoteId);
     }
 
     if (quote.status !== QuoteStatus.SENT) {
-      throw new Error('Quote must be in SENT status to reject');
+      const { BusinessRuleError } = await import('../utils/errors');
+      throw new BusinessRuleError(
+        `Quote must be in SENT status to reject. Current status: ${quote.status}`,
+        'quote_status_validation',
+        { quoteId, currentStatus: quote.status }
+      );
     }
 
     // Verify token
@@ -367,7 +388,8 @@ export class QuoteLifecycleService {
     );
 
     if (!validToken) {
-      throw new Error('Invalid or expired acceptance token');
+      const { NotFoundError } = await import('../utils/errors');
+      throw new NotFoundError('Acceptance token');
     }
 
     const rejectedQuote = await prisma.$transaction(async (tx) => {

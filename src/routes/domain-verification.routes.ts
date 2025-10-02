@@ -9,8 +9,8 @@ const router = Router();
 const audit = auditMiddleware('DomainVerification');
 
 // All routes require authentication and master org super admin
-router.use(authenticate);
-router.use(requireMasterOrgSuperAdmin);
+router.use(authenticate as any);
+router.use(requireMasterOrgSuperAdmin as any);
 
 /**
  * @swagger
@@ -88,7 +88,7 @@ router.use(requireMasterOrgSuperAdmin);
 router.post(
   '/verify-domain',
   audit.create,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (req: any, res: Response): Promise<void> => {
     const { domain } = req.body;
 
     const result = await domainVerificationService.requestDomainVerification(
@@ -167,7 +167,7 @@ router.post(
 router.get(
   '/verify-domain/:domain',
   audit.view,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (req: any, res: Response): Promise<void> => {
     const { domain } = req.params;
 
     const status = await domainVerificationService.getVerificationStatus(domain);
@@ -256,7 +256,7 @@ router.get(
 router.post(
   '/verify-domain/:domain/verify',
   audit.update,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (req: any, res: Response): Promise<void> => {
     const { domain } = req.params;
 
     const result = await domainVerificationService.verifyDomain(

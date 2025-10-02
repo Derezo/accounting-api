@@ -184,7 +184,7 @@ export class PublicQuoteController {
 
       const ipAddress = req.ip || req.socket.remoteAddress;
 
-      const acceptedQuote = await quoteLifecycleService.acceptQuote(
+      const result = await quoteLifecycleService.acceptQuote(
         quoteId,
         token,
         customerEmail,
@@ -194,19 +194,26 @@ export class PublicQuoteController {
 
       // Prepare response
       const responseData = {
-        id: acceptedQuote.id,
-        quoteNumber: acceptedQuote.quoteNumber,
-        status: acceptedQuote.status,
-        acceptedAt: acceptedQuote.acceptedAt,
+        id: result.quote.id,
+        quoteNumber: result.quote.quoteNumber,
+        status: result.quote.status,
+        acceptedAt: result.quote.acceptedAt,
         message: 'Quote accepted successfully! Please book your appointment to proceed.',
-        // Include booking URL in response
-        bookingUrl: `${process.env.FRONTEND_URL || 'https://account.lifestreamdynamics.com'}/public/appointments/book?quoteId=${acceptedQuote.id}`
+        // Include booking URL and token in response
+        bookingUrl: `${process.env.FRONTEND_URL || 'https://account.lifestreamdynamics.com'}/public/appointments/book?quoteId=${result.quote.id}`,
+        ...(result.bookingToken && { bookingToken: result.bookingToken })
       };
 
       sendSuccess(res, responseData);
     } catch (error: any) {
       logger.error('Error accepting quote', { error, quoteId: req.params.quoteId });
-      sendError(res, 'INTERNAL_ERROR', error.message || 'Failed to accept quote', 500);
+
+      // Handle custom AppError instances with appropriate status codes
+      if (error.statusCode) {
+        sendError(res, error.errorCode || 'ERROR', error.message, error.statusCode);
+      } else {
+        sendError(res, 'INTERNAL_ERROR', error.message || 'Failed to accept quote', 500);
+      }
     }
   }
 
@@ -256,7 +263,13 @@ export class PublicQuoteController {
       sendSuccess(res, responseData);
     } catch (error: any) {
       logger.error('Error rejecting quote', { error, quoteId: req.params.quoteId });
-      sendError(res, 'INTERNAL_ERROR', error.message || 'Failed to decline quote', 500);
+
+      // Handle custom AppError instances with appropriate status codes
+      if (error.statusCode) {
+        sendError(res, error.errorCode || 'ERROR', error.message, error.statusCode);
+      } else {
+        sendError(res, 'INTERNAL_ERROR', error.message || 'Failed to decline quote', 500);
+      }
     }
   }
 

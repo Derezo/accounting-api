@@ -706,6 +706,7 @@ model Invoice {
   invoiceNumber  String
   customerId     String
   quoteId        String? @unique
+  templateId     String? // Optional invoice template
 
   // Invoice Details
   status       String   @default("DRAFT") // InvoiceStatus
@@ -745,6 +746,7 @@ model Invoice {
   organization  Organization        @relation(fields: [organizationId], references: [id])
   customer      Customer            @relation(fields: [customerId], references: [id])
   quote         Quote?              @relation(fields: [quoteId], references: [id])
+  template      InvoiceTemplate?    @relation(fields: [templateId], references: [id])
   creator       User?               @relation("InvoiceCreator", fields: [createdBy], references: [id])
   items         InvoiceItem[]
   payments      Payment[]
@@ -782,6 +784,14 @@ model InvoiceItem {
   // Ordering
   sortOrder Int
 
+  // Versioning for financial record immutability
+  version        Int      @default(1)
+  supersededAt   DateTime?
+  supersededById String?
+  supersededBy   InvoiceItem? @relation("InvoiceItemVersions", fields: [supersededById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  previousVersions InvoiceItem[] @relation("InvoiceItemVersions")
+  isLatestVersion Boolean  @default(true)
+
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -792,6 +802,8 @@ model InvoiceItem {
   service Service? @relation(fields: [serviceId], references: [id])
 
   @@index([invoiceId])
+  @@index([invoiceId, isLatestVersion])
+  @@index([supersededById])
   @@map("invoice_items")
 }
 
@@ -1701,6 +1713,7 @@ model InvoiceTemplate {
   organization  Organization   @relation(fields: [organizationId], references: [id])
   invoiceStyles InvoiceStyle[]
   generatedPDFs GeneratedPDF[]
+  invoices      Invoice[]
 
   @@unique([organizationId, name])
   @@index([organizationId])

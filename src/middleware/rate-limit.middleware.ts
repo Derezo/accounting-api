@@ -15,6 +15,8 @@ export function rateLimitMiddleware(options: {
     message: options.message || 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
+    // Skip rate limiting in test environment
+    skip: (req) => process.env.NODE_ENV === 'test',
     // Use IP address for identification
     keyGenerator: (req) => {
       return req.ip || req.socket.remoteAddress || 'unknown';

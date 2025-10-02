@@ -1,3 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="0" failures="0" errors="0" time="1.019">
+<testsuites name="jest tests" tests="16" failures="16" errors="0" time="1.499">
+  <testsuite name="Payment Integration Tests" errors="0" failures="16" skipped="0" timestamp="2025-10-02T00:28:31" time="1.469" tests="16">
+    <testcase classname="Payment Integration Tests › Stripe Payment Processing" name="should process complete Stripe payment flow" time="0.001">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Stripe Payment Processing" name="should handle Stripe payment failures" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Stripe Payment Processing" name="should handle partial payments via Stripe" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Stripe Payment Processing" name="should handle Stripe refunds" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › E-Transfer Payment Processing" name="should process e-transfer payment workflow" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › E-Transfer Payment Processing" name="should handle e-transfer timeout and cancellation" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Manual Payment Processing" name="should record manual cash payment" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Manual Payment Processing" name="should record manual cheque payment" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Manual Payment Processing" name="should handle bounced cheque" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Payment Reconciliation" name="should reconcile multiple payments for single invoice" time="0.001">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Payment Reconciliation" name="should handle overpayment scenarios" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Payment Reconciliation" name="should generate payment reconciliation report" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Payment Security and Validation" name="should validate payment amounts and prevent fraud" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Payment Security and Validation" name="should handle payment processor webhooks securely" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Payment Security and Validation" name="should prevent duplicate payment processing" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Payment Analytics and Reporting" name="should generate comprehensive payment analytics" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
 </testsuites>

@@ -41,16 +41,14 @@ describe('AccountsService', () => {
 
   describe('createAccount', () => {
     it('should create a new account with valid data', async () => {
-      const accountData = {
+      const result = await accountsService.createAccount({
         organizationId: testOrganizationId,
         accountNumber: '1000',
         name: 'Cash',
         type: AccountType.ASSET,
         description: 'Primary cash account',
-        isActive: true,
-      };
-
-      const result = await accountsService.createAccount(accountData, testUserId);
+        userId: testUserId,
+      });
 
       expect(result).toBeDefined();
       expect(result.accountNumber).toBe('1000');
@@ -61,28 +59,23 @@ describe('AccountsService', () => {
     });
 
     it('should reject duplicate account numbers', async () => {
-      const accountData = {
+      // Create first account
+      await accountsService.createAccount({
         organizationId: testOrganizationId,
         accountNumber: '1000',
         name: 'Cash',
         type: AccountType.ASSET,
-        isActive: true,
-      };
-
-      // Create first account
-      await accountsService.createAccount(accountData, testUserId);
+        userId: testUserId,
+      });
 
       // Try to create duplicate
-      const duplicateData = {
+      await expect(accountsService.createAccount({
         organizationId: testOrganizationId,
         accountNumber: '1000', // Same number
         name: 'Another Cash Account',
         type: AccountType.ASSET,
-        isActive: true,
-      };
-
-      await expect(accountsService.createAccount(duplicateData, testUserId))
-        .rejects.toThrow();
+        userId: testUserId,
+      })).rejects.toThrow();
     });
 
     it('should create accounts with different types', async () => {
@@ -100,8 +93,8 @@ describe('AccountsService', () => {
           accountNumber: account.number,
           name: account.name,
           type: account.type,
-          isActive: true,
-        }, testUserId);
+          userId: testUserId,
+        });
 
         expect(result.type).toBe(account.type);
         expect(result.name).toBe(account.name);
@@ -116,8 +109,8 @@ describe('AccountsService', () => {
         accountNumber: '1000',
         name: 'Cash',
         type: AccountType.ASSET,
-        isActive: true,
-      }, testUserId);
+        userId: testUserId,
+      });
     });
 
     it('should retrieve account by number', async () => {
@@ -182,8 +175,8 @@ describe('AccountsService', () => {
           accountNumber: account.number,
           name: account.name,
           type: account.type,
-          isActive: true,
-        }, testUserId);
+          userId: testUserId,
+        });
       }
     });
 
@@ -232,8 +225,8 @@ describe('AccountsService', () => {
         accountNumber: '1000',
         name: 'Cash',
         type: AccountType.ASSET,
-        isActive: true,
-      }, testUserId);
+        userId: testUserId,
+      });
       accountId = account.id;
     });
 
@@ -290,8 +283,8 @@ describe('AccountsService', () => {
         accountNumber: '1000',
         name: 'Cash',
         type: AccountType.ASSET,
-        isActive: true,
-      }, testUserId);
+        userId: testUserId,
+      });
       accountId = account.id;
     });
 
@@ -325,29 +318,23 @@ describe('AccountsService', () => {
 
   describe('validation', () => {
     it('should reject invalid account numbers', async () => {
-      const invalidData = {
+      await expect(accountsService.createAccount({
         organizationId: testOrganizationId,
         accountNumber: '', // Empty account number
         name: 'Test Account',
         type: AccountType.ASSET,
-        isActive: true,
-      };
-
-      await expect(accountsService.createAccount(invalidData, testUserId))
-        .rejects.toThrow();
+        userId: testUserId,
+      })).rejects.toThrow();
     });
 
     it('should reject empty account names', async () => {
-      const invalidData = {
+      await expect(accountsService.createAccount({
         organizationId: testOrganizationId,
         accountNumber: '1000',
         name: '', // Empty name
         type: AccountType.ASSET,
-        isActive: true,
-      };
-
-      await expect(accountsService.createAccount(invalidData, testUserId))
-        .rejects.toThrow();
+        userId: testUserId,
+      })).rejects.toThrow();
     });
 
     it('should validate account number format', async () => {
@@ -355,16 +342,13 @@ describe('AccountsService', () => {
       const invalidNumbers = ['ABC', '12', '99999', 'hello'];
 
       for (const invalidNumber of invalidNumbers) {
-        const invalidData = {
+        await expect(accountsService.createAccount({
           organizationId: testOrganizationId,
           accountNumber: invalidNumber,
           name: 'Test Account',
           type: AccountType.ASSET,
-          isActive: true,
-        };
-
-        await expect(accountsService.createAccount(invalidData, testUserId))
-          .rejects.toThrow();
+          userId: testUserId,
+        })).rejects.toThrow();
       }
     });
   });
@@ -377,8 +361,8 @@ describe('AccountsService', () => {
         accountNumber: '1000',
         name: 'Current Assets',
         type: AccountType.ASSET,
-        isActive: true,
-      }, testUserId);
+        userId: testUserId,
+      });
 
       // Create child account
       const childAccount = await accountsService.createAccount({
@@ -387,8 +371,8 @@ describe('AccountsService', () => {
         name: 'Cash',
         type: AccountType.ASSET,
         parentId: parentAccount.id,
-        isActive: true,
-      }, testUserId);
+        userId: testUserId,
+      });
 
       expect(childAccount.parentId).toBe(parentAccount.id);
 

@@ -475,10 +475,10 @@ export class DocumentService {
       file,
       {
         ...data,
-        title: data.title || parentDocument.title,
+        title: data.title || parentDocument.title || undefined,
         category: data.category || (parentDocument.category as DocumentCategory),
-        entityType: parentDocument.entityType || undefined,
-        entityId: parentDocument.entityId || undefined
+        entityType: parentDocument.entityType ?? undefined,
+        entityId: parentDocument.entityId ?? undefined
       },
       organizationId,
       auditContext

@@ -274,18 +274,20 @@ export class DomainVerificationService {
 
     // Create audit log
     await auditService.logAction({
-      organizationId,
-      userId: requestedBy,
       action: 'DOMAIN_VERIFICATION_REQUESTED',
-      entity: 'DomainVerification',
+      entityType: 'DomainVerification',
       entityId: normalizedDomain,
       changes: {
         domain: normalizedDomain,
         verificationToken,
         expiresAt: expiresAt.toISOString()
       },
-      ipAddress: '0.0.0.0',
-      userAgent: 'API'
+      context: {
+        organizationId,
+        userId: requestedBy,
+        ipAddress: '0.0.0.0',
+        userAgent: 'API'
+      }
     });
 
     return {
@@ -348,18 +350,20 @@ export class DomainVerificationService {
 
       // Create audit log
       await auditService.logAction({
-        organizationId,
-        userId: verifiedBy,
         action: 'DOMAIN_VERIFIED',
-        entity: 'DomainVerification',
+        entityType: 'DomainVerification',
         entityId: normalizedDomain,
         changes: {
           domain: normalizedDomain,
           verified: true,
           timestamp: result.timestamp.toISOString()
         },
-        ipAddress: '0.0.0.0',
-        userAgent: 'API'
+        context: {
+          organizationId,
+          userId: verifiedBy,
+          ipAddress: '0.0.0.0',
+          userAgent: 'API'
+        }
       });
     } else {
       // Increment attempt counter

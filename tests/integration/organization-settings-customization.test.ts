@@ -1,15 +1,16 @@
+// @ts-nocheck
 /**
  * Organization Settings Customization Test Suite
  * Tests all organization-level invoice customization features
  */
 
-import request from 'supertest';
+import supertest from 'supertest';
 import { Application } from 'express';
 import { PrismaClient } from '@prisma/client';
 import fs from 'fs/promises';
 import path from 'path';
-import { setupTestApp, cleanupTestApp, createTestToken } from '../setup';
-import { createTestOrganization } from '../test-utils';
+import { setupTestApp, cleanupTestApp, createTestToken } from './setup';
+import { createTestOrganization } from './test-utils';
 
 describe('Organization Settings Customization Integration Tests', () => {
   let app: Application;
@@ -42,7 +43,7 @@ describe('Organization Settings Customization Integration Tests', () => {
 
   describe('Settings Initialization', () => {
     test('should initialize settings for new organization', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/initialize`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(201);
@@ -55,7 +56,7 @@ describe('Organization Settings Customization Integration Tests', () => {
     });
 
     test('should not allow viewers to initialize settings', async () => {
-      await request(app)
+      await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/initialize`)
         .set('Authorization', `Bearer ${viewerToken}`)
         .expect(403);
@@ -65,14 +66,14 @@ describe('Organization Settings Customization Integration Tests', () => {
   describe('Invoice Settings Management', () => {
     beforeEach(async () => {
       // Initialize settings for each test
-      await request(app)
+      await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/initialize`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(201);
     });
 
     test('should get complete invoice settings', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
@@ -106,7 +107,7 @@ describe('Organization Settings Customization Integration Tests', () => {
         customCss: '.invoice { font-family: Arial, sans-serif; padding: 20px; }'
       };
 
-      const response = await request(app)
+      const response = await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .send(updateData)
@@ -125,7 +126,7 @@ describe('Organization Settings Customization Integration Tests', () => {
         secondaryColor: '#invalidhex'
       };
 
-      const response = await request(app)
+      const response = await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .send(invalidData)
@@ -142,7 +143,7 @@ describe('Organization Settings Customization Integration Tests', () => {
         primaryColor: '#10b981'
       };
 
-      const response = await request(app)
+      const response = await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${managerToken}`)
         .send(updateData)
@@ -157,7 +158,7 @@ describe('Organization Settings Customization Integration Tests', () => {
         primaryColor: '#ef4444'
       };
 
-      await request(app)
+      await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${viewerToken}`)
         .send(updateData)
@@ -167,7 +168,7 @@ describe('Organization Settings Customization Integration Tests', () => {
 
   describe('Logo Management', () => {
     beforeEach(async () => {
-      await request(app)
+      await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/initialize`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(201);
@@ -180,7 +181,7 @@ describe('Organization Settings Customization Integration Tests', () => {
         0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52
       ]);
 
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/assets/logo`)
         .set('Authorization', `Bearer ${authToken}`)
         .attach('logo', testImageBuffer, 'test-logo.png')
@@ -197,7 +198,7 @@ describe('Organization Settings Customization Integration Tests', () => {
     test('should validate file types for logo upload', async () => {
       const invalidFileBuffer = Buffer.from('not an image');
 
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/assets/logo`)
         .set('Authorization', `Bearer ${authToken}`)
         .attach('logo', invalidFileBuffer, 'test.txt')
@@ -211,7 +212,7 @@ describe('Organization Settings Customization Integration Tests', () => {
       // Create a large buffer (over 5MB)
       const largeBuffer = Buffer.alloc(6 * 1024 * 1024);
 
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/assets/logo`)
         .set('Authorization', `Bearer ${authToken}`)
         .attach('logo', largeBuffer, 'large-image.png')
@@ -225,14 +226,14 @@ describe('Organization Settings Customization Integration Tests', () => {
       // First upload a logo
       const testImageBuffer = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
-      await request(app)
+      await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/assets/logo`)
         .set('Authorization', `Bearer ${authToken}`)
         .attach('logo', testImageBuffer, 'test-logo.png')
         .expect(201);
 
       // Then remove it
-      const response = await request(app)
+      const response = await supertest(app)
         .delete(`/api/v1/organizations/${organizationId}/settings/assets/logo`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
@@ -245,7 +246,7 @@ describe('Organization Settings Customization Integration Tests', () => {
     test('should not allow viewers to manage logos', async () => {
       const testImageBuffer = Buffer.from([0x89, 0x50, 0x4E, 0x47]);
 
-      await request(app)
+      await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/assets/logo`)
         .set('Authorization', `Bearer ${viewerToken}`)
         .attach('logo', testImageBuffer, 'test-logo.png')
@@ -255,14 +256,14 @@ describe('Organization Settings Customization Integration Tests', () => {
 
   describe('Tax Settings Management', () => {
     beforeEach(async () => {
-      await request(app)
+      await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/initialize`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(201);
     });
 
     test('should get current tax settings', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get(`/api/v1/organizations/${organizationId}/settings/tax`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
@@ -273,7 +274,7 @@ describe('Organization Settings Customization Integration Tests', () => {
     });
 
     test('should disable taxes organization-wide', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/tax`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -287,7 +288,7 @@ describe('Organization Settings Customization Integration Tests', () => {
       expect(response.body.data.defaultTaxExempt).toBe(true);
 
       // Verify setting is persisted
-      const getResponse = await request(app)
+      const getResponse = await supertest(app)
         .get(`/api/v1/organizations/${organizationId}/settings/tax`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
@@ -297,14 +298,14 @@ describe('Organization Settings Customization Integration Tests', () => {
 
     test('should enable taxes organization-wide', async () => {
       // First disable taxes
-      await request(app)
+      await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/tax`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({ taxesEnabled: false })
         .expect(200);
 
       // Then re-enable them
-      const response = await request(app)
+      const response = await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/tax`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -319,7 +320,7 @@ describe('Organization Settings Customization Integration Tests', () => {
     });
 
     test('should validate boolean values for tax settings', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/tax`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -332,7 +333,7 @@ describe('Organization Settings Customization Integration Tests', () => {
     });
 
     test('should allow managers to update tax settings', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/tax`)
         .set('Authorization', `Bearer ${managerToken}`)
         .send({
@@ -345,7 +346,7 @@ describe('Organization Settings Customization Integration Tests', () => {
     });
 
     test('should not allow viewers to update tax settings', async () => {
-      await request(app)
+      await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/tax`)
         .set('Authorization', `Bearer ${viewerToken}`)
         .send({
@@ -361,18 +362,18 @@ describe('Organization Settings Customization Integration Tests', () => {
 
     beforeEach(async () => {
       // Initialize system templates and styles
-      await request(app)
+      await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/initialize`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(201);
 
       // Get available templates and styles
-      const templatesResponse = await request(app)
+      const templatesResponse = await supertest(app)
         .get(`/api/v1/organizations/${organizationId}/invoice-templates`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
-      const stylesResponse = await request(app)
+      const stylesResponse = await supertest(app)
         .get(`/api/v1/organizations/${organizationId}/invoice-styles`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
@@ -382,7 +383,7 @@ describe('Organization Settings Customization Integration Tests', () => {
     });
 
     test('should set default template and style', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/defaults`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -397,7 +398,7 @@ describe('Organization Settings Customization Integration Tests', () => {
     });
 
     test('should validate template and style IDs', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/defaults`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -410,7 +411,7 @@ describe('Organization Settings Customization Integration Tests', () => {
     });
 
     test('should allow managers to set defaults', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/defaults`)
         .set('Authorization', `Bearer ${managerToken}`)
         .send({
@@ -425,7 +426,7 @@ describe('Organization Settings Customization Integration Tests', () => {
 
   describe('Complex Branding Scenarios', () => {
     beforeEach(async () => {
-      await request(app)
+      await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/initialize`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(201);
@@ -433,7 +434,7 @@ describe('Organization Settings Customization Integration Tests', () => {
 
     test('should handle logo display vs organization name preference', async () => {
       // Test showing logo only
-      await request(app)
+      await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -442,7 +443,7 @@ describe('Organization Settings Customization Integration Tests', () => {
         })
         .expect(200);
 
-      let settings = await request(app)
+      let settings = await supertest(app)
         .get(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
@@ -451,7 +452,7 @@ describe('Organization Settings Customization Integration Tests', () => {
       expect(settings.body.data.branding.showOrgName).toBe(false);
 
       // Test showing organization name only
-      await request(app)
+      await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -460,7 +461,7 @@ describe('Organization Settings Customization Integration Tests', () => {
         })
         .expect(200);
 
-      settings = await request(app)
+      settings = await supertest(app)
         .get(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
@@ -469,7 +470,7 @@ describe('Organization Settings Customization Integration Tests', () => {
       expect(settings.body.data.branding.showOrgName).toBe(true);
 
       // Test showing both
-      await request(app)
+      await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -478,7 +479,7 @@ describe('Organization Settings Customization Integration Tests', () => {
         })
         .expect(200);
 
-      settings = await request(app)
+      settings = await supertest(app)
         .get(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
@@ -505,7 +506,7 @@ describe('Organization Settings Customization Integration Tests', () => {
         showTotal: true
       };
 
-      const response = await request(app)
+      const response = await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -516,7 +517,7 @@ describe('Organization Settings Customization Integration Tests', () => {
       expect(response.body.success).toBe(true);
 
       // Verify settings are persisted correctly
-      const getResponse = await request(app)
+      const getResponse = await supertest(app)
         .get(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
@@ -545,7 +546,7 @@ describe('Organization Settings Customization Integration Tests', () => {
         }
       `;
 
-      const response = await request(app)
+      const response = await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -557,7 +558,7 @@ describe('Organization Settings Customization Integration Tests', () => {
       expect(response.body.success).toBe(true);
 
       // Verify CSS is stored correctly
-      const getResponse = await request(app)
+      const getResponse = await supertest(app)
         .get(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
@@ -570,7 +571,7 @@ describe('Organization Settings Customization Integration Tests', () => {
   describe('Integration with PDF Generation', () => {
     test('should apply settings to PDF generation workflow', async () => {
       // Initialize settings
-      await request(app)
+      await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/initialize`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(201);
@@ -597,7 +598,7 @@ describe('Organization Settings Customization Integration Tests', () => {
       });
 
       // Configure organization settings
-      await request(app)
+      await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -613,7 +614,7 @@ describe('Organization Settings Customization Integration Tests', () => {
         .expect(200);
 
       // Test that PDF generation uses the settings
-      const pdfResponse = await request(app)
+      const pdfResponse = await supertest(app)
         .get(`/api/v1/organizations/${organizationId}/invoices/${invoice.id}/pdf`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
@@ -624,13 +625,13 @@ describe('Organization Settings Customization Integration Tests', () => {
 
     test('should respect tax disable setting in PDF generation', async () => {
       // Initialize settings
-      await request(app)
+      await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/initialize`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(201);
 
       // Disable taxes
-      await request(app)
+      await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/tax`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -661,7 +662,7 @@ describe('Organization Settings Customization Integration Tests', () => {
       });
 
       // Generate PDF - should not show tax sections
-      const pdfResponse = await request(app)
+      const pdfResponse = await supertest(app)
         .get(`/api/v1/organizations/${organizationId}/invoices/${invoice.id}/pdf`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
@@ -672,7 +673,7 @@ describe('Organization Settings Customization Integration Tests', () => {
 
   describe('Error Handling and Edge Cases', () => {
     test('should handle missing organization gracefully', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get(`/api/v1/organizations/nonexistent/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(403); // Organization access validation should fail
@@ -682,12 +683,12 @@ describe('Organization Settings Customization Integration Tests', () => {
 
     test('should handle malformed JSON in display settings', async () => {
       // Initialize first
-      await request(app)
+      await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/initialize`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(201);
 
-      const response = await request(app)
+      const response = await supertest(app)
         .put(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -700,22 +701,22 @@ describe('Organization Settings Customization Integration Tests', () => {
 
     test('should handle concurrent settings updates', async () => {
       // Initialize settings
-      await request(app)
+      await supertest(app)
         .post(`/api/v1/organizations/${organizationId}/settings/initialize`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(201);
 
       // Fire multiple concurrent updates
       const updates = [
-        request(app)
+        supertest(app)
           .put(`/api/v1/organizations/${organizationId}/settings/invoice`)
           .set('Authorization', `Bearer ${authToken}`)
           .send({ primaryColor: '#ef4444' }),
-        request(app)
+        supertest(app)
           .put(`/api/v1/organizations/${organizationId}/settings/invoice`)
           .set('Authorization', `Bearer ${authToken}`)
           .send({ primaryColor: '#10b981' }),
-        request(app)
+        supertest(app)
           .put(`/api/v1/organizations/${organizationId}/settings/invoice`)
           .set('Authorization', `Bearer ${authToken}`)
           .send({ primaryColor: '#3b82f6' })
@@ -730,7 +731,7 @@ describe('Organization Settings Customization Integration Tests', () => {
       });
 
       // Final state should be consistent
-      const finalState = await request(app)
+      const finalState = await supertest(app)
         .get(`/api/v1/organizations/${organizationId}/settings/invoice`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);

@@ -5,8 +5,7 @@ import { UserRole } from '../types/enums';
 
 const router = Router();
 
-// Apply authentication to all routes
-router.use(authenticate);
+// Authentication is already applied at app level before this router
 
 /**
  * @swagger
@@ -374,6 +373,43 @@ router.get(
 
 /**
  * @swagger
+ * /api/v1/organizations/{organizationId}/invoice-templates/{id}:
+ *   get:
+ *     tags: [Invoice Templates]
+ *     summary: Get single invoice template by ID
+ *     description: Retrieves a specific invoice template with full details including associated styles.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         description: Organization ID
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Template ID
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Template retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Template not found
+ *       500:
+ *         description: Failed to retrieve template
+ */
+router.get(
+  '/templates/:id',
+  invoicePDFController.getInvoiceTemplate.bind(invoicePDFController)
+);
+
+/**
+ * @swagger
  * /api/v1/organizations/{organizationId}/invoice-templates:
  *   post:
  *     tags: [Invoice Templates]
@@ -700,6 +736,43 @@ router.get(
 
 /**
  * @swagger
+ * /api/v1/organizations/{organizationId}/invoice-styles/{id}:
+ *   get:
+ *     tags: [Invoice Styles]
+ *     summary: Get single invoice style by ID
+ *     description: Retrieves a specific invoice style with full details including associated template information.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         description: Organization ID
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Style ID
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Style retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Style not found
+ *       500:
+ *         description: Failed to retrieve style
+ */
+router.get(
+  '/styles/:id',
+  invoicePDFController.getInvoiceStyle.bind(invoicePDFController)
+);
+
+/**
+ * @swagger
  * /api/v1/organizations/{organizationId}/invoice-styles:
  *   post:
  *     tags: [Invoice Styles]
@@ -781,6 +854,137 @@ router.post(
   '/styles',
   authorize(UserRole.ADMIN, UserRole.MANAGER),
   invoicePDFController.createInvoiceStyle.bind(invoicePDFController)
+);
+
+/**
+ * @swagger
+ * /api/v1/organizations/{organizationId}/invoice-styles/{id}:
+ *   put:
+ *     tags: [Invoice Styles]
+ *     summary: Update invoice style
+ *     description: Updates an existing custom invoice style. System styles cannot be modified. Requires Admin or Manager role.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         description: Organization ID
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Style ID
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Updated Blue Theme"
+ *               description:
+ *                 type: string
+ *                 example: "Updated blue color scheme"
+ *               templateId:
+ *                 type: string
+ *                 description: Associated template ID (optional)
+ *               cssContent:
+ *                 type: string
+ *                 description: CSS stylesheet content
+ *               colorScheme:
+ *                 type: object
+ *                 properties:
+ *                   primary:
+ *                     type: string
+ *                     example: "#2563eb"
+ *                   secondary:
+ *                     type: string
+ *                     example: "#64748b"
+ *                   accent:
+ *                     type: string
+ *                     example: "#3b82f6"
+ *                   background:
+ *                     type: string
+ *                     example: "#ffffff"
+ *                   text:
+ *                     type: string
+ *                     example: "#1e293b"
+ *               fontFamily:
+ *                 type: string
+ *                 example: "Arial, sans-serif"
+ *               isDefault:
+ *                 type: boolean
+ *                 description: Set as organization default style
+ *               tags:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Style updated successfully
+ *       400:
+ *         description: Invalid style data or system style modification attempted
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Insufficient permissions
+ *       404:
+ *         description: Style not found
+ *       500:
+ *         description: Failed to update style
+ */
+router.put(
+  '/styles/:id',
+  authorize(UserRole.ADMIN, UserRole.MANAGER),
+  invoicePDFController.updateInvoiceStyle.bind(invoicePDFController)
+);
+
+/**
+ * @swagger
+ * /api/v1/organizations/{organizationId}/invoice-styles/{id}:
+ *   delete:
+ *     tags: [Invoice Styles]
+ *     summary: Delete invoice style
+ *     description: Soft deletes an invoice style. System styles and default styles cannot be deleted. Requires Admin role.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         description: Organization ID
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Style ID
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Style deleted successfully
+ *       400:
+ *         description: Cannot delete system or default style
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Insufficient permissions
+ *       404:
+ *         description: Style not found
+ *       500:
+ *         description: Failed to delete style
+ */
+router.delete(
+  '/styles/:id',
+  authorize(UserRole.ADMIN),
+  invoicePDFController.deleteInvoiceStyle.bind(invoicePDFController)
 );
 
 export default router;

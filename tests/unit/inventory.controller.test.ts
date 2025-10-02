@@ -40,7 +40,7 @@ describe('InventoryController', () => {
       params: {},
       query: {},
       body: {},
-      user: { id: 'user-123' },
+      user: { id: "user-123", organizationId: "org-123", role: "ADMIN", sessionId: "session-123" },
     };
     mockResponse = {
       status: jest.fn().mockReturnThis(),
@@ -66,7 +66,7 @@ describe('InventoryController', () => {
       mockRequest.body = itemData;
 
       const createdItem = { id: 'item-123', ...itemData };
-      mockInventoryService.createInventoryItem.mockResolvedValue(createdItem);
+      mockInventoryService.createInventoryItem.mockResolvedValue(createdItem as any);
 
       await createInventoryItem(
         mockRequest as Request,
@@ -128,7 +128,7 @@ describe('InventoryController', () => {
         name: 'Office Chair',
         quantityOnHand: 50,
       };
-      mockInventoryService.getInventoryItemById.mockResolvedValue(item);
+      mockInventoryService.getInventoryItemById.mockResolvedValue(item as any);
 
       await getInventoryItemById(
         mockRequest as Request,
@@ -180,7 +180,7 @@ describe('InventoryController', () => {
         hasMore: true,
         nextCursor: 'cursor-456',
       };
-      mockInventoryService.getInventoryItems.mockResolvedValue(result);
+      mockInventoryService.getInventoryItems.mockResolvedValue(result as any);
 
       await getInventoryItems(
         mockRequest as Request,
@@ -218,7 +218,7 @@ describe('InventoryController', () => {
       };
 
       const result = { items: [], hasMore: false, nextCursor: null };
-      mockInventoryService.getInventoryItems.mockResolvedValue(result);
+      mockInventoryService.getInventoryItems.mockResolvedValue(result as any);
 
       await getInventoryItems(
         mockRequest as Request,
@@ -244,7 +244,7 @@ describe('InventoryController', () => {
       mockRequest.body = { unitPrice: 450, status: 'ACTIVE' };
 
       const updatedItem = { id: 'item-123', unitPrice: 450 };
-      mockInventoryService.updateInventoryItem.mockResolvedValue(updatedItem);
+      mockInventoryService.updateInventoryItem.mockResolvedValue(updatedItem as any);
 
       await updateInventoryItem(
         mockRequest as Request,
@@ -288,7 +288,7 @@ describe('InventoryController', () => {
       };
 
       const updatedItem = { id: 'item-123', quantityOnHand: 60 };
-      mockInventoryService.adjustQuantity.mockResolvedValue(updatedItem);
+      mockInventoryService.adjustQuantity.mockResolvedValue(updatedItem as any);
 
       await adjustQuantity(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -314,7 +314,7 @@ describe('InventoryController', () => {
       };
 
       const updatedItem = { id: 'item-123', quantityOnHand: 45 };
-      mockInventoryService.adjustQuantity.mockResolvedValue(updatedItem);
+      mockInventoryService.adjustQuantity.mockResolvedValue(updatedItem as any);
 
       await adjustQuantity(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -347,7 +347,7 @@ describe('InventoryController', () => {
       };
 
       const updatedItem = { id: 'item-123', quantityOnHand: 50 };
-      mockInventoryService.transferInventory.mockResolvedValue(updatedItem);
+      mockInventoryService.transferInventory.mockResolvedValue(updatedItem as any);
 
       await transferInventory(
         mockRequest as Request,
@@ -426,11 +426,13 @@ describe('InventoryController', () => {
       const stats = {
         totalItems: 150,
         totalValue: 750000,
+        lowStockCount: 12,
+        outOfStockCount: 3,
         lowStockItems: 12,
         outOfStockItems: 3,
         activeItems: 140,
       };
-      mockInventoryService.getInventoryStats.mockResolvedValue(stats);
+      mockInventoryService.getInventoryStats.mockResolvedValue(stats as any);
 
       await getInventoryStats(
         mockRequest as Request,
@@ -470,7 +472,7 @@ describe('InventoryController', () => {
         { id: 'item-1', name: 'Item 1', quantityOnHand: 5, reorderPoint: 10 },
         { id: 'item-2', name: 'Item 2', quantityOnHand: 2, reorderPoint: 15 },
       ];
-      mockInventoryService.getLowStockItems.mockResolvedValue(items);
+      mockInventoryService.getLowStockItems.mockResolvedValue(items as any);
 
       await getLowStockItems(
         mockRequest as Request,

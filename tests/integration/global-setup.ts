@@ -9,6 +9,9 @@ export default async function globalSetup() {
   console.log('🔧 Setting up integration test environment...');
 
   try {
+    // Set test environment
+    process.env.NODE_ENV = 'test';
+
     // Create a separate test database
     const testDatabaseUrl = process.env.TEST_DATABASE_URL || 'file:./test.db';
     process.env.DATABASE_URL = testDatabaseUrl;

@@ -1,6 +1,7 @@
 import { PrismaClient, TaxRate, TaxRecord, StateProvince, Prisma } from '@prisma/client';
 import { AuditService } from './audit.service';
 import { FinancialMath } from '../utils/financial';
+import Decimal from 'decimal.js';
 
 export interface TaxCalculationRequest {
   organizationId: string;
@@ -110,9 +111,16 @@ export class TaxService {
   async calculateTax(request: TaxCalculationRequest): Promise<TaxCalculationResult> {
     const { organizationId, items, customerTaxExempt = false, jurisdiction, calculationDate = new Date() } = request;
 
-    // Calculate subtotal and discounts
-    const subtotal = items.reduce((sum, item) => sum + (item.amount * item.quantity), 0);
-    const totalDiscount = items.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
+    // HIGH-PRIORITY FIX: Use Decimal arithmetic for tax calculations to ensure precision
+    const subtotal = items.reduce(
+      (sum, item) => sum.plus(new Decimal(item.amount).times(item.quantity)),
+      new Decimal(0)
+    ).toNumber();
+
+    const totalDiscount = items.reduce(
+      (sum, item) => sum.plus(new Decimal(item.discountAmount || 0)),
+      new Decimal(0)
+    ).toNumber();
 
     // Apply customer tax exemption
     if (customerTaxExempt) {
@@ -136,15 +144,29 @@ export class TaxService {
       throw new Error(`No tax rates found for jurisdiction: ${JSON.stringify(jurisdiction)}`);
     }
 
-    // Calculate taxable amount (exclude non-taxable items)
+    // Calculate taxable amount (exclude non-taxable items) with Decimal precision
     const taxableItems = items.filter(item => item.taxable);
     const taxableAmount = taxableItems.reduce(
-      (sum, item) => sum + ((item.amount * item.quantity) - (item.discountAmount || 0)), 0
-    );
+      (sum, item) => {
+        const itemTotal = new Decimal(item.amount).times(item.quantity);
+        const discount = new Decimal(item.discountAmount || 0);
+        return sum.plus(itemTotal.minus(discount));
+      },
+      new Decimal(0)
+    ).toNumber();
 
     // Calculate taxes (handle compound taxes properly)
     const taxes = await this.calculateTaxBreakdown(taxableAmount, applicableTaxRates);
-    const totalTax = taxes.reduce((sum, tax) => sum + tax.taxAmount, 0);
+    const totalTax = taxes.reduce(
+      (sum, tax) => sum.plus(new Decimal(tax.taxAmount)),
+      new Decimal(0)
+    ).toNumber();
+
+    // Calculate grand total with Decimal precision
+    const grandTotal = new Decimal(subtotal)
+      .minus(totalDiscount)
+      .plus(totalTax)
+      .toNumber();
 
     return {
       subtotal,
@@ -152,7 +174,7 @@ export class TaxService {
       taxableAmount,
       taxes,
       totalTax,
-      grandTotal: subtotal - totalDiscount + totalTax,
+      grandTotal,
       calculationDate,
       jurisdiction,
       exemptionApplied: false

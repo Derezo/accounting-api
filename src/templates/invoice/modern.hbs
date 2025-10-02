@@ -194,6 +194,28 @@
             font-weight: 600;
         }
 
+        .terms-section {
+            background: #f8f9fc;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid {{branding.accentColor}};
+            margin-bottom: 25px;
+        }
+
+        .notes-section {
+            background: #f8f9fc;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid {{branding.accentColor}};
+            margin-bottom: 25px;
+        }
+
+        .section-header {
+            margin: 0 0 12px 0;
+            color: {{branding.primaryColor}};
+            font-weight: 600;
+        }
+
         .footer {
             background: #f1f5f9;
             padding: 25px 40px;
@@ -210,6 +232,50 @@
             border-radius: 6px;
             margin: 20px 0;
             border-left: 4px solid #ffc107;
+        }
+
+        /* PDF Page Break Control */
+        @media print {
+            .items-section {
+                page-break-inside: auto;
+            }
+
+            .items-table {
+                page-break-inside: auto;
+            }
+
+            .items-table thead {
+                display: table-header-group;
+            }
+
+            .items-table tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+
+            .totals-section {
+                page-break-inside: avoid;
+            }
+
+            .terms-section {
+                page-break-inside: avoid;
+            }
+
+            .notes-section {
+                page-break-inside: avoid;
+            }
+
+            .section-header {
+                page-break-after: avoid;
+            }
+
+            .info-card {
+                page-break-inside: avoid;
+            }
+
+            .footer {
+                page-break-inside: avoid;
+            }
         }
     </style>
 </head>
@@ -377,17 +443,18 @@
                 </div>
             {{/if}}
 
-            <!-- Terms & Notes -->
+            <!-- Terms & Conditions -->
             {{#if invoice.terms}}
-                <div class="info-card">
-                    <h4>Terms & Conditions</h4>
+                <div class="terms-section">
+                    <h4 class="section-header">Terms & Conditions</h4>
                     <p style="margin: 0;">{{invoice.terms}}</p>
                 </div>
             {{/if}}
 
+            <!-- Notes -->
             {{#if invoice.notes}}
-                <div class="info-card">
-                    <h4>Notes</h4>
+                <div class="notes-section">
+                    <h4 class="section-header">Notes</h4>
                     <p style="margin: 0;">{{invoice.notes}}</p>
                 </div>
             {{/if}}

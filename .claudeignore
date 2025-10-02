@@ -1,0 +1,5 @@
+# In your project root
+echo "node_modules/" > .claudeignore
+echo "dist/" >> .claudeignore
+echo "build/" >> .claudeignore
+echo ".next/" >> .claudeignore

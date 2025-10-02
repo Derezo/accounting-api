@@ -430,7 +430,7 @@ export class EncryptionService {
    * Perform emergency security lockdown
    */
   public async emergencyLockdown(reason: string): Promise<void> {
-    logger.critical('Emergency encryption lockdown initiated', { reason });
+    logger.error('Emergency encryption lockdown initiated', { reason });
 
     try {
       // Clear all caches
@@ -448,10 +448,10 @@ export class EncryptionService {
         // This would be implemented based on your organization model
       }
 
-      logger.critical('Emergency lockdown completed');
+      logger.error('Emergency lockdown completed');
 
     } catch (error) {
-      logger.critical('Emergency lockdown failed', {
+      logger.error('Emergency lockdown failed', {
         error: error instanceof Error ? error.message : 'Unknown error'
       });
       throw error;
@@ -667,10 +667,11 @@ export class EncryptionService {
    * Generate document-specific encryption key
    */
   public async generateDocumentKey(organizationId: string): Promise<string> {
-    return encryptionKeyManager.deriveOrganizationKey({
+    const key = encryptionKeyManager.deriveOrganizationKey({
       organizationId,
       keyVersion: 1
     });
+    return key.key.toString('base64');
   }
 
   /**

@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
+import { seedInvoiceTemplates } from './seeds/master-organization.seed';
 
 const prisma = new PrismaClient();
 
@@ -73,6 +74,12 @@ async function main() {
     await prisma.account.deleteMany();
     await prisma.apiKey.deleteMany();
     await prisma.user.deleteMany();
+
+    console.log('  - Deleting invoice templates and styles...');
+    await prisma.invoiceStyle?.deleteMany().catch(() => {});
+    await prisma.invoiceTemplate?.deleteMany().catch(() => {});
+    await prisma.generatedPDF?.deleteMany().catch(() => {});
+    await prisma.organizationBranding?.deleteMany().catch(() => {});
 
     console.log('  - Deleting organizations...');
     await prisma.organization.deleteMany();
@@ -226,6 +233,11 @@ async function main() {
       website: 'https://techsolutions.dev'
     }
   });
+
+  // ==================== SEED INVOICE TEMPLATES ====================
+  console.log('📄 Seeding invoice templates...');
+  await seedInvoiceTemplates(organization1.id);
+  await seedInvoiceTemplates(organization2.id);
 
   // ==================== CREATE USERS ====================
   console.log('👥 Creating users...');
@@ -830,12 +842,26 @@ async function main() {
   // ==================== CREATE INVOICES ====================
   console.log('📄 Creating invoices...');
 
+  // Get invoice templates for linking
+  const invoiceTemplates = await prisma.invoiceTemplate.findMany({
+    where: {
+      organizationId: organization1.id,
+      isSystem: true
+    },
+    orderBy: { name: 'asc' }
+  });
+
+  const defaultTemplate = invoiceTemplates.find(t => t.isDefault) || invoiceTemplates[0];
+  const modernTemplate = invoiceTemplates.find(t => t.name === 'Modern Blue') || invoiceTemplates[1];
+  const minimalTemplate = invoiceTemplates.find(t => t.name === 'Minimal Clean') || invoiceTemplates[2];
+
   const invoice1 = await prisma.invoice.create({
     data: {
       organizationId: organization1.id,
       invoiceNumber: 'INV-2024-001',
       customerId: customer1.id,
       quoteId: quote1.id,
+      templateId: defaultTemplate?.id,
       issueDate: new Date('2024-02-01'),
       dueDate: new Date('2024-03-03'),
       status: 'PAID',
@@ -856,6 +882,7 @@ async function main() {
       organizationId: organization1.id,
       invoiceNumber: 'INV-2024-002',
       customerId: customer2.id,
+      templateId: modernTemplate?.id,
       issueDate: new Date('2024-01-25'),
       dueDate: new Date('2024-02-09'),
       status: 'PARTIALLY_PAID',
@@ -876,6 +903,7 @@ async function main() {
       organizationId: organization1.id,
       invoiceNumber: 'INV-2024-003',
       customerId: customer3.id,
+      templateId: minimalTemplate?.id,
       issueDate: new Date('2024-01-30'),
       dueDate: new Date('2024-02-14'),
       status: 'SENT',
@@ -1160,6 +1188,8 @@ async function main() {
   console.log('• 6 Payments ($33.4K, $1K, $5K, Failed, $260, $1.5K USD)');
   console.log('• 2 Projects (ERP Implementation, Website Development)');
   console.log('• 2 Appointments (Completed, Scheduled)');
+  console.log('• 6 Invoice Templates (3 per organization)');
+  console.log('• 6 Invoice Styles (3 per organization)');
 }
 
 main()

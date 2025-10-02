@@ -12,7 +12,7 @@ export interface RateLimitResult {
 export interface RateLimitConfig {
   limit: number;
   windowMs: number;
-  keyPrefix: string;
+  keyPrefix?: string;
 }
 
 /**

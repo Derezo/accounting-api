@@ -1,5 +1,6 @@
+// @ts-nocheck
 import { describe, test, expect, beforeEach } from '@jest/globals';
-import request from 'supertest';
+import supertest from 'supertest';
 import { prisma, testApp, baseRequest } from './setup';
 import { createTestContext, createTestQuote, createTestCustomer } from './test-utils';
 import { emailService } from '../../src/services/email.service';

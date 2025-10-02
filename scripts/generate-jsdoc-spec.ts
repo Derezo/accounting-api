@@ -85,6 +85,42 @@ API requests are rate-limited. See response headers for current limits:
             details: {
               type: 'object',
               description: 'Additional error details'
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+        NotFoundError: {
+          type: 'object',
+          properties: {
+            error: {
+              type: 'string',
+              enum: ['RESOURCE_NOT_FOUND']
+            },
+            message: {
+              type: 'string'
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+        ConflictError: {
+          type: 'object',
+          properties: {
+            error: {
+              type: 'string',
+              enum: ['RESOURCE_CONFLICT', 'DUPLICATE_ENTRY']
+            },
+            message: {
+              type: 'string'
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time'
             }
           }
         },
@@ -92,6 +128,278 @@ API requests are rate-limited. See response headers for current limits:
           type: 'string',
           format: 'date-time',
           description: 'ISO 8601 timestamp'
+        },
+        Currency: {
+          type: 'string',
+          enum: ['CAD', 'USD', 'EUR', 'GBP'],
+          description: 'ISO 4217 currency code'
+        },
+        CustomerTier: {
+          type: 'string',
+          enum: ['PERSONAL', 'SMALL_BUSINESS', 'ENTERPRISE'],
+          description: 'Customer service tier'
+        },
+        CustomerStatus: {
+          type: 'string',
+          enum: ['PROSPECT', 'ACTIVE', 'INACTIVE', 'SUSPENDED'],
+          description: 'Customer account status'
+        },
+        PaymentMethod: {
+          type: 'string',
+          enum: ['STRIPE_CARD', 'E_TRANSFER', 'CASH', 'BANK_TRANSFER', 'CHECK'],
+          description: 'Payment processing method'
+        },
+        User: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Unique user identifier'
+            },
+            organizationId: {
+              type: 'string',
+              description: 'Organization the user belongs to'
+            },
+            email: {
+              type: 'string',
+              format: 'email'
+            },
+            firstName: {
+              type: 'string'
+            },
+            lastName: {
+              type: 'string'
+            },
+            role: {
+              type: 'string',
+              enum: ['VIEWER', 'EMPLOYEE', 'ACCOUNTANT', 'MANAGER', 'ADMIN', 'SUPER_ADMIN']
+            },
+            isActive: {
+              type: 'boolean'
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+        Customer: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Unique customer identifier'
+            },
+            organizationId: {
+              type: 'string'
+            },
+            customerNumber: {
+              type: 'string',
+              description: 'Organization-specific customer number'
+            },
+            tier: {
+              type: 'string',
+              enum: ['PERSONAL', 'SMALL_BUSINESS', 'ENTERPRISE']
+            },
+            status: {
+              type: 'string',
+              enum: ['PROSPECT', 'ACTIVE', 'INACTIVE', 'SUSPENDED']
+            },
+            creditLimit: {
+              type: 'number',
+              format: 'decimal'
+            },
+            paymentTerms: {
+              type: 'integer',
+              description: 'Payment terms in days'
+            },
+            preferredCurrency: {
+              type: 'string',
+              enum: ['CAD', 'USD', 'EUR', 'GBP']
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+        Quote: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string'
+            },
+            organizationId: {
+              type: 'string'
+            },
+            customerId: {
+              type: 'string'
+            },
+            quoteNumber: {
+              type: 'string'
+            },
+            status: {
+              type: 'string',
+              enum: ['DRAFT', 'SENT', 'VIEWED', 'ACCEPTED', 'REJECTED', 'EXPIRED']
+            },
+            subtotal: {
+              type: 'number',
+              format: 'decimal'
+            },
+            taxTotal: {
+              type: 'number',
+              format: 'decimal'
+            },
+            total: {
+              type: 'number',
+              format: 'decimal'
+            },
+            validUntil: {
+              type: 'string',
+              format: 'date-time'
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+        Payment: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string'
+            },
+            organizationId: {
+              type: 'string'
+            },
+            customerId: {
+              type: 'string'
+            },
+            amount: {
+              type: 'number',
+              format: 'decimal'
+            },
+            currency: {
+              type: 'string',
+              enum: ['CAD', 'USD', 'EUR', 'GBP']
+            },
+            method: {
+              type: 'string',
+              enum: ['STRIPE_CARD', 'E_TRANSFER', 'CASH', 'BANK_TRANSFER', 'CHECK']
+            },
+            status: {
+              type: 'string',
+              enum: ['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED', 'CANCELLED']
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+        Document: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string'
+            },
+            organizationId: {
+              type: 'string'
+            },
+            name: {
+              type: 'string'
+            },
+            filename: {
+              type: 'string'
+            },
+            mimeType: {
+              type: 'string'
+            },
+            size: {
+              type: 'integer',
+              description: 'File size in bytes'
+            },
+            encrypted: {
+              type: 'boolean'
+            },
+            url: {
+              type: 'string',
+              format: 'uri'
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+        PaginationMeta: {
+          type: 'object',
+          properties: {
+            page: {
+              type: 'integer',
+              minimum: 1
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100
+            },
+            total: {
+              type: 'integer',
+              minimum: 0
+            },
+            totalPages: {
+              type: 'integer',
+              minimum: 0
+            },
+            hasNext: {
+              type: 'boolean'
+            },
+            hasPrev: {
+              type: 'boolean'
+            }
+          }
+        },
+        Pagination: {
+          type: 'object',
+          properties: {
+            page: {
+              type: 'integer',
+              minimum: 1
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100
+            },
+            total: {
+              type: 'integer',
+              minimum: 0
+            },
+            totalPages: {
+              type: 'integer',
+              minimum: 0
+            },
+            hasNext: {
+              type: 'boolean'
+            },
+            hasPrev: {
+              type: 'boolean'
+            }
+          }
         }
       }
     },
@@ -157,15 +465,57 @@ API requests are rate-limited. See response headers for current limits:
 console.log('🚀 Generating JSDoc-based OpenAPI specification...');
 const jsdocSpec = swaggerJSDoc(jsdocOptions);
 
+// Fix security scheme references and undefined schema references
+const fixSpec = (obj: any, definedSchemas: Set<string>): any => {
+  if (obj && typeof obj === 'object') {
+    if (Array.isArray(obj)) {
+      return obj.map(item => fixSpec(item, definedSchemas));
+    }
+    const fixed: any = {};
+    for (const key in obj) {
+      if (key === 'security' && Array.isArray(obj[key])) {
+        // Fix BearerAuth -> bearerAuth
+        fixed[key] = obj[key].map((item: any) => {
+          if (item.BearerAuth) {
+            return { bearerAuth: item.BearerAuth };
+          }
+          return item;
+        });
+      } else if (key === '$ref' && typeof obj[key] === 'string') {
+        // Check if referenced schema exists
+        const match = obj[key].match(/#\/components\/schemas\/(.+)$/);
+        if (match && !definedSchemas.has(match[1])) {
+          // Replace undefined schema reference with generic object
+          console.log(`⚠️  Warning: Undefined schema reference: ${match[1]} - replacing with generic object`);
+          return { type: 'object', description: `${match[1]} object` };
+        }
+        fixed[key] = obj[key];
+      } else {
+        fixed[key] = fixSpec(obj[key], definedSchemas);
+      }
+    }
+    return fixed;
+  }
+  return obj;
+};
+
+// Get list of defined schemas
+const definedSchemas = new Set<string>(
+  Object.keys((jsdocSpec as any).components?.schemas || {})
+);
+console.log(`📋 Defined schemas: ${Array.from(definedSchemas).join(', ')}`);
+
+const fixedSpec = fixSpec(jsdocSpec, definedSchemas);
+
 // Save as JSON
 const jsonPath = path.join(process.cwd(), 'docs', 'jsdoc-openapi.json');
-fs.writeFileSync(jsonPath, JSON.stringify(jsdocSpec, null, 2));
+fs.writeFileSync(jsonPath, JSON.stringify(fixedSpec, null, 2));
 
 // Save as YAML
 const yamlPath = path.join(process.cwd(), 'docs', 'jsdoc-openapi.yaml');
-fs.writeFileSync(yamlPath, yaml.dump(jsdocSpec));
+fs.writeFileSync(yamlPath, yaml.dump(fixedSpec));
 
 console.log(`✅ JSDoc OpenAPI specification generated successfully!`);
 console.log(`📄 JSON: ${jsonPath}`);
 console.log(`📄 YAML: ${yamlPath}`);
-console.log(`📊 Total endpoints documented: ${Object.keys((jsdocSpec as any).paths || {}).length}`);
+console.log(`📊 Total endpoints documented: ${Object.keys((fixedSpec as any).paths || {}).length}`);

@@ -11,6 +11,7 @@ declare global {
         organizationId: string;
         role: string;
         sessionId: string;
+        isTestToken?: boolean;
       };
     }
   }

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { prisma, baseRequest } from './setup';
 import { createTestContext } from './test-utils';

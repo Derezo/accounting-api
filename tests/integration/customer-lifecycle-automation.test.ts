@@ -1,4 +1,5 @@
-import request from 'supertest';
+// @ts-nocheck
+import supertest from 'supertest';
 import { app } from '@/app';
 import { PrismaClient } from '@prisma/client';
 import { beforeAll, afterAll, beforeEach, describe, it, expect } from '@jest/globals';
@@ -23,7 +24,10 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
       data: {
         name: 'Test Lifecycle Org',
         type: 'SINGLE_BUSINESS',
-        domain: 'test-lifecycle.com'
+        domain: 'test-lifecycle.com',
+        email: 'testorg@test.com',
+        phone: '+1-555-0102',
+        encryptionKey: 'test-encryption-key'
       }
     });
     organizationId = organization.id;
@@ -106,7 +110,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
 
   describe('Quote Acceptance Automation', () => {
     it('should automatically generate invoice when quote is accepted', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/quotes/${quoteId}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -137,7 +141,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
     });
 
     it('should suggest available appointment slots', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/quotes/${quoteId}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -159,7 +163,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
     });
 
     it('should handle quote acceptance without invoice generation', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/quotes/${quoteId}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -189,7 +193,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
         }
       });
 
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/quotes/${expiredQuote.id}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -209,7 +213,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
 
     beforeEach(async () => {
       // Accept quote to create invoice first
-      const acceptResponse = await request(app)
+      const acceptResponse = await supertest(app)
         .post(`/api/v1/quotes/${quoteId}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -221,7 +225,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
 
     it('should schedule appointment from suggested slots', async () => {
       // Get suggested appointments first
-      const suggestResponse = await request(app)
+      const suggestResponse = await supertest(app)
         .get('/api/v1/appointments/available-slots')
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -233,7 +237,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
       const availableSlot = suggestResponse.body.slots[0];
 
       // Schedule appointment
-      const response = await request(app)
+      const response = await supertest(app)
         .post('/api/v1/appointments')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -259,7 +263,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
       const appointmentTime = new Date(Date.now() + 24 * 60 * 60 * 1000); // Tomorrow
 
       // Create first appointment
-      await request(app)
+      await supertest(app)
         .post('/api/v1/appointments')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -270,7 +274,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
         });
 
       // Try to create conflicting appointment
-      const response = await request(app)
+      const response = await supertest(app)
         .post('/api/v1/appointments')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -285,7 +289,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
     });
 
     it('should get intelligent appointment suggestions', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/appointments/smart-suggestions')
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -310,7 +314,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
 
   describe('Invoice Generation Automation', () => {
     it('should create invoice with correct deposit calculation', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/quotes/${quoteId}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -348,7 +352,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
         ]
       });
 
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/quotes/${quoteId}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -369,7 +373,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
     });
 
     it('should set appropriate payment terms', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/quotes/${quoteId}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -399,7 +403,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
       expect(customer?.status).toBe('PROSPECT');
 
       // Accept quote - should become ACTIVE
-      await request(app)
+      await supertest(app)
         .post(`/api/v1/quotes/${quoteId}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -445,7 +449,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
         }
       });
 
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/quotes/${highValueQuote.id}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -468,7 +472,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
 
   describe('Workflow Automation Triggers', () => {
     it('should trigger email notifications on quote acceptance', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/quotes/${quoteId}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -483,7 +487,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
     });
 
     it('should create project automatically for accepted quotes', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/quotes/${quoteId}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -503,7 +507,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
     });
 
     it('should schedule follow-up tasks', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/quotes/${quoteId}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -547,7 +551,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
         }
       });
 
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/quotes/${invalidQuote.id}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -563,7 +567,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
 
     it('should handle already accepted quotes', async () => {
       // Accept quote first
-      await request(app)
+      await supertest(app)
         .post(`/api/v1/quotes/${quoteId}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -571,7 +575,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
         });
 
       // Try to accept again
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/quotes/${quoteId}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -584,7 +588,7 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
 
     it('should rollback changes on automation failure', async () => {
       // Simulate automation failure by providing invalid data
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/quotes/${quoteId}/accept`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({

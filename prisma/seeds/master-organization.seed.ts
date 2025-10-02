@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
@@ -118,23 +118,22 @@ export async function seedMasterOrganization(): Promise<void> {
     where: { email: 'eric@lifestreamdynamics.com' },
     update: {
       // Update if exists
-      name: 'Eric',
-      role: UserRole.SUPER_ADMIN,
+      firstName: 'Eric',
+      lastName: 'Lifestream',
+      role: 'SUPER_ADMIN',
       organizationId: masterOrg.id,
       isActive: true,
-      emailVerified: true,
-      mustChangePassword: process.env.NODE_ENV === 'production' ? true : false
+      emailVerified: true
     },
     create: {
       email: 'eric@lifestreamdynamics.com',
-      name: 'Eric',
-      password: hashedPassword,
-      role: UserRole.SUPER_ADMIN,
+      firstName: 'Eric',
+      lastName: 'Lifestream',
+      passwordHash: hashedPassword,
+      role: 'SUPER_ADMIN',
       organizationId: masterOrg.id,
       isActive: true,
-      emailVerified: true,
-      mustChangePassword: process.env.NODE_ENV === 'production' ? true : false,
-      createdBy: 'SYSTEM_SEED'
+      emailVerified: true
     }
   });
 
@@ -155,7 +154,7 @@ export async function seedMasterOrganization(): Promise<void> {
       organizationId: masterOrg.id,
       userId: masterAdmin.id,
       action: 'MASTER_ORG_SEED',
-      entity: 'Organization',
+      entityType: 'Organization',
       entityId: masterOrg.id,
       changes: JSON.stringify({
         operation: 'SEED_MASTER_ORGANIZATION',
@@ -187,11 +186,171 @@ export async function seedMasterOrganization(): Promise<void> {
 }
 
 /**
+ * Seed invoice templates and styles for an organization
+ */
+export async function seedInvoiceTemplates(organizationId: string): Promise<void> {
+  console.log(`📄 Seeding invoice templates for organization ${organizationId}...`);
+
+  const fs = await import('fs/promises');
+  const path = await import('path');
+
+  // Load template files
+  const templatesDir = path.join(process.cwd(), 'src', 'templates', 'invoice');
+  const stylesDir = path.join(process.cwd(), 'src', 'templates', 'invoice');
+
+  try {
+    // Check if templates already exist
+    const existingTemplates = await prisma.invoiceTemplate.count({
+      where: { organizationId, isSystem: true }
+    });
+
+    if (existingTemplates > 0) {
+      console.log('   ℹ️  System templates already exist, skipping...');
+      return;
+    }
+
+    // Create Default Professional template
+    const defaultTemplate = await prisma.invoiceTemplate.create({
+      data: {
+        organizationId,
+        name: 'Default Professional',
+        description: 'Standard professional invoice template with clean layout',
+        templateType: 'STANDARD',
+        htmlTemplate: await fs.readFile(path.join(templatesDir, 'default.hbs'), 'utf-8'),
+        isDefault: true,
+        isSystem: true,
+        version: '1.0',
+        tags: JSON.stringify(['professional', 'standard', 'default'])
+      }
+    });
+    console.log(`   ✅ Created template: ${defaultTemplate.name}`);
+
+    // Create Modern Blue template
+    const modernTemplate = await prisma.invoiceTemplate.create({
+      data: {
+        organizationId,
+        name: 'Modern Blue',
+        description: 'Contemporary invoice template with blue accent colors',
+        templateType: 'MODERN',
+        htmlTemplate: await fs.readFile(path.join(templatesDir, 'modern.hbs'), 'utf-8'),
+        isDefault: false,
+        isSystem: true,
+        version: '1.0',
+        tags: JSON.stringify(['modern', 'contemporary', 'blue'])
+      }
+    });
+    console.log(`   ✅ Created template: ${modernTemplate.name}`);
+
+    // Create Minimal Clean template
+    const minimalTemplate = await prisma.invoiceTemplate.create({
+      data: {
+        organizationId,
+        name: 'Minimal Clean',
+        description: 'Minimal text-focused invoice template for simple transactions',
+        templateType: 'MINIMAL',
+        htmlTemplate: await fs.readFile(path.join(templatesDir, 'minimal.hbs'), 'utf-8'),
+        isDefault: false,
+        isSystem: true,
+        version: '1.0',
+        tags: JSON.stringify(['minimal', 'simple', 'clean'])
+      }
+    });
+    console.log(`   ✅ Created template: ${minimalTemplate.name}`);
+
+    // Create Classic Black & White style
+    const classicStyle = await prisma.invoiceStyle.create({
+      data: {
+        organizationId,
+        templateId: defaultTemplate.id,
+        name: 'Classic Black & White',
+        description: 'Professional monochrome design with high contrast',
+        cssContent: await fs.readFile(path.join(stylesDir, 'classic.css'), 'utf-8'),
+        colorScheme: JSON.stringify({
+          primary: '#000000',
+          secondary: '#666666',
+          accent: '#333333',
+          background: '#ffffff',
+          text: '#000000'
+        }),
+        fontFamily: 'Times New Roman, serif',
+        isDefault: true,
+        isSystem: true,
+        version: '1.0',
+        tags: JSON.stringify(['classic', 'professional', 'monochrome'])
+      }
+    });
+    console.log(`   ✅ Created style: ${classicStyle.name}`);
+
+    // Create Modern Blue style
+    const modernStyle = await prisma.invoiceStyle.create({
+      data: {
+        organizationId,
+        templateId: modernTemplate.id,
+        name: 'Modern Blue',
+        description: 'Contemporary blue theme with gradient effects',
+        cssContent: await fs.readFile(path.join(stylesDir, 'modern-blue.css'), 'utf-8'),
+        colorScheme: JSON.stringify({
+          primary: '#2563eb',
+          secondary: '#64748b',
+          accent: '#3b82f6',
+          background: '#f8fafc',
+          text: '#1e293b'
+        }),
+        fontFamily: 'Inter, Arial, sans-serif',
+        isDefault: false,
+        isSystem: true,
+        version: '1.0',
+        tags: JSON.stringify(['modern', 'blue', 'gradient'])
+      }
+    });
+    console.log(`   ✅ Created style: ${modernStyle.name}`);
+
+    // Create Corporate Gray style
+    const corporateStyle = await prisma.invoiceStyle.create({
+      data: {
+        organizationId,
+        templateId: defaultTemplate.id,
+        name: 'Corporate Gray',
+        description: 'Professional gray palette for conservative businesses',
+        cssContent: await fs.readFile(path.join(stylesDir, 'corporate-gray.css'), 'utf-8'),
+        colorScheme: JSON.stringify({
+          primary: '#374151',
+          secondary: '#6b7280',
+          accent: '#4b5563',
+          background: '#f9fafb',
+          text: '#111827'
+        }),
+        fontFamily: 'Arial, Helvetica, sans-serif',
+        isDefault: false,
+        isSystem: true,
+        version: '1.0',
+        tags: JSON.stringify(['corporate', 'professional', 'gray'])
+      }
+    });
+    console.log(`   ✅ Created style: ${corporateStyle.name}`);
+
+    console.log(`   📊 Summary: 3 templates and 3 styles created`);
+  } catch (error) {
+    console.error('   ❌ Failed to seed invoice templates:', error);
+    throw error;
+  }
+}
+
+/**
  * Main seed function
  */
 async function main(): Promise<void> {
   try {
     await seedMasterOrganization();
+
+    // Get the master organization ID to seed templates
+    const masterOrg = await prisma.organization.findUnique({
+      where: { domain: 'lifestreamdynamics.com' }
+    });
+
+    if (masterOrg) {
+      await seedInvoiceTemplates(masterOrg.id);
+    }
   } catch (error) {
     console.error('❌ Error seeding master organization:', error);
     throw error;

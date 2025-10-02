@@ -645,7 +645,9 @@ describe('PaymentService', () => {
       mockPrisma.payment.update.mockResolvedValue(mockPayment);
       mockPrisma.invoice.findUnique.mockResolvedValue({
         id: 'invoice-123',
-        notes: null
+        notes: null,
+        amountPaid: { toNumber: () => 100.00, toString: () => '100.00', sub: (val: any) => ({ toString: () => '50.00' }) },
+        balance: { toNumber: () => 0, toString: () => '0', add: (val: any) => ({ toString: () => '50.00' }) }
       });
       mockPrisma.invoice.update.mockResolvedValue({});
       mockAuditService.logAction.mockResolvedValue(undefined);
@@ -730,7 +732,7 @@ describe('PaymentService', () => {
           organizationId,
           auditContext
         )
-      ).rejects.toThrow('Refund amount cannot exceed payment amount');
+      ).rejects.toThrow('cannot exceed net amount received');
     });
   });
 
@@ -872,8 +874,8 @@ describe('PaymentService', () => {
           data: {
             status: PaymentStatus.COMPLETED,
             stripeChargeId: 'charge_placeholder',
-            processorFee: 0,
-            netAmount: 100.00,
+            processorFee: 3.20, // 2.9% + $0.30 = $2.90 + $0.30 = $3.20
+            netAmount: 96.80,    // $100.00 - $3.20 = $96.80
             processedAt: expect.any(Date)
           }
         });

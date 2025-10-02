@@ -37,5 +37,6 @@ module.exports = {
   verbose: true,
   testEnvironment: 'node',
   globalSetup: '<rootDir>/tests/jest.global-setup.js',
-  globalTeardown: '<rootDir>/tests/jest.global-teardown.js'
+  globalTeardown: '<rootDir>/tests/jest.global-teardown.js',
+  maxWorkers: 1  // Run tests serially to avoid database race conditions
 };

@@ -1,0 +1,215 @@
+/* Modern Blue Invoice Style */
+
+/* Contemporary blue color palette */
+:root {
+    --primary-blue: #2563eb;
+    --secondary-blue: #3b82f6;
+    --light-blue: #60a5fa;
+    --dark-blue: #1e40af;
+    --slate: #64748b;
+    --background: #f8fafc;
+    --text: #1e293b;
+}
+
+body {
+    font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text);
+    background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+}
+
+.invoice-container {
+    background: white;
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.invoice-header {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+    color: white;
+    padding: 30px 40px;
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.company-name {
+    color: white;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.company-details {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.invoice-number {
+    color: white;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    border-radius: 6px;
+    backdrop-filter: blur(10px);
+    display: inline-block;
+}
+
+.invoice-meta {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.billing-section {
+    background-color: var(--background);
+    padding: 30px 40px;
+    margin: 0 -40px 30px -40px;
+}
+
+.billing-title {
+    color: var(--primary-blue);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--secondary-blue);
+}
+
+.items-table {
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.items-table th {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    padding: 14px 12px;
+}
+
+.items-table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.items-table tbody tr:hover {
+    background-color: #f1f5f9;
+    transition: background-color 0.2s ease;
+}
+
+.items-table tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+.totals-section {
+    background-color: var(--background);
+    padding: 20px;
+    border-radius: 6px;
+}
+
+.totals-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.totals-table .total-row {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+    color: white;
+    font-size: 18px;
+    border-radius: 6px;
+}
+
+.totals-table .total-row td {
+    padding: 14px;
+    border: none;
+}
+
+.payment-info {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-left: 4px solid var(--secondary-blue);
+    border-radius: 6px;
+}
+
+.terms-section {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-left: 4px solid var(--secondary-blue);
+    border-radius: 6px;
+}
+
+.notes-section {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-left: 4px solid var(--secondary-blue);
+    border-radius: 6px;
+}
+
+.footer {
+    border-top: 2px solid #e2e8f0;
+    color: var(--slate);
+}
+
+/* Modern accents */
+strong {
+    color: var(--primary-blue);
+}
+
+small {
+    color: var(--slate);
+}
+
+/* Smooth transitions */
+* {
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+/* PDF Page Break Control */
+@media print {
+    body {
+        background: white;
+    }
+
+    .invoice-container {
+        box-shadow: none;
+    }
+
+    * {
+        transition: none;
+    }
+
+    .items-table {
+        page-break-inside: auto;
+    }
+
+    .items-table thead {
+        display: table-header-group;
+    }
+
+    .items-table tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+
+    .totals-section {
+        page-break-inside: avoid;
+    }
+
+    .terms-section {
+        page-break-inside: avoid;
+    }
+
+    .notes-section {
+        page-break-inside: avoid;
+    }
+
+    .section-header {
+        page-break-after: avoid;
+    }
+
+    .payment-info {
+        page-break-inside: avoid;
+    }
+
+    .info-card {
+        page-break-inside: avoid;
+    }
+
+    .footer {
+        page-break-inside: avoid;
+    }
+}

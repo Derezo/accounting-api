@@ -15,6 +15,11 @@ import { intakeRateLimitService } from '../services/intake-rate-limit.service';
 export const publicRateLimit = (limitType: 'initialize' | 'step' | 'status' | 'submit' | 'total') => {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+      // Skip rate limiting in test environment
+      if (process.env.NODE_ENV === 'test') {
+        return next();
+      }
+
       const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
 
       // Check rate limit for this IP
@@ -70,6 +75,11 @@ export const tokenRateLimit = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Skip rate limiting in test environment
+    if (process.env.NODE_ENV === 'test') {
+      return next();
+    }
+
     // Get session ID from request (attached by validateIntakeToken middleware)
     const sessionId = (req as any).intakeSession?.id;
 

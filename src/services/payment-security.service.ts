@@ -99,7 +99,7 @@ export class PaymentSecurityService {
     const iv = crypto.randomBytes(16);
 
     // Encrypt data
-    const cipher = crypto.createCipherGCM(this.algorithm, key, iv);
+    const cipher = crypto.createCipheriv(this.algorithm, key, iv);
     let encrypted = cipher.update(data, 'utf8', 'hex');
     encrypted += cipher.final('hex');
 
@@ -171,7 +171,7 @@ export class PaymentSecurityService {
     const key = crypto.pbkdf2Sync(organization.encryptionKey, salt, this.keyDerivationIterations, 32, 'sha256');
 
     // Decrypt data
-    const decipher = crypto.createDecipherGCM(this.algorithm, key, iv);
+    const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
     decipher.setAuthTag(tag);
 
     let decrypted = decipher.update(encrypted, undefined, 'utf8');
@@ -270,7 +270,7 @@ export class PaymentSecurityService {
 
     if (historicalPayments.length < 5) return null; // Need sufficient history
 
-    const amounts = historicalPayments.map(p => p.amount);
+    const amounts = historicalPayments.map(p => Number(p.amount));
     const mean = amounts.reduce((sum, amount) => sum + amount, 0) / amounts.length;
     const variance = amounts.reduce((sum, amount) => sum + Math.pow(amount - mean, 2), 0) / amounts.length;
     const stdDev = Math.sqrt(variance);
@@ -314,7 +314,7 @@ export class PaymentSecurityService {
       }
     });
 
-    const totalAmount = recentPayments.reduce((sum, p) => sum + p.amount, 0);
+    const totalAmount = recentPayments.reduce((sum, p) => sum + Number(p.amount), 0);
     const paymentCount = recentPayments.length;
 
     // Check against limits (these should be configurable)
@@ -619,7 +619,7 @@ export class PaymentSecurityService {
 
     let missingTaxInfo = 0;
     for (const payment of largePayments) {
-      if (!payment.invoice?.taxAmount || payment.invoice.taxAmount === 0) {
+      if (!payment.invoice?.taxAmount || Number(payment.invoice.taxAmount) === 0) {
         missingTaxInfo++;
       }
     }
@@ -703,7 +703,7 @@ export class PaymentSecurityService {
           }
         });
 
-        const dayTotal = dayPayments.reduce((sum, p) => sum + p.amount, 0);
+        const dayTotal = dayPayments.reduce((sum, p) => sum + Number(p.amount), 0);
 
         if (dayTotal + paymentData.amount > limit.maxAmount) {
           violatedLimits.push(limit);
@@ -747,7 +747,7 @@ export class PaymentSecurityService {
     }
 
     if (typeof obj === 'object') {
-      const masked: unknown = {};
+      const masked: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(obj)) {
         if (fieldsToMask.includes(key)) {
           masked[key] = this.maskValue(value);

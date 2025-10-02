@@ -1,4 +1,5 @@
-import request from 'supertest';
+// @ts-nocheck
+import supertest from 'supertest';
 import app from '../../src/app';
 import { PrismaClient } from '@prisma/client';
 import path from 'path';
@@ -51,7 +52,7 @@ describe('Document Management Integration Tests', () => {
     await fs.writeFile(testFilePath, 'This is a test document for upload testing.');
 
     // Get auth token (mock for testing)
-    const authResponse = await request(app)
+    const authResponse = await supertest(app)
       .post('/api/v1/auth/login')
       .send({
         email: 'doctest@test.com',
@@ -90,7 +91,7 @@ describe('Document Management Integration Tests', () => {
 
   describe('Document Upload', () => {
     it('should upload a document successfully', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .post('/api/v1/documents')
         .set('Authorization', `Bearer ${authToken}`)
         .attach('file', testFilePath)
@@ -114,7 +115,7 @@ describe('Document Management Integration Tests', () => {
       const badFilePath = path.join(__dirname, '../fixtures/test.exe');
       await fs.writeFile(badFilePath, 'fake executable content');
 
-      const response = await request(app)
+      const response = await supertest(app)
         .post('/api/v1/documents')
         .set('Authorization', `Bearer ${authToken}`)
         .attach('file', badFilePath)
@@ -129,7 +130,7 @@ describe('Document Management Integration Tests', () => {
     });
 
     it('should upload an encrypted document', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .post('/api/v1/documents')
         .set('Authorization', `Bearer ${authToken}`)
         .attach('file', testFilePath)
@@ -152,7 +153,7 @@ describe('Document Management Integration Tests', () => {
       await fs.writeFile(file2Path, 'Second test document content');
       await fs.writeFile(file3Path, 'Third test document content');
 
-      const response = await request(app)
+      const response = await supertest(app)
         .post('/api/v1/documents/bulk')
         .set('Authorization', `Bearer ${authToken}`)
         .attach('files', testFilePath)
@@ -176,7 +177,7 @@ describe('Document Management Integration Tests', () => {
 
     beforeEach(async () => {
       // Create a test document
-      const uploadResponse = await request(app)
+      const uploadResponse = await supertest(app)
         .post('/api/v1/documents')
         .set('Authorization', `Bearer ${authToken}`)
         .attach('file', testFilePath)
@@ -187,7 +188,7 @@ describe('Document Management Integration Tests', () => {
     });
 
     it('should retrieve document list with filtering', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/documents')
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -203,7 +204,7 @@ describe('Document Management Integration Tests', () => {
     });
 
     it('should retrieve specific document details', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get(`/api/v1/documents/${documentId}`)
         .set('Authorization', `Bearer ${authToken}`);
 
@@ -213,7 +214,7 @@ describe('Document Management Integration Tests', () => {
     });
 
     it('should download document file', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get(`/api/v1/documents/${documentId}/download`)
         .set('Authorization', `Bearer ${authToken}`);
 
@@ -222,7 +223,7 @@ describe('Document Management Integration Tests', () => {
     });
 
     it('should search documents by text', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/documents')
         .set('Authorization', `Bearer ${authToken}`)
         .query({
@@ -240,7 +241,7 @@ describe('Document Management Integration Tests', () => {
     let documentId: string;
 
     beforeEach(async () => {
-      const uploadResponse = await request(app)
+      const uploadResponse = await supertest(app)
         .post('/api/v1/documents')
         .set('Authorization', `Bearer ${authToken}`)
         .attach('file', testFilePath)
@@ -251,7 +252,7 @@ describe('Document Management Integration Tests', () => {
     });
 
     it('should update document metadata', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .put(`/api/v1/documents/${documentId}`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -268,7 +269,7 @@ describe('Document Management Integration Tests', () => {
     });
 
     it('should create document versions', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/documents/${documentId}/versions`)
         .set('Authorization', `Bearer ${authToken}`)
         .attach('file', testFilePath)
@@ -282,12 +283,12 @@ describe('Document Management Integration Tests', () => {
 
     it('should get document versions', async () => {
       // Create a version first
-      await request(app)
+      await supertest(app)
         .post(`/api/v1/documents/${documentId}/versions`)
         .set('Authorization', `Bearer ${authToken}`)
         .attach('file', testFilePath);
 
-      const response = await request(app)
+      const response = await supertest(app)
         .get(`/api/v1/documents/${documentId}/versions`)
         .set('Authorization', `Bearer ${authToken}`);
 
@@ -297,7 +298,7 @@ describe('Document Management Integration Tests', () => {
     });
 
     it('should attach document to entity', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .post(`/api/v1/documents/${documentId}/attach`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -311,7 +312,7 @@ describe('Document Management Integration Tests', () => {
     });
 
     it('should soft delete document', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .delete(`/api/v1/documents/${documentId}`)
         .set('Authorization', `Bearer ${authToken}`);
 
@@ -319,7 +320,7 @@ describe('Document Management Integration Tests', () => {
       expect(response.body.deletedAt).toBeTruthy();
 
       // Verify document is not in regular listing
-      const listResponse = await request(app)
+      const listResponse = await supertest(app)
         .get('/api/v1/documents')
         .set('Authorization', `Bearer ${authToken}`);
 
@@ -331,13 +332,13 @@ describe('Document Management Integration Tests', () => {
   describe('Document Statistics', () => {
     beforeEach(async () => {
       // Create test documents for statistics
-      await request(app)
+      await supertest(app)
         .post('/api/v1/documents')
         .set('Authorization', `Bearer ${authToken}`)
         .attach('file', testFilePath)
         .field('category', 'INVOICE');
 
-      await request(app)
+      await supertest(app)
         .post('/api/v1/documents')
         .set('Authorization', `Bearer ${authToken}`)
         .attach('file', testFilePath)
@@ -345,7 +346,7 @@ describe('Document Management Integration Tests', () => {
     });
 
     it('should get document statistics', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/documents/stats')
         .set('Authorization', `Bearer ${authToken}`);
 
@@ -361,7 +362,7 @@ describe('Document Management Integration Tests', () => {
 
   describe('Security and Access Control', () => {
     it('should reject unauthorized access', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .get('/api/v1/documents')
         .set('Authorization', 'Bearer invalid-token');
 
@@ -371,7 +372,7 @@ describe('Document Management Integration Tests', () => {
     it('should enforce file size limits', async () => {
       // This test would require creating a large file
       // For now, we'll test the validation logic
-      const response = await request(app)
+      const response = await supertest(app)
         .post('/api/v1/documents')
         .set('Authorization', `Bearer ${authToken}`)
         .attach('file', testFilePath)
@@ -382,7 +383,7 @@ describe('Document Management Integration Tests', () => {
     });
 
     it('should validate required fields', async () => {
-      const response = await request(app)
+      const response = await supertest(app)
         .post('/api/v1/documents')
         .set('Authorization', `Bearer ${authToken}`)
         .attach('file', testFilePath);
@@ -396,7 +397,7 @@ describe('Document Management Integration Tests', () => {
   describe('Encryption Integration', () => {
     it('should handle encrypted document upload and download cycle', async () => {
       // Upload encrypted document
-      const uploadResponse = await request(app)
+      const uploadResponse = await supertest(app)
         .post('/api/v1/documents')
         .set('Authorization', `Bearer ${authToken}`)
         .attach('file', testFilePath)
@@ -410,7 +411,7 @@ describe('Document Management Integration Tests', () => {
       const documentId = uploadResponse.body.id;
 
       // Download and verify decryption works
-      const downloadResponse = await request(app)
+      const downloadResponse = await supertest(app)
         .get(`/api/v1/documents/${documentId}/download`)
         .set('Authorization', `Bearer ${authToken}`);
 

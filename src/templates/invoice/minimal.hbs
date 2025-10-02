@@ -115,6 +115,21 @@
             border-top: 1px solid #ddd;
         }
 
+        .terms-section {
+            clear: both;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .notes-section {
+            margin-top: 20px;
+        }
+
+        .section-header {
+            font-weight: bold;
+        }
+
         .footer {
             margin-top: 30px;
             font-size: 12px;
@@ -127,6 +142,46 @@
             margin: 15px 0;
             padding: 10px;
             border: 1px solid #ddd;
+        }
+
+        /* PDF Page Break Control */
+        @media print {
+            .items-table {
+                page-break-inside: auto;
+            }
+
+            .items-table thead {
+                display: table-header-group;
+            }
+
+            .items-table tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+
+            .totals-table {
+                page-break-inside: avoid;
+            }
+
+            .terms-section {
+                page-break-inside: avoid;
+            }
+
+            .notes-section {
+                page-break-inside: avoid;
+            }
+
+            .section-header {
+                page-break-after: avoid;
+            }
+
+            .payment-terms {
+                page-break-inside: avoid;
+            }
+
+            .footer {
+                page-break-inside: avoid;
+            }
         }
     </style>
 </head>
@@ -257,11 +312,17 @@
         <!-- Terms and Notes -->
         <div class="payment-terms">
             {{#if invoice.terms}}
-                <p><strong>Terms:</strong> {{invoice.terms}}</p>
+                <div class="terms-section">
+                    <p class="section-header">Terms:</p>
+                    <p>{{invoice.terms}}</p>
+                </div>
             {{/if}}
 
             {{#if invoice.notes}}
-                <p><strong>Notes:</strong> {{invoice.notes}}</p>
+                <div class="notes-section">
+                    <p class="section-header">Notes:</p>
+                    <p>{{invoice.notes}}</p>
+                </div>
             {{/if}}
 
             <p><strong>Status:</strong> {{invoice.status}}</p>

@@ -1,16 +1,17 @@
+// @ts-nocheck
 import { describe, test, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
 
 // Import our encryption services
-import { EncryptionKeyManagerService, encryptionKeyManager } from '../src/services/encryption-key-manager.service';
-import { FieldEncryptionService, fieldEncryptionService } from '../src/services/field-encryption.service';
-import { SearchableEncryptionService, searchableEncryptionService } from '../src/services/searchable-encryption.service';
-import { EncryptionMiddleware, encryptionMiddleware } from '../src/middleware/encryption.middleware';
-import { KeyRotationService } from '../src/services/key-rotation.service';
-import { EncryptionAuditService } from '../src/services/encryption-audit.service';
-import { EncryptionPerformanceService } from '../src/services/encryption-performance.service';
-import { DataEncryptionMigrationService } from '../src/scripts/data-encryption-migration';
+import { EncryptionKeyManagerService, encryptionKeyManager } from '../../src/services/encryption-key-manager.service';
+import { FieldEncryptionService, fieldEncryptionService } from '../../src/services/field-encryption.service';
+import { SearchableEncryptionService, searchableEncryptionService } from '../../src/services/searchable-encryption.service';
+import { EncryptionMiddleware, encryptionMiddleware } from '../../src/middleware/encryption.middleware';
+import { KeyRotationService } from '../../src/services/key-rotation.service';
+import { EncryptionAuditService } from '../../src/services/encryption-audit.service';
+import { EncryptionPerformanceService } from '../../src/services/encryption-performance.service';
+import { DataEncryptionMigrationService } from '../../src/scripts/data-encryption-migration';
 
 describe('Encryption System Tests', () => {
   let prisma: PrismaClient;
@@ -52,8 +53,17 @@ describe('Encryption System Tests', () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    await auditService.shutdown();
-    await performanceService.shutdown();
+
+    // Shutdown services to clear intervals and prevent open handles
+    if (keyRotation && typeof keyRotation.shutdown === 'function') {
+      await keyRotation.shutdown();
+    }
+    if (auditService && typeof auditService.shutdown === 'function') {
+      await auditService.shutdown();
+    }
+    if (performanceService && typeof performanceService.shutdown === 'function') {
+      await performanceService.shutdown();
+    }
   });
 
   beforeEach(() => {

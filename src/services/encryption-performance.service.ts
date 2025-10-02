@@ -72,7 +72,7 @@ export interface CacheStats {
  */
 export class EncryptionPerformanceService {
   private readonly memoryCache: NodeCache;
-  private readonly redisClient?: Redis;
+  private readonly redisClient?: RedisClientType;
   private readonly performanceMetrics: PerformanceMetrics[] = [];
   private readonly optimizationProfiles = new Map<string, OptimizationProfile>();
 
@@ -88,7 +88,7 @@ export class EncryptionPerformanceService {
   private readonly MAX_DECRYPTION_LATENCY = 50; // milliseconds
   private readonly MIN_THROUGHPUT = 1000000; // 1MB/s
 
-  constructor(redisClient?: Redis) {
+  constructor(redisClient?: RedisClientType) {
     this.redisClient = redisClient;
 
     this.memoryCache = new NodeCache({
@@ -403,7 +403,7 @@ export class EncryptionPerformanceService {
           const result = options.compression ? this.decompress(redisResult) : redisResult;
 
           // Populate memory cache for hybrid strategy
-          if (strategy === 'hybrid') {
+          if (strategy === 'hybrid' && options.ttl !== undefined) {
             this.memoryCache.set(key, redisResult, options.ttl);
           }
 
@@ -765,6 +765,6 @@ export class EncryptionPerformanceService {
 // Export singleton instance (will be initialized with Redis client if available)
 export let encryptionPerformanceService: EncryptionPerformanceService;
 
-export function initializeEncryptionPerformanceService(redisClient?: Redis): void {
+export function initializeEncryptionPerformanceService(redisClient?: RedisClientType): void {
   encryptionPerformanceService = new EncryptionPerformanceService(redisClient);
 }

@@ -155,7 +155,11 @@ export const AuditAction = {
   EXPORT: 'EXPORT',
   IMPORT: 'IMPORT',
   REFUND: 'REFUND',
-  AUTHORIZE: 'AUTHORIZE'
+  AUTHORIZE: 'AUTHORIZE',
+  ENCRYPT: 'ENCRYPT',
+  DECRYPT: 'DECRYPT',
+  DOMAIN_VERIFICATION_REQUESTED: 'DOMAIN_VERIFICATION_REQUESTED',
+  DOMAIN_VERIFIED: 'DOMAIN_VERIFIED'
 } as const;
 
 export type AuditAction = typeof AuditAction[keyof typeof AuditAction];

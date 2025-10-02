@@ -166,19 +166,14 @@ export class InvoicePDFService {
 
   /**
    * Get organization branding settings
+   * Uses upsert to handle concurrent requests safely
    */
   private async getOrganizationBranding(organizationId: string): Promise<OrganizationBranding> {
-    const branding = await prisma.organizationBranding.findUnique({
-      where: { organizationId }
-    });
-
-    if (branding) {
-      return branding;
-    }
-
-    // Create default branding if none exists
-    const defaultBranding = await prisma.organizationBranding.create({
-      data: {
+    // Use upsert to avoid race conditions with concurrent requests
+    const branding = await prisma.organizationBranding.upsert({
+      where: { organizationId },
+      update: {}, // Don't update anything if it exists
+      create: {
         organizationId,
         logoUrl: null,
         showLogo: true,
@@ -198,7 +193,7 @@ export class InvoicePDFService {
       }
     });
 
-    return defaultBranding;
+    return branding;
   }
 
   /**
@@ -211,6 +206,21 @@ export class InvoicePDFService {
     auditContext: { userId: string; ipAddress?: string; userAgent?: string }
   ): Promise<GeneratedPDF> {
     try {
+      // First, check if invoice exists at all (for proper 404 vs 403 errors)
+      const invoiceExists = await prisma.invoice.findFirst({
+        where: { id: invoiceId, deletedAt: null },
+        select: { id: true, organizationId: true }
+      });
+
+      if (!invoiceExists) {
+        throw new Error('Invoice not found');
+      }
+
+      // Then validate organization access
+      if (invoiceExists.organizationId !== organizationId) {
+        throw new Error('Access denied: Invoice belongs to a different organization');
+      }
+
       // Get invoice with all related data
       const invoice = await prisma.invoice.findFirst({
         where: { id: invoiceId, organizationId, deletedAt: null },
@@ -283,15 +293,35 @@ export class InvoicePDFService {
         const template = await this.getCompiledTemplate(templateName);
         const styles = await this.getStyles(styleName);
 
-        // Prepare context with tax handling
+        // Convert Decimal fields to numbers for template rendering
+        const toNumber = (val: any): number => {
+          if (val === null || val === undefined) return 0;
+          if (typeof val === 'number') return val;
+          if (typeof val === 'object' && 'toNumber' in val) return val.toNumber();
+          return parseFloat(String(val)) || 0;
+        };
+
+        // Prepare context with tax handling and Decimal conversion
         const context = {
           invoice: {
             ...invoice,
-            taxAmount: branding.taxesEnabled ? invoice.taxAmount : 0,
+            subtotal: toNumber(invoice.subtotal),
+            taxAmount: branding.taxesEnabled ? toNumber(invoice.taxAmount) : 0,
+            total: toNumber(invoice.total),
+            depositRequired: toNumber(invoice.depositRequired),
+            amountPaid: toNumber(invoice.amountPaid),
+            balance: toNumber(invoice.balance),
+            exchangeRate: toNumber(invoice.exchangeRate),
             items: invoice.items.map(item => ({
               ...item,
-              taxRate: branding.taxesEnabled ? item.taxRate : 0,
-              taxAmount: branding.taxesEnabled ? item.taxAmount : 0
+              quantity: toNumber(item.quantity),
+              unitPrice: toNumber(item.unitPrice),
+              discountPercent: toNumber(item.discountPercent),
+              taxRate: branding.taxesEnabled ? toNumber(item.taxRate) : 0,
+              subtotal: toNumber(item.subtotal),
+              discountAmount: toNumber(item.discountAmount),
+              taxAmount: branding.taxesEnabled ? toNumber(item.taxAmount) : 0,
+              total: toNumber(item.total)
             }))
           },
           organization: invoice.organization!,
@@ -376,26 +406,39 @@ export class InvoicePDFService {
     } catch (error) {
       logger.error('PDF generation failed:', error);
 
-      // Create failed PDF record
-      const failedPDF = await prisma.generatedPDF.create({
-        data: {
-          organizationId,
-          invoiceId,
-          templateId: options.templateId || null,
-          styleId: options.styleId || null,
-          filename: `failed-${Date.now()}.pdf`,
-          fileSize: 0,
-          filePath: '',
-          fileHash: '',
-          templateVersion: '1.0',
-          generatedBy: auditContext.userId,
-          generationParams: JSON.stringify(options),
-          status: 'FAILED',
-          errorMessage: error instanceof Error ? error.message : 'Unknown error'
-        }
-      });
+      // Only create failed PDF record if the error is not about missing invoice or access denial
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const shouldCreateFailedRecord = !errorMessage.includes('not found') &&
+                                       !errorMessage.includes('Access denied') &&
+                                       !errorMessage.includes('Invalid');
 
-      throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      if (shouldCreateFailedRecord) {
+        try {
+          await prisma.generatedPDF.create({
+            data: {
+              organizationId,
+              invoiceId,
+              templateId: options.templateId || null,
+              styleId: options.styleId || null,
+              filename: `failed-${Date.now()}.pdf`,
+              fileSize: 0,
+              filePath: '',
+              fileHash: '',
+              templateVersion: '1.0',
+              generatedBy: auditContext.userId,
+              generationParams: JSON.stringify(options),
+              status: 'FAILED',
+              errorMessage
+            }
+          });
+        } catch (dbError) {
+          // If we can't create the failed record, just log it and continue with the original error
+          logger.warn('Failed to create failed PDF record:', dbError);
+        }
+      }
+
+      // Re-throw the original error for proper error handling
+      throw error;
     }
   }
 

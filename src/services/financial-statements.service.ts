@@ -456,7 +456,7 @@ export class FinancialStatementsService {
   private async getAccountsWithBalances(
     organizationId: string,
     asOfDate: Date
-  ): Promise<Array<Account & { periodActivity: number }>> {
+  ): Promise<AccountWithBalance[]> {
     const accounts = await this.prisma.account.findMany({
       where: {
         organizationId,
@@ -473,6 +473,7 @@ export class FinancialStatementsService {
 
     return accounts.map(account => ({
       ...account,
+      balance: Number(account.balance),
       periodActivity: 0 // Would calculate period activity if needed
     }));
   }
@@ -481,7 +482,7 @@ export class FinancialStatementsService {
     organizationId: string,
     startDate: Date,
     endDate: Date
-  ): Promise<Array<Account & { periodActivity: number }>> {
+  ): Promise<AccountWithBalance[]> {
     const accounts = await this.prisma.account.findMany({
       where: {
         organizationId,
@@ -501,6 +502,7 @@ export class FinancialStatementsService {
 
     return accounts.map(account => ({
       ...account,
+      balance: Number(account.balance),
       periodActivity: account.transactions.reduce((sum, txn) => {
         const amount = Number(txn.amount);
         return txn.type === 'DEBIT' ? sum + amount : sum - amount;

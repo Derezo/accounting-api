@@ -660,7 +660,7 @@ describe('ETransferService', () => {
       const result = await etransferService.getETransfer('ET-123456789', organizationId);
 
       expect(result).toBeTruthy();
-      const metadata = JSON.parse(result.metadata);
+      const metadata = JSON.parse((result as any).metadata);
       expect(metadata.etransfer.securityAnswer).toBe('[ENCRYPTED]');
     });
 
@@ -759,7 +759,7 @@ describe('ETransferService', () => {
           if (args.length === 0) {
             super(fixedNow);
           } else {
-            super(...args);
+            super(...(args as [number]));
           }
         }
       } as any;

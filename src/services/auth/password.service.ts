@@ -7,6 +7,9 @@ import {
   BusinessRuleError,
   ValidationError
 } from '../../utils/errors';
+import { EmailService } from '../email.service';
+
+const emailService = new EmailService();
 
 export interface PasswordResetRequest {
   email: string;
@@ -260,7 +263,9 @@ export class PasswordService {
       select: {
         id: true,
         email: true,
-        isActive: true
+        isActive: true,
+        firstName: true,
+        lastName: true
       }
     });
 
@@ -298,9 +303,108 @@ export class PasswordService {
       ipAddress: data.ipAddress
     });
 
-    // In a real implementation, you would send this token via email
-    // For now, we return it (this should be removed in production)
-    return resetToken;
+    // SECURITY FIX: Send reset token via email only (never return to API response)
+    try {
+      await this.sendPasswordResetEmail(user.email, resetToken, user.firstName);
+      logger.info('Password reset email sent', {
+        userId: user.id,
+        email: user.email
+      });
+    } catch (error) {
+      logger.error('Failed to send password reset email', {
+        userId: user.id,
+        email: user.email,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      // Still return success message to avoid revealing whether email exists
+    }
+
+    return successMessage;
+  }
+
+  /**
+   * Send password reset email with token
+   */
+  private async sendPasswordResetEmail(
+    email: string,
+    token: string,
+    firstName?: string | null
+  ): Promise<void> {
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${token}`;
+    const expiryHours = this.RESET_TOKEN_EXPIRY_HOURS;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #007bff; color: white; padding: 20px; text-align: center; }
+            .content { background-color: #f9f9f9; padding: 30px; border-radius: 5px; margin: 20px 0; }
+            .button { display: inline-block; padding: 12px 30px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; font-size: 12px; color: #666; margin-top: 30px; }
+            .warning { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Password Reset Request</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${firstName || 'there'},</p>
+              <p>We received a request to reset your password for your Lifestream Dynamics account.</p>
+              <p>Click the button below to reset your password:</p>
+              <p style="text-align: center;">
+                <a href="${resetUrl}" class="button">Reset Password</a>
+              </p>
+              <p>Or copy and paste this link into your browser:</p>
+              <p style="word-break: break-all; background-color: #fff; padding: 10px; border: 1px solid #ddd;">
+                ${resetUrl}
+              </p>
+              <div class="warning">
+                <strong>⚠️ Security Notice:</strong>
+                <ul>
+                  <li>This link will expire in ${expiryHours} hour${expiryHours > 1 ? 's' : ''}</li>
+                  <li>If you didn't request this reset, please ignore this email</li>
+                  <li>Never share this link with anyone</li>
+                </ul>
+              </div>
+            </div>
+            <div class="footer">
+              <p>© ${new Date().getFullYear()} Lifestream Dynamics. All rights reserved.</p>
+              <p>This is an automated email. Please do not reply to this message.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const text = `
+Password Reset Request
+
+Hi ${firstName || 'there'},
+
+We received a request to reset your password for your Lifestream Dynamics account.
+
+Reset your password by visiting this link:
+${resetUrl}
+
+Security Notice:
+- This link will expire in ${expiryHours} hour${expiryHours > 1 ? 's' : ''}
+- If you didn't request this reset, please ignore this email
+- Never share this link with anyone
+
+© ${new Date().getFullYear()} Lifestream Dynamics. All rights reserved.
+    `.trim();
+
+    await emailService.sendEmail(
+      email,
+      'Reset Your Password - Lifestream Dynamics',
+      html,
+      text
+    );
   }
 
   /**

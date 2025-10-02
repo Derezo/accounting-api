@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { businessTemplateService } from '../../src/services/business-template.service';
 

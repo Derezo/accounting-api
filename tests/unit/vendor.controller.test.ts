@@ -26,6 +26,29 @@ import { AuthenticationError } from '../../src/utils/errors';
 
 const mockVendorService = vendorService as jest.Mocked<typeof vendorService>;
 
+// Helper to create a mock vendor with proper structure
+const createMockVendor = (overrides: any = {}): any => ({
+  id: 'vendor-123',
+  organizationId: 'org-123',
+  businessId: 'business-123',
+  vendorNumber: 'VEN-001',
+  accountNumber: null,
+  paymentTerms: 'Net 30',
+  taxId: null,
+  taxNumber: null,
+  notes: null,
+  isActive: true,
+  bankAccount: null,
+  preferredCurrency: 'CAD',
+  preferredPaymentMethod: 'BANK_TRANSFER',
+  creditLimit: 0,
+  currentBalance: 0,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  deletedAt: null,
+  ...overrides,
+});
+
 describe('VendorController', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
@@ -36,7 +59,7 @@ describe('VendorController', () => {
       params: {},
       query: {},
       body: {},
-      user: { id: 'user-123' },
+      user: { id: 'user-123', organizationId: 'org-123', role: 'ADMIN', sessionId: 'session-123' },
     };
     mockResponse = {
       status: jest.fn().mockReturnThis(),
@@ -60,7 +83,7 @@ describe('VendorController', () => {
       mockRequest.params = { organizationId: 'org-123' };
       mockRequest.body = vendorData;
 
-      const createdVendor = { id: 'vendor-123', ...vendorData };
+      const createdVendor = createMockVendor();
       mockVendorService.createVendor.mockResolvedValue(createdVendor);
 
       await createVendor(mockRequest as Request, mockResponse as Response, mockNext);
@@ -105,12 +128,7 @@ describe('VendorController', () => {
     it('should get a vendor by ID', async () => {
       mockRequest.params = { organizationId: 'org-123', vendorId: 'vendor-123' };
 
-      const vendor = {
-        id: 'vendor-123',
-        name: 'Office Supplies Inc',
-        vendorType: 'SUPPLIER',
-        status: 'ACTIVE',
-      };
+      const vendor = createMockVendor();
       mockVendorService.getVendorById.mockResolvedValue(vendor);
 
       await getVendorById(mockRequest as Request, mockResponse as Response, mockNext);
@@ -146,8 +164,8 @@ describe('VendorController', () => {
 
       const result = {
         vendors: [
-          { id: 'vendor-1', name: 'Vendor 1' },
-          { id: 'vendor-2', name: 'Vendor 2' },
+          createMockVendor({ id: 'vendor-1', vendorNumber: 'VEN-001' }),
+          createMockVendor({ id: 'vendor-2', vendorNumber: 'VEN-002' }),
         ],
         hasMore: true,
         nextCursor: 'cursor-456',
@@ -184,7 +202,7 @@ describe('VendorController', () => {
         currency: 'CAD',
       };
 
-      const result = { vendors: [], hasMore: false, nextCursor: null };
+      const result = { vendors: [], hasMore: false, nextCursor: undefined };
       mockVendorService.getVendors.mockResolvedValue(result);
 
       await getVendors(mockRequest as Request, mockResponse as Response, mockNext);
@@ -205,7 +223,7 @@ describe('VendorController', () => {
       mockRequest.params = { organizationId: 'org-123', vendorId: 'vendor-123' };
       mockRequest.body = { status: 'INACTIVE', email: 'newemail@vendor.com' };
 
-      const updatedVendor = { id: 'vendor-123', status: 'INACTIVE' };
+      const updatedVendor = createMockVendor({ isActive: false });
       mockVendorService.updateVendor.mockResolvedValue(updatedVendor);
 
       await updateVendor(mockRequest as Request, mockResponse as Response, mockNext);
@@ -266,10 +284,11 @@ describe('VendorController', () => {
       mockRequest.params = { organizationId: 'org-123', vendorId: 'vendor-123' };
 
       const stats = {
+        totalPurchaseOrders: 10,
         totalBills: 25,
         totalSpent: 50000,
-        unpaidAmount: 5000,
         averagePaymentDays: 28,
+        outstandingBalance: 5000,
       };
       mockVendorService.getVendorStats.mockResolvedValue(stats);
 

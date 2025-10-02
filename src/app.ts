@@ -43,6 +43,7 @@ import {
   validateOrganizationAccess,
   getOrganizationId,
 } from "./middleware/organization.middleware";
+import { authenticate } from "./middleware/auth.middleware";
 import {
   errorHandler,
   errorConverter,
@@ -187,7 +188,7 @@ app.get("/health/db", async (_req: Request, res: Response) => {
 
 // Setup API documentation - extensive JSDoc annotations are complete
 // Live documentation available via npm scripts (npm run docs:serve)
-// setupSwagger(app);
+setupSwagger(app);
 
 // Note: Use npm scripts for documentation generation:
 // - npm run docs:serve - Live documentation server on port 8080
@@ -233,25 +234,31 @@ app.use(
   config.NODE_ENV === "development"
     ? debugMiddleware("5-CUSTOMER-ROUTE")
     : (req, res, next) => next(),
+  authenticate,
   validateOrganizationAccess,
   customerRoutes
 );
 app.use(
   `/api/${config.API_VERSION}/organizations/:organizationId/quotes`,
+  authenticate,
   validateOrganizationAccess,
   quoteRoutes
 );
 app.use(
   `/api/${config.API_VERSION}/organizations/:organizationId/appointments`,
+  authenticate,
   validateOrganizationAccess,
   appointmentRoutes
 );
 // Invoice routes (includes PDF routes)
+// IMPORTANT: PDF routes MUST be registered BEFORE invoice routes
+// because invoice routes have /:id which would catch /templates and /styles
 const invoiceRouter = Router();
-invoiceRouter.use(invoiceRoutes);
-invoiceRouter.use(invoicePdfRoutes);
+invoiceRouter.use(invoicePdfRoutes);  // Register PDF routes first
+invoiceRouter.use(invoiceRoutes);      // Register invoice routes second
 app.use(
   `/api/${config.API_VERSION}/organizations/:organizationId/invoices`,
+  authenticate,
   validateOrganizationAccess,
   invoiceRouter
 );
@@ -264,6 +271,7 @@ app.use(
   config.NODE_ENV === "development"
     ? debugOrganizationMiddleware
     : (req, res, next) => next(),
+  authenticate,
   validateOrganizationAccess,
   config.NODE_ENV === "development"
     ? debugMiddleware("6-AFTER-ORG-VALIDATION")
@@ -272,31 +280,37 @@ app.use(
 );
 app.use(
   `/api/${config.API_VERSION}/organizations/:organizationId/projects`,
+  authenticate,
   validateOrganizationAccess,
   projectRoutes
 );
 app.use(
   `/api/${config.API_VERSION}/organizations/:organizationId/etransfers`,
+  authenticate,
   validateOrganizationAccess,
   etransferRoutes
 );
 app.use(
   `/api/${config.API_VERSION}/organizations/:organizationId/manual-payments`,
+  authenticate,
   validateOrganizationAccess,
   manualPaymentRoutes
 );
 app.use(
   `/api/${config.API_VERSION}/organizations/:organizationId/payment-analytics`,
+  authenticate,
   validateOrganizationAccess,
   paymentAnalyticsRoutes
 );
 app.use(
   `/api/${config.API_VERSION}/organizations/:organizationId/users`,
+  authenticate,
   validateOrganizationAccess,
   userRoutes
 );
 app.use(
   `/api/${config.API_VERSION}/organizations/:organizationId/audit`,
+  authenticate,
   validateOrganizationAccess,
   auditRoutes
 );

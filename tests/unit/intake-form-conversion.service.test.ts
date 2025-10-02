@@ -81,6 +81,7 @@ describe('IntakeFormConversionService', () => {
     await prisma.intakeFormData.deleteMany({});
     await prisma.intakeFormSession.deleteMany({});
     await prisma.intakeFormTemplate.deleteMany({});
+    await prisma.auditLog.deleteMany({});
     await prisma.user.deleteMany({});
     await prisma.organization.deleteMany({});
   });

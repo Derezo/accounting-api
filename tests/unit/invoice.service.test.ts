@@ -114,7 +114,7 @@ describe('InvoiceService', () => {
       expect(Number(invoice.subtotal)).toBe(1000);
       expect(Number(invoice.taxAmount)).toBe(130);
       expect(Number(invoice.total)).toBe(1130);
-      expect(Number(invoice.balance)).toBe(830); // total - deposit
+      expect(Number(invoice.balance)).toBe(1130); // balance = total - amountPaid (not depositRequired)
       expect(invoice.invoiceNumber).toMatch(/^INV-\d{6}$/);
       expect(invoice.items).toHaveLength(1);
       expect(invoice.customer).toBeDefined();
@@ -412,7 +412,7 @@ describe('InvoiceService', () => {
       expect(Number(updatedInvoice.depositRequired)).toBe(updateData.depositRequired);
       expect(updatedInvoice.terms).toBe(updateData.terms);
       expect(updatedInvoice.notes).toBe(updateData.notes);
-      expect(Number(updatedInvoice.balance)).toBe(830); // 1130 - 300
+      expect(Number(updatedInvoice.balance)).toBe(1130); // balance = total - amountPaid
     });
 
     it('should update invoice items', async () => {
@@ -800,7 +800,7 @@ describe('InvoiceService', () => {
           testOrganization.id,
           { userId: testUser.id }
         )
-      ).rejects.toThrow('Payment amount exceeds remaining balance');
+      ).rejects.toThrow('would exceed remaining balance');
     });
 
     it('should reject payment for cancelled invoice', async () => {

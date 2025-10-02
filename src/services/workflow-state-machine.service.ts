@@ -84,7 +84,7 @@ export class WorkflowStateMachineService {
     fromStatus: string,
     toStatus: string
   ): { valid: boolean; allowedTransitions: string[] } {
-    const entityTransitions = this.transitions[entityType];
+    const entityTransitions = this.transitions[entityType] as Record<string, string[]>;
 
     if (!entityTransitions || !entityTransitions[fromStatus]) {
       return {
@@ -93,7 +93,7 @@ export class WorkflowStateMachineService {
       };
     }
 
-    const allowedTransitions = entityTransitions[fromStatus];
+    const allowedTransitions = entityTransitions[fromStatus] as string[];
 
     return {
       valid: allowedTransitions.includes(toStatus),
@@ -109,13 +109,13 @@ export class WorkflowStateMachineService {
     currentStatus: string,
     userRole: string
   ): string[] {
-    const entityTransitions = this.transitions[entityType];
+    const entityTransitions = this.transitions[entityType] as Record<string, string[]>;
 
     if (!entityTransitions || !entityTransitions[currentStatus]) {
       return [];
     }
 
-    let availableTransitions = entityTransitions[currentStatus];
+    let availableTransitions = entityTransitions[currentStatus] as string[];
 
     // Filter based on user role permissions
     availableTransitions = this.filterTransitionsByRole(
@@ -205,19 +205,23 @@ export class WorkflowStateMachineService {
         await this.updateEntityStatus(tx, entityType, entityId, toStatus, userId);
 
         // Create audit log
-        await this.auditService.logAction(
-          userId,
-          organizationId,
-          'UPDATE',
-          entityType.toUpperCase(),
+        await this.auditService.logAction({
+          action: 'UPDATE',
+          entityType: entityType.toUpperCase(),
           entityId,
-          {
+          changes: {
             action: 'STATE_TRANSITION',
             fromStatus,
             toStatus,
             reason: reason || 'Manual state transition'
+          },
+          context: {
+            organizationId,
+            userId,
+            ipAddress: '0.0.0.0',
+            userAgent: 'WorkflowStateMachine'
           }
-        );
+        });
 
         // Execute post-transition actions
         await this.executePostTransitionActions(
@@ -275,10 +279,10 @@ export class WorkflowStateMachineService {
           select: { status: true }
         });
       case 'appointment':
-        return await prisma.appointment.findUnique({
-          where: { id: entityId },
-          select: { status: true }
+        const appointment = await prisma.appointment.findUnique({
+          where: { id: entityId }
         });
+        return appointment ? { status: appointment.confirmed ? "CONFIRMED" : "PENDING" } : null;
       default:
         return null;
     }
@@ -390,9 +394,9 @@ export class WorkflowStateMachineService {
       if (payment && payment.invoice) {
         // Calculate total paid (exclude current payment to avoid double-counting)
         const totalPaid = payment.invoice.payments
-          .filter(p => p.id !== payment.id)
+          .filter((p: any) => p.id !== payment.id)
           .reduce(
-            (sum, p) => sum + Number(p.amount),
+            (sum: number, p: any) => sum + Number(p.amount),
             0
           ) + Number(payment.amount);
 

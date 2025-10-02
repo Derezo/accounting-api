@@ -103,8 +103,7 @@ export class SessionService {
         where: { id: sessionId },
         data: {
           token: accessToken,
-          refreshToken: refreshToken,
-          updatedAt: new Date()
+          refreshToken: refreshToken
         }
       });
 
@@ -290,7 +289,6 @@ export class SessionService {
       await prisma.session.update({
         where: { id: sessionId },
         data: {
-          lastAccessedAt: new Date(),
           ...(ipAddress && { ipAddress })
         }
       });

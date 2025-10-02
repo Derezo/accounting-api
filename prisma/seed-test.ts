@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
+import { seedInvoiceTemplates } from './seeds/master-organization.seed';
 
 // Force test database
 const DATABASE_URL = 'file:./test.db';
@@ -20,7 +21,7 @@ const generateEncryptionKey = (): string => {
   return randomUUID().replace(/-/g, '');
 };
 
-async function main() {
+async function main(): Promise<void> {
   console.log('🌱 Seeding test database at', DATABASE_URL);
 
   // Clear all data
@@ -35,23 +36,12 @@ async function main() {
   await prisma.appointment.deleteMany().catch(() => {});
   await prisma.project.deleteMany().catch(() => {});
   await prisma.customer.deleteMany().catch(() => {});
+  await prisma.person.deleteMany().catch(() => {});
+  await prisma.business.deleteMany().catch(() => {});
   await prisma.account.deleteMany().catch(() => {});
   await prisma.apiKey.deleteMany().catch(() => {});
   await prisma.user.deleteMany().catch(() => {});
   await prisma.organization.deleteMany().catch(() => {});
-  await prisma.country.deleteMany().catch(() => {});
-
-  // Create country
-  console.log('🌍 Creating reference data...');
-  const canada = await prisma.country.create({
-    data: {
-      code: 'CA',
-      code3: 'CAN',
-      name: 'Canada',
-      phoneCode: '+1',
-      currency: 'CAD'
-    }
-  });
 
   // Create test organizations
   console.log('🏢 Creating organizations...');
@@ -61,11 +51,10 @@ async function main() {
       name: 'Test Accounting Co',
       email: 'test@accounting.com',
       phone: '555-0001',
-      taxId: 'TAX001',
+      taxNumber: 'TAX001',
       website: 'https://test-accounting.com',
-      countryCode: 'CA',
       encryptionKey: generateEncryptionKey(),
-      status: 'ACTIVE'
+      isActive: true
     }
   });
 
@@ -74,11 +63,10 @@ async function main() {
       name: 'Second Test Org',
       email: 'test2@org.com',
       phone: '555-0002',
-      taxId: 'TAX002',
+      taxNumber: 'TAX002',
       website: 'https://test-org2.com',
-      countryCode: 'CA',
       encryptionKey: generateEncryptionKey(),
-      status: 'ACTIVE'
+      isActive: true
     }
   });
 
@@ -94,7 +82,7 @@ async function main() {
       role: 'SUPER_ADMIN',
       organizationId: org1.id,
       emailVerified: true,
-      status: 'ACTIVE'
+      isActive: true
     }
   });
 
@@ -107,7 +95,7 @@ async function main() {
       role: 'ADMIN',
       organizationId: org1.id,
       emailVerified: true,
-      status: 'ACTIVE'
+      isActive: true
     }
   });
 
@@ -120,7 +108,7 @@ async function main() {
       role: 'MANAGER',
       organizationId: org1.id,
       emailVerified: true,
-      status: 'ACTIVE'
+      isActive: true
     }
   });
 
@@ -133,7 +121,7 @@ async function main() {
       role: 'ACCOUNTANT',
       organizationId: org1.id,
       emailVerified: true,
-      status: 'ACTIVE'
+      isActive: true
     }
   });
 
@@ -146,7 +134,7 @@ async function main() {
       role: 'EMPLOYEE',
       organizationId: org1.id,
       emailVerified: true,
-      status: 'ACTIVE'
+      isActive: true
     }
   });
 
@@ -159,7 +147,7 @@ async function main() {
       role: 'VIEWER',
       organizationId: org1.id,
       emailVerified: true,
-      status: 'ACTIVE'
+      isActive: true
     }
   });
 
@@ -173,7 +161,7 @@ async function main() {
       role: 'ADMIN',
       organizationId: org2.id,
       emailVerified: true,
-      status: 'ACTIVE'
+      isActive: true
     }
   });
 
@@ -186,10 +174,8 @@ async function main() {
       name: 'Cash',
       description: 'Cash on hand',
       type: 'ASSET',
-      subType: 'CURRENT_ASSET',
       organizationId: org1.id,
       balance: 50000,
-      currency: 'CAD',
       isActive: true
     }
   });
@@ -200,10 +186,8 @@ async function main() {
       name: 'Accounts Receivable',
       description: 'Money owed by customers',
       type: 'ASSET',
-      subType: 'CURRENT_ASSET',
       organizationId: org1.id,
       balance: 25000,
-      currency: 'CAD',
       isActive: true
     }
   });
@@ -214,10 +198,8 @@ async function main() {
       name: 'Service Revenue',
       description: 'Revenue from services',
       type: 'REVENUE',
-      subType: 'OPERATING_REVENUE',
       organizationId: org1.id,
       balance: 0,
-      currency: 'CAD',
       isActive: true
     }
   });
@@ -228,11 +210,74 @@ async function main() {
       name: 'Operating Expenses',
       description: 'General operating expenses',
       type: 'EXPENSE',
-      subType: 'OPERATING_EXPENSE',
       organizationId: org1.id,
       balance: 0,
-      currency: 'CAD',
       isActive: true
+    }
+  });
+
+  // Create persons and businesses
+  console.log('👨‍💼 Creating persons and businesses...');
+
+  const person1 = await prisma.person.create({
+    data: {
+      organizationId: org1.id,
+      firstName: 'John',
+      lastName: 'Customer',
+      email: 'customer1@test.com',
+      phone: '555-1001'
+    }
+  });
+
+  const business1 = await prisma.business.create({
+    data: {
+      organizationId: org1.id,
+      legalName: 'Customer Corp',
+      tradeName: 'Customer Corp',
+      businessType: 'CORPORATION',
+      email: 'info@customercorp.com',
+      phone: '555-1001'
+    }
+  });
+
+  const person2 = await prisma.person.create({
+    data: {
+      organizationId: org1.id,
+      firstName: 'Jane',
+      lastName: 'Smith',
+      email: 'customer2@test.com',
+      phone: '555-1002'
+    }
+  });
+
+  const person3 = await prisma.person.create({
+    data: {
+      organizationId: org1.id,
+      firstName: 'Bob',
+      lastName: 'Builder',
+      email: 'customer3@test.com',
+      phone: '555-1003'
+    }
+  });
+
+  const business3 = await prisma.business.create({
+    data: {
+      organizationId: org1.id,
+      legalName: 'Build It Inc',
+      tradeName: 'Build It Inc',
+      businessType: 'CORPORATION',
+      email: 'info@buildit.com',
+      phone: '555-1003'
+    }
+  });
+
+  const person4 = await prisma.person.create({
+    data: {
+      organizationId: org2.id,
+      firstName: 'Org2',
+      lastName: 'Customer',
+      email: 'customer@org2.com',
+      phone: '555-2001'
     }
   });
 
@@ -241,14 +286,11 @@ async function main() {
 
   const customer1 = await prisma.customer.create({
     data: {
-      email: 'customer1@test.com',
-      firstName: 'John',
-      lastName: 'Customer',
-      phone: '555-1001',
-      businessName: 'Customer Corp',
       organizationId: org1.id,
+      customerNumber: 'CUST-0001',
+      businessId: business1.id,
+      tier: 'BUSINESS',
       status: 'ACTIVE',
-      customerType: 'BUSINESS',
       creditLimit: 50000,
       createdBy: admin.id
     }
@@ -256,13 +298,11 @@ async function main() {
 
   const customer2 = await prisma.customer.create({
     data: {
-      email: 'customer2@test.com',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      phone: '555-1002',
       organizationId: org1.id,
+      customerNumber: 'CUST-0002',
+      personId: person2.id,
+      tier: 'PERSONAL',
       status: 'ACTIVE',
-      customerType: 'INDIVIDUAL',
       creditLimit: 10000,
       createdBy: admin.id
     }
@@ -270,14 +310,11 @@ async function main() {
 
   const customer3 = await prisma.customer.create({
     data: {
-      email: 'customer3@test.com',
-      firstName: 'Bob',
-      lastName: 'Builder',
-      phone: '555-1003',
-      businessName: 'Build It Inc',
       organizationId: org1.id,
+      customerNumber: 'CUST-0003',
+      businessId: business3.id,
+      tier: 'BUSINESS',
       status: 'PROSPECT',
-      customerType: 'BUSINESS',
       creditLimit: 25000,
       createdBy: manager.id
     }
@@ -286,13 +323,11 @@ async function main() {
   // Create customers for org2 (for multi-tenant testing)
   const org2Customer = await prisma.customer.create({
     data: {
-      email: 'customer@org2.com',
-      firstName: 'Org2',
-      lastName: 'Customer',
-      phone: '555-2001',
       organizationId: org2.id,
+      customerNumber: 'CUST-0001',
+      personId: person4.id,
+      tier: 'PERSONAL',
       status: 'ACTIVE',
-      customerType: 'INDIVIDUAL',
       creditLimit: 5000,
       createdBy: org2Admin.id
     }
@@ -308,11 +343,10 @@ async function main() {
       organizationId: org1.id,
       createdById: admin.id,
       status: 'SENT',
-      issueDate: new Date('2025-01-15'),
-      expiryDate: new Date('2025-02-15'),
+      validUntil: new Date('2025-02-15'),
       subtotal: 10000,
       taxAmount: 1300,
-      totalAmount: 11300,
+      total: 11300,
       currency: 'CAD',
       notes: 'Website development project'
     }
@@ -325,11 +359,10 @@ async function main() {
       organizationId: org1.id,
       createdById: manager.id,
       status: 'ACCEPTED',
-      issueDate: new Date('2025-01-20'),
-      expiryDate: new Date('2025-02-20'),
+      validUntil: new Date('2025-02-20'),
       subtotal: 5000,
       taxAmount: 650,
-      totalAmount: 5650,
+      total: 5650,
       currency: 'CAD',
       notes: 'Consulting services'
     }
@@ -342,11 +375,10 @@ async function main() {
       organizationId: org1.id,
       createdById: manager.id,
       status: 'DRAFT',
-      issueDate: new Date('2025-01-25'),
-      expiryDate: new Date('2025-02-25'),
+      validUntil: new Date('2025-02-25'),
       subtotal: 15000,
       taxAmount: 1950,
-      totalAmount: 16950,
+      total: 16950,
       currency: 'CAD',
       notes: 'Construction management software'
     }
@@ -357,15 +389,16 @@ async function main() {
 
   const project1 = await prisma.project.create({
     data: {
+      projectNumber: 'PRJ-2025-0001',
       name: 'Website Development',
       description: 'Build corporate website',
       customerId: customer1.id,
       organizationId: org1.id,
       status: 'IN_PROGRESS',
       startDate: new Date('2025-02-01'),
-      estimatedEndDate: new Date('2025-04-30'),
-      budget: 10000,
-      currency: 'CAD',
+      endDate: new Date('2025-04-30'),
+      estimatedHours: 100,
+      hourlyRate: 100,
       depositPaid: true,
       depositPaidAt: new Date('2025-01-20'),
       createdBy: admin.id
@@ -374,15 +407,16 @@ async function main() {
 
   const project2 = await prisma.project.create({
     data: {
+      projectNumber: 'PRJ-2025-0002',
       name: 'Consulting Services',
       description: 'Business consulting',
       customerId: customer2.id,
       organizationId: org1.id,
       status: 'PLANNING',
       startDate: new Date('2025-02-15'),
-      estimatedEndDate: new Date('2025-03-15'),
-      budget: 5000,
-      currency: 'CAD',
+      endDate: new Date('2025-03-15'),
+      estimatedHours: 50,
+      hourlyRate: 100,
       depositPaid: false,
       createdBy: manager.id
     }
@@ -396,19 +430,25 @@ async function main() {
       invoiceNumber: 'INV-2025-0001',
       customerId: customer1.id,
       organizationId: org1.id,
-      projectId: project1.id,
       status: 'PARTIALLY_PAID',
       issueDate: new Date('2025-01-20'),
       dueDate: new Date('2025-02-20'),
       subtotal: 10000,
       taxAmount: 1300,
-      totalAmount: 11300,
+      total: 11300,
+      depositRequired: 3000,
       amountPaid: 3000,
-      amountDue: 8300,
+      balance: 8300,
       currency: 'CAD',
       notes: 'Website development - Deposit invoice',
       createdBy: admin.id
     }
+  });
+
+  // Link project1 to invoice1
+  await prisma.project.update({
+    where: { id: project1.id },
+    data: { invoiceId: invoice1.id }
   });
 
   const invoice2 = await prisma.invoice.create({
@@ -416,19 +456,25 @@ async function main() {
       invoiceNumber: 'INV-2025-0002',
       customerId: customer2.id,
       organizationId: org1.id,
-      projectId: project2.id,
       status: 'SENT',
       issueDate: new Date('2025-02-01'),
       dueDate: new Date('2025-03-01'),
       subtotal: 5000,
       taxAmount: 650,
-      totalAmount: 5650,
+      total: 5650,
+      depositRequired: 1500,
       amountPaid: 0,
-      amountDue: 5650,
+      balance: 5650,
       currency: 'CAD',
       notes: 'Consulting services',
       createdBy: manager.id
     }
+  });
+
+  // Link project2 to invoice2
+  await prisma.project.update({
+    where: { id: project2.id },
+    data: { invoiceId: invoice2.id }
   });
 
   const invoice3 = await prisma.invoice.create({
@@ -441,9 +487,10 @@ async function main() {
       dueDate: new Date('2025-02-10'),
       subtotal: 2000,
       taxAmount: 260,
-      totalAmount: 2260,
+      total: 2260,
+      depositRequired: 500,
       amountPaid: 2260,
-      amountDue: 0,
+      balance: 0,
       currency: 'CAD',
       notes: 'Previous project - PAID',
       createdBy: admin.id
@@ -464,8 +511,8 @@ async function main() {
       paymentMethod: 'CREDIT_CARD',
       status: 'COMPLETED',
       paymentDate: new Date('2025-01-20'),
-      reference: 'Stripe-ch_123abc',
-      notes: 'Deposit payment',
+      referenceNumber: 'Stripe-ch_123abc',
+      adminNotes: 'Deposit payment',
       createdBy: admin.id
     }
   });
@@ -481,8 +528,8 @@ async function main() {
       paymentMethod: 'BANK_TRANSFER',
       status: 'COMPLETED',
       paymentDate: new Date('2025-01-15'),
-      reference: 'TRF-98765',
-      notes: 'Full payment',
+      referenceNumber: 'TRF-98765',
+      adminNotes: 'Full payment',
       createdBy: admin.id
     }
   });
@@ -498,7 +545,7 @@ async function main() {
       paymentMethod: 'CASH',
       status: 'PENDING',
       paymentDate: new Date('2025-02-01'),
-      notes: 'Partial payment - pending confirmation',
+      adminNotes: 'Partial payment - pending confirmation',
       createdBy: manager.id
     }
   });
@@ -512,10 +559,11 @@ async function main() {
       description: 'Initial project planning session',
       customerId: customer1.id,
       organizationId: org1.id,
+      projectId: project1.id,
       startTime: new Date('2025-02-01T10:00:00Z'),
       endTime: new Date('2025-02-01T11:00:00Z'),
-      status: 'SCHEDULED',
-      location: 'Office - Room 101',
+      duration: 60,
+      confirmed: true,
       createdBy: admin.id
     }
   });
@@ -526,18 +574,26 @@ async function main() {
       description: 'Review business requirements',
       customerId: customer2.id,
       organizationId: org1.id,
+      projectId: project2.id,
       startTime: new Date('2025-02-15T14:00:00Z'),
       endTime: new Date('2025-02-15T15:30:00Z'),
-      status: 'SCHEDULED',
-      location: 'Zoom Meeting',
+      duration: 90,
+      confirmed: true,
       createdBy: manager.id
     }
   });
+
+  // Seed invoice templates for both organizations
+  console.log('📄 Seeding invoice templates...');
+  await seedInvoiceTemplates(org1.id);
+  await seedInvoiceTemplates(org2.id);
 
   console.log('✅ Test database seeding complete!');
   console.log('📊 Summary:');
   console.log(`  - Organizations: 2`);
   console.log(`  - Users: 7`);
+  console.log(`  - Persons: 4`);
+  console.log(`  - Businesses: 2`);
   console.log(`  - Customers: 4`);
   console.log(`  - Accounts: 4`);
   console.log(`  - Quotes: 3`);
@@ -545,6 +601,8 @@ async function main() {
   console.log(`  - Invoices: 3`);
   console.log(`  - Payments: 3`);
   console.log(`  - Appointments: 2`);
+  console.log(`  - Invoice Templates: 6 (3 per org)`);
+  console.log(`  - Invoice Styles: 6 (3 per org)`);
 }
 
 main()

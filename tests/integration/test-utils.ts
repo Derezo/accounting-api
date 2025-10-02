@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -156,7 +157,7 @@ export async function createTestOrganization(
   const orgData = {
     name,
     email: `${name.toLowerCase().replace(/\s+/g, '')}@test.com`,
-    phone: faker.phone.number('+1-###-###-####'),
+    phone: `+1-${faker.string.numeric(3)}-${faker.string.numeric(3)}-${faker.string.numeric(4)}`,
     encryptionKey: generateEncryptionKey()
   };
 

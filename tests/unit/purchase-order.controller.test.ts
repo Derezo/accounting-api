@@ -44,7 +44,7 @@ describe('PurchaseOrderController', () => {
       params: {},
       query: {},
       body: {},
-      user: { id: 'user-123' },
+      user: { id: "user-123", organizationId: "org-123", role: "ADMIN", sessionId: "session-123" },
     };
     mockResponse = {
       status: jest.fn().mockReturnThis(),
@@ -79,7 +79,7 @@ describe('PurchaseOrderController', () => {
       mockRequest.body = poData;
 
       const createdPO = { id: 'po-123', ...poData };
-      mockPurchaseOrderService.createPurchaseOrder.mockResolvedValue(createdPO);
+      mockPurchaseOrderService.createPurchaseOrder.mockResolvedValue(createdPO as any);
 
       await createPurchaseOrder(
         mockRequest as Request,
@@ -144,7 +144,7 @@ describe('PurchaseOrderController', () => {
         poNumber: 'PO-001',
         totalAmount: 5650,
       };
-      mockPurchaseOrderService.getPurchaseOrderById.mockResolvedValue(po);
+      mockPurchaseOrderService.getPurchaseOrderById.mockResolvedValue(po as any);
 
       await getPurchaseOrderById(
         mockRequest as Request,
@@ -200,7 +200,7 @@ describe('PurchaseOrderController', () => {
         hasMore: true,
         nextCursor: 'cursor-456',
       };
-      mockPurchaseOrderService.getPurchaseOrders.mockResolvedValue(result);
+      mockPurchaseOrderService.getPurchaseOrders.mockResolvedValue(result as any);
 
       await getPurchaseOrders(
         mockRequest as Request,
@@ -238,7 +238,7 @@ describe('PurchaseOrderController', () => {
       };
 
       const result = { purchaseOrders: [], hasMore: false, nextCursor: null };
-      mockPurchaseOrderService.getPurchaseOrders.mockResolvedValue(result);
+      mockPurchaseOrderService.getPurchaseOrders.mockResolvedValue(result as any);
 
       await getPurchaseOrders(
         mockRequest as Request,
@@ -266,7 +266,7 @@ describe('PurchaseOrderController', () => {
       mockRequest.body = { priority: 'URGENT', notes: 'Rush order' };
 
       const updatedPO = { id: 'po-123', priority: 'URGENT' };
-      mockPurchaseOrderService.updatePurchaseOrder.mockResolvedValue(updatedPO);
+      mockPurchaseOrderService.updatePurchaseOrder.mockResolvedValue(updatedPO as any);
 
       await updatePurchaseOrder(
         mockRequest as Request,
@@ -311,7 +311,7 @@ describe('PurchaseOrderController', () => {
       };
 
       const approvedPO = { id: 'po-123', status: 'APPROVED' };
-      mockPurchaseOrderService.approvePurchaseOrder.mockResolvedValue(approvedPO);
+      mockPurchaseOrderService.approvePurchaseOrder.mockResolvedValue(approvedPO as any);
 
       await approvePurchaseOrder(
         mockRequest as Request,
@@ -363,7 +363,7 @@ describe('PurchaseOrderController', () => {
       };
 
       const updatedPO = { id: 'po-123', status: 'PARTIALLY_RECEIVED' };
-      mockPurchaseOrderService.receiveItems.mockResolvedValue(updatedPO);
+      mockPurchaseOrderService.receiveItems.mockResolvedValue(updatedPO as any);
 
       await receiveItems(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -401,7 +401,7 @@ describe('PurchaseOrderController', () => {
       };
 
       const closedPO = { id: 'po-123', status: 'CLOSED' };
-      mockPurchaseOrderService.closePurchaseOrder.mockResolvedValue(closedPO);
+      mockPurchaseOrderService.closePurchaseOrder.mockResolvedValue(closedPO as any);
 
       await closePurchaseOrder(
         mockRequest as Request,
@@ -446,7 +446,7 @@ describe('PurchaseOrderController', () => {
       };
 
       const cancelledPO = { id: 'po-123', status: 'CANCELLED' };
-      mockPurchaseOrderService.cancelPurchaseOrder.mockResolvedValue(cancelledPO);
+      mockPurchaseOrderService.cancelPurchaseOrder.mockResolvedValue(cancelledPO as any);
 
       await cancelPurchaseOrder(
         mockRequest as Request,
@@ -533,11 +533,14 @@ describe('PurchaseOrderController', () => {
 
       const stats = {
         totalOrders: 100,
+        totalPOs: 100,
         totalAmount: 500000,
         openOrders: 15,
         receivedOrders: 80,
+        byStatus: {},
+        averageAmount: 0,
       };
-      mockPurchaseOrderService.getPurchaseOrderStats.mockResolvedValue(stats);
+      mockPurchaseOrderService.getPurchaseOrderStats.mockResolvedValue(stats as any);
 
       await getPurchaseOrderStats(
         mockRequest as Request,
@@ -560,7 +563,7 @@ describe('PurchaseOrderController', () => {
       mockRequest.query = {};
 
       const stats = { totalOrders: 200 };
-      mockPurchaseOrderService.getPurchaseOrderStats.mockResolvedValue(stats);
+      mockPurchaseOrderService.getPurchaseOrderStats.mockResolvedValue({ ...stats, totalPOs: stats.totalOrders, byStatus: {}, averageAmount: 0 } as any);
 
       await getPurchaseOrderStats(
         mockRequest as Request,

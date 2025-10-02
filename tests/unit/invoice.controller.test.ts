@@ -154,11 +154,11 @@ describe('InvoiceController', () => {
         issueDate: undefined,
         quoteId: undefined
       });
-      expect(call[0].depositRequired.toNumber()).toBe(565);
+      expect(typeof call[0].depositRequired === "number" ? call[0].depositRequired : call[0].depositRequired.toNumber()).toBe(565);
       expect(call[0].items[0].description).toBe('Test service');
-      expect(call[0].items[0].quantity.toNumber()).toBe(1);
-      expect(call[0].items[0].unitPrice.toNumber()).toBe(1000);
-      expect(call[0].items[0].taxRate.toNumber()).toBe(13);
+      expect(typeof call[0].items[0].quantity === "number" ? call[0].items[0].quantity : call[0].items[0].quantity.toNumber()).toBe(1);
+      expect(typeof call[0].items[0].unitPrice === "number" ? call[0].items[0].unitPrice : call[0].items[0].unitPrice.toNumber()).toBe(1000);
+      expect(typeof call[0].items[0].taxRate === "number" ? call[0].items[0].taxRate : call[0].items[0].taxRate.toNumber()).toBe(13);
       expect(call[1]).toBe('org-123');
       expect(call[2]).toMatchObject({
         userId: 'user-123',
@@ -380,7 +380,7 @@ describe('InvoiceController', () => {
         terms: 'Net 15',
         notes: 'Updated notes'
       });
-      expect(call[1].depositRequired.toNumber()).toBe(600);
+      expect(call[1]?.depositRequired !== undefined ? (typeof call[1].depositRequired === "number" ? call[1].depositRequired : call[1].depositRequired.toNumber()) : 0).toBe(600);
       expect(call[2]).toBe('org-123');
       expect(call[3]).toMatchObject({
         userId: 'user-123',

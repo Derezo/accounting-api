@@ -11,6 +11,7 @@ declare global {
         organizationId: string;
         role: string;
         sessionId: string;
+        isTestToken?: boolean;
       };
     }
   }
@@ -222,7 +223,12 @@ async function validateQuoteTransitionPrerequisites(
   const quote = await prisma.quote.findUnique({
     where: { id: quoteId },
     include: {
-      customer: true,
+      customer: {
+        include: {
+          person: true,
+          business: true
+        }
+      },
       items: true
     }
   });
@@ -258,7 +264,7 @@ async function validateQuoteTransitionPrerequisites(
     }
 
     // Only ADMIN, MANAGER, ACCOUNTANT can accept quotes
-    if (![UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT].includes(user.role as UserRole)) {
+    if (!['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'ACCOUNTANT'].includes(user.role)) {
       return {
         reason: 'Insufficient permissions to accept quote',
         requirement: 'ADMIN, MANAGER, or ACCOUNTANT role'
@@ -275,8 +281,10 @@ async function validateQuoteTransitionPrerequisites(
       };
     }
 
-    // Check customer has contact information
-    if (!quote.customer.email && !quote.customer.phone) {
+    // Check customer has contact information (via person or business)
+    const hasContact = (quote.customer as any).person?.email || (quote.customer as any).person?.phone ||
+                      (quote.customer as any).business?.email || (quote.customer as any).business?.phone;
+    if (!hasContact) {
       return {
         reason: 'Customer must have email or phone to send quote',
         requirement: 'Customer contact information'
@@ -300,7 +308,12 @@ async function validateInvoiceTransitionPrerequisites(
   const invoice = await prisma.invoice.findUnique({
     where: { id: invoiceId },
     include: {
-      customer: true,
+      customer: {
+        include: {
+          person: true,
+          business: true
+        }
+      },
       items: true,
       quote: true,
       payments: true
@@ -320,7 +333,10 @@ async function validateInvoiceTransitionPrerequisites(
       };
     }
 
-    if (!invoice.customer.email && !invoice.customer.phone) {
+    // Check customer has contact information (via person or business)
+    const hasContact = (invoice.customer as any).person?.email || (invoice.customer as any).person?.phone ||
+                      (invoice.customer as any).business?.email || (invoice.customer as any).business?.phone;
+    if (!hasContact) {
       return {
         reason: 'Customer must have email or phone to send invoice',
         requirement: 'Customer contact information'
@@ -342,7 +358,7 @@ async function validateInvoiceTransitionPrerequisites(
     }
 
     // Only ADMIN, MANAGER, ACCOUNTANT can mark as paid
-    if (![UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT].includes(user.role as UserRole)) {
+    if (!['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'ACCOUNTANT'].includes(user.role)) {
       return {
         reason: 'Insufficient permissions to mark invoice as paid',
         requirement: 'ADMIN, MANAGER, or ACCOUNTANT role'
@@ -360,7 +376,7 @@ async function validateInvoiceTransitionPrerequisites(
     }
 
     // Only ADMIN, MANAGER can void/cancel
-    if (![UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER].includes(user.role as UserRole)) {
+    if (!['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(user.role)) {
       return {
         reason: 'Insufficient permissions to void/cancel invoice',
         requirement: 'ADMIN or MANAGER role'
@@ -407,7 +423,7 @@ async function validateCustomerTransitionPrerequisites(
 
   // SUSPENDED/ARCHIVED requires ADMIN or MANAGER
   if (targetStatus === 'SUSPENDED' || targetStatus === 'ARCHIVED') {
-    if (![UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER].includes(user.role as UserRole)) {
+    if (!['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(user.role)) {
       return {
         reason: `Insufficient permissions to ${targetStatus.toLowerCase()} customer`,
         requirement: 'ADMIN or MANAGER role'
@@ -460,7 +476,7 @@ async function validatePaymentTransitionPrerequisites(
     }
 
     // Only ADMIN, MANAGER, ACCOUNTANT can complete payments
-    if (![UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT].includes(user.role as UserRole)) {
+    if (!['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'ACCOUNTANT'].includes(user.role)) {
       return {
         reason: 'Insufficient permissions to complete payment',
         requirement: 'ADMIN, MANAGER, or ACCOUNTANT role'
@@ -478,7 +494,7 @@ async function validatePaymentTransitionPrerequisites(
     }
 
     // Only ADMIN, MANAGER can issue refunds
-    if (![UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER].includes(user.role as UserRole)) {
+    if (!['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(user.role)) {
       return {
         reason: 'Insufficient permissions to refund payment',
         requirement: 'ADMIN or MANAGER role'

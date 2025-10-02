@@ -79,6 +79,7 @@ describe('WorkflowStateMachineService', () => {
     await prisma.project.deleteMany({});
     await prisma.customer.deleteMany({});
     await prisma.person.deleteMany({});
+    await prisma.auditLog.deleteMany({});
     await prisma.user.deleteMany({});
     await prisma.organization.deleteMany({});
   });

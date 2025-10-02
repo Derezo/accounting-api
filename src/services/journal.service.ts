@@ -1,6 +1,7 @@
 import { PrismaClient, Account, JournalEntry, Transaction, Prisma } from '@prisma/client';
 import { AccountType, TransactionType } from '../types/enums';
 import { AuditService } from './audit.service';
+import Decimal from 'decimal.js';
 
 export interface CreateJournalEntryRequest {
   accountId: string;
@@ -69,20 +70,23 @@ export class JournalService {
     // Validate that all accounts exist and belong to the organization
     await this.validateAccountsExist(organizationId, entries.map(e => e.accountId));
 
-    // Calculate total debits and credits
+    // CRITICAL FIX: Calculate total debits and credits using Decimal arithmetic
+    // This prevents floating-point precision errors in financial calculations
     const totalDebits = entries
       .filter(e => e.type === TransactionType.DEBIT)
-      .reduce((sum, e) => sum + e.amount, 0);
+      .reduce((sum, e) => sum.plus(new Decimal(e.amount)), new Decimal(0));
 
     const totalCredits = entries
       .filter(e => e.type === TransactionType.CREDIT)
-      .reduce((sum, e) => sum + e.amount, 0);
+      .reduce((sum, e) => sum.plus(new Decimal(e.amount)), new Decimal(0));
 
     // Enforce fundamental double-entry rule: debits must equal credits
-    if (Math.abs(totalDebits - totalCredits) > 0.01) {
+    // Use Decimal comparison for exact precision
+    const difference = totalDebits.minus(totalCredits).abs();
+    if (difference.greaterThan(0.01)) {
       throw new Error(
-        `Transaction does not balance: Debits ${totalDebits} ≠ Credits ${totalCredits}. ` +
-        `Difference: ${Math.abs(totalDebits - totalCredits)}`
+        `Transaction does not balance: Debits ${totalDebits.toString()} ≠ Credits ${totalCredits.toString()}. ` +
+        `Difference: ${difference.toString()}`
       );
     }
 
@@ -97,8 +101,8 @@ export class JournalService {
             transactionNumber,
             date,
             description,
-            totalDebits: new Prisma.Decimal(totalDebits),
-            totalCredits: new Prisma.Decimal(totalCredits),
+            totalDebits: new Prisma.Decimal(totalDebits.toString()),
+            totalCredits: new Prisma.Decimal(totalCredits.toString()),
           },
           include: {
             entries: {

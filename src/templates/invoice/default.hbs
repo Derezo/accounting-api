@@ -143,6 +143,26 @@
             border-left: 4px solid {{branding.accentColor}};
         }
 
+        .terms-section {
+            clear: both;
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-left: 4px solid {{branding.accentColor}};
+        }
+
+        .notes-section {
+            clear: both;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-left: 4px solid {{branding.accentColor}};
+        }
+
+        .section-header {
+            font-weight: bold;
+        }
+
         .footer {
             margin-top: 40px;
             padding-top: 20px;
@@ -155,6 +175,42 @@
         .tax-exempt {
             font-style: italic;
             color: {{branding.secondaryColor}};
+        }
+
+        /* PDF Page Break Control */
+        @media print {
+            .items-table {
+                page-break-inside: auto;
+            }
+
+            .items-table thead {
+                display: table-header-group;
+            }
+
+            .items-table tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+
+            .totals-section {
+                page-break-inside: avoid;
+            }
+
+            .terms-section {
+                page-break-inside: avoid;
+            }
+
+            .notes-section {
+                page-break-inside: avoid;
+            }
+
+            .section-header {
+                page-break-after: avoid;
+            }
+
+            .footer {
+                page-break-inside: avoid;
+            }
         }
     </style>
 </head>
@@ -308,18 +364,18 @@
             </div>
         {{/if}}
 
-        <!-- Payment Information -->
+        <!-- Terms & Conditions -->
         {{#if invoice.terms}}
-            <div class="payment-info">
-                <strong>Terms & Conditions:</strong>
+            <div class="terms-section">
+                <div class="section-header">Terms & Conditions:</div>
                 <p>{{invoice.terms}}</p>
             </div>
         {{/if}}
 
         <!-- Notes -->
         {{#if invoice.notes}}
-            <div class="payment-info">
-                <strong>Notes:</strong>
+            <div class="notes-section">
+                <div class="section-header">Notes:</div>
                 <p>{{invoice.notes}}</p>
             </div>
         {{/if}}
