@@ -112,16 +112,20 @@ export async function cleanupDatabase(prisma: PrismaClient): Promise<void> {
  * Create a complete test organization with users and basic data
  */
 export async function createTestContext(prisma: PrismaClient, organizationName = 'Test Organization'): Promise<TestContext> {
-  // Create organization
-  const organization = await createTestOrganization(prisma, organizationName);
+  // Add unique suffix to organization name to ensure uniqueness
+  const uniqueSuffix = Date.now() + '-' + Math.random().toString(36).substring(7);
+  const uniqueOrgName = `${organizationName}-${uniqueSuffix}`;
 
-  // Create users with different roles
+  // Create organization
+  const organization = await createTestOrganization(prisma, uniqueOrgName);
+
+  // Create users with different roles using unique emails
   const users = {
-    admin: await createTestUser(prisma, organization.id, UserRole.ADMIN, 'admin@test.com'),
-    manager: await createTestUser(prisma, organization.id, UserRole.MANAGER, 'manager@test.com'),
-    accountant: await createTestUser(prisma, organization.id, UserRole.ACCOUNTANT, 'accountant@test.com'),
-    employee: await createTestUser(prisma, organization.id, UserRole.EMPLOYEE, 'employee@test.com'),
-    viewer: await createTestUser(prisma, organization.id, UserRole.VIEWER, 'viewer@test.com')
+    admin: await createTestUser(prisma, organization.id, UserRole.ADMIN, `admin-${uniqueSuffix}@test.com`),
+    manager: await createTestUser(prisma, organization.id, UserRole.MANAGER, `manager-${uniqueSuffix}@test.com`),
+    accountant: await createTestUser(prisma, organization.id, UserRole.ACCOUNTANT, `accountant-${uniqueSuffix}@test.com`),
+    employee: await createTestUser(prisma, organization.id, UserRole.EMPLOYEE, `employee-${uniqueSuffix}@test.com`),
+    viewer: await createTestUser(prisma, organization.id, UserRole.VIEWER, `viewer-${uniqueSuffix}@test.com`)
   };
 
   // Create auth tokens for each user
@@ -154,9 +158,10 @@ export async function createTestOrganization(
   prisma: PrismaClient,
   name = 'Test Organization'
 ): Promise<TestOrganization> {
+  const uniqueSuffix = Date.now() + '-' + Math.random().toString(36).substring(7);
   const orgData = {
     name,
-    email: `${name.toLowerCase().replace(/\s+/g, '')}@test.com`,
+    email: `${name.toLowerCase().replace(/\s+/g, '')}-${uniqueSuffix}@test.com`,
     phone: `+1-${faker.string.numeric(3)}-${faker.string.numeric(3)}-${faker.string.numeric(4)}`,
     encryptionKey: generateEncryptionKey()
   };
@@ -177,9 +182,13 @@ export async function createTestUser(
   role: string = UserRole.EMPLOYEE,
   email?: string
 ): Promise<TestUser> {
+  // Generate unique email if not provided
+  const uniqueSuffix = Date.now() + '-' + Math.random().toString(36).substring(7);
+  const userEmail = email || `user-${uniqueSuffix}@test.com`;
+
   const userData = {
     organizationId,
-    email: email || faker.internet.email(),
+    email: userEmail,
     passwordHash: await bcrypt.hash('password123', 10),
     role,
     firstName: faker.person.firstName(),
@@ -484,7 +493,9 @@ export function generateAuthToken(user: TestUser): string {
     userId: user.id,
     organizationId: user.organizationId,
     role: user.role,
-    email: user.email
+    email: user.email,
+    isTestToken: true,  // Enable test mode bypass in auth middleware
+    sessionId: 'test-session-' + Date.now()
   };
 
   return jwt.sign(payload, process.env.JWT_SECRET || 'test-secret', {
