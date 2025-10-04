@@ -616,7 +616,7 @@ export class PaymentAnalyticsService {
 
     const rapidPayments: any[] = [];
 
-    for (const [customerId, customerPaymentList] of Object.entries(customerPayments) as [string, any[]][]) {
+    for (const [customerId, customerPaymentList] of Object.entries(customerPayments)) {
       if (customerPaymentList.length < 3) continue;
 
       customerPaymentList.sort((a: any, b: any) => a.paymentDate.getTime() - b.paymentDate.getTime());

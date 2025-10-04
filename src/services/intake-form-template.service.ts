@@ -116,6 +116,94 @@ export class IntakeFormTemplateService {
   }
 
   /**
+   * Get template by ID (public access - no org restriction)
+   * Only returns active templates
+   */
+  async getPublicTemplateById(templateId: string): Promise<TemplateWithRelations | null> {
+    const template = await this.prisma.intakeFormTemplate.findFirst({
+      where: {
+        id: templateId,
+        isActive: true,
+        deletedAt: null,
+      },
+      include: {
+        steps: {
+          include: {
+            fields: {
+              orderBy: { sortOrder: 'asc' },
+            },
+            transitions: {
+              orderBy: { priority: 'desc' },
+            },
+          },
+          orderBy: { sortOrder: 'asc' },
+        },
+        fields: {
+          orderBy: { sortOrder: 'asc' },
+        },
+      },
+    });
+
+    if (!template) {
+      return null;
+    }
+
+    return this.mapTemplateToDto(template);
+  }
+
+  /**
+   * Get default template by organization domain (public access)
+   * Looks up organization by domain and returns their default template
+   */
+  async getDefaultTemplateByDomain(domain: string): Promise<TemplateWithRelations | null> {
+    // First, find organization by domain
+    const org = await this.prisma.organization.findFirst({
+      where: {
+        domain: domain,
+        isActive: true
+      }
+    });
+
+    if (!org) {
+      console.log(`No organization found for domain: ${domain}`);
+      return null;
+    }
+
+    // Then get their default template
+    const template = await this.prisma.intakeFormTemplate.findFirst({
+      where: {
+        organizationId: org.id,
+        isDefault: true,
+        isActive: true,
+        deletedAt: null,
+      },
+      include: {
+        steps: {
+          include: {
+            fields: {
+              orderBy: { sortOrder: 'asc' },
+            },
+            transitions: {
+              orderBy: { priority: 'desc' },
+            },
+          },
+          orderBy: { sortOrder: 'asc' },
+        },
+        fields: {
+          orderBy: { sortOrder: 'asc' },
+        },
+      },
+    });
+
+    if (!template) {
+      console.log(`No default template found for organization: ${org.name}`);
+      return null;
+    }
+
+    return this.mapTemplateToDto(template);
+  }
+
+  /**
    * List all templates for an organization
    */
   async listTemplates(organizationId: string): Promise<TemplateWithRelations[]> {

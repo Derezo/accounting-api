@@ -624,7 +624,7 @@ describe('Canadian Tax Compliance Permission Tests', () => {
           if (scenario.type === 'EXPORT') {
             // Test export transaction processing
             const exportData = {
-              customerId: customers[0]!.id,
+              customerId: customers[0].id,
               amount: 5000.00,
               currency: 'CAD',
               destinationCountry: scenario.destination,

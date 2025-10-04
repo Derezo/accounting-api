@@ -75,9 +75,9 @@ export const validateZod = (schema: ZodSchema, source: 'body' | 'query' | 'param
       if (source === 'body') {
         req.body = validated;
       } else if (source === 'query') {
-        req.query = validated as any;
+        req.query = validated;
       } else {
-        req.params = validated as any;
+        req.params = validated;
       }
 
       next();

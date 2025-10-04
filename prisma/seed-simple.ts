@@ -12,18 +12,22 @@ const generateEncryptionKey = (): string => {
   return randomUUID().replace(/-/g, '');
 };
 
-async function main() {
-  console.log('🌱 Starting simple database seeding...');
+const getPasswordExpirationDate = (): Date => {
+  return new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 days
+};
+
+async function main(): Promise<void> {
+  console.error('🌱 Starting simple database seeding...');
 
   // Clear existing data in development
   if (process.env.NODE_ENV === 'development') {
-    console.log('🧹 Clearing existing development data...');
+    console.error('🧹 Clearing existing development data...');
     await prisma.user.deleteMany();
     await prisma.organization.deleteMany();
   }
 
   // ==================== CREATE ORGANIZATIONS ====================
-  console.log('🏢 Creating organizations...');
+  console.error('🏢 Creating organizations...');
 
   const organization1 = await prisma.organization.create({
     data: {
@@ -70,7 +74,7 @@ async function main() {
   });
 
   // ==================== CREATE USERS WITH DIFFERENT ROLES ====================
-  console.log('👥 Creating users with different roles...');
+  console.error('👥 Creating users with different roles...');
 
   // Super Admin User
   await prisma.user.create({
@@ -78,7 +82,8 @@ async function main() {
       id: 'user_super_admin_001',
       organizationId: organization1.id,
       email: 'admin@acme.dev',
-      passwordHash: await hashPassword('SuperAdmin123!'),
+      passwordHash: await hashPassword('SimpleAdmin123!'),
+      passwordExpiresAt: getPasswordExpirationDate(),
       role: 'SUPER_ADMIN',
       isActive: true,
       emailVerified: true,
@@ -94,7 +99,8 @@ async function main() {
       id: 'user_org_admin_001',
       organizationId: organization1.id,
       email: 'manager@acme.dev',
-      passwordHash: await hashPassword('OrgAdmin123!'),
+      passwordHash: await hashPassword('SimpleManager123!'),
+      passwordExpiresAt: getPasswordExpirationDate(),
       role: 'ADMIN',
       isActive: true,
       emailVerified: true,
@@ -110,7 +116,8 @@ async function main() {
       id: 'user_manager_001',
       organizationId: organization1.id,
       email: 'sales@acme.dev',
-      passwordHash: await hashPassword('Manager123!'),
+      passwordHash: await hashPassword('SimpleSales123!'),
+      passwordExpiresAt: getPasswordExpirationDate(),
       role: 'MANAGER',
       isActive: true,
       emailVerified: true,
@@ -126,7 +133,8 @@ async function main() {
       id: 'user_accountant_001',
       organizationId: organization1.id,
       email: 'accounting@acme.dev',
-      passwordHash: await hashPassword('Accountant123!'),
+      passwordHash: await hashPassword('SimpleAcct123!@#'),
+      passwordExpiresAt: getPasswordExpirationDate(),
       role: 'ACCOUNTANT',
       isActive: true,
       emailVerified: true,
@@ -142,7 +150,8 @@ async function main() {
       id: 'user_employee_001',
       organizationId: organization1.id,
       email: 'employee@acme.dev',
-      passwordHash: await hashPassword('Employee123!'),
+      passwordHash: await hashPassword('SimpleEmployee123!'),
+      passwordExpiresAt: getPasswordExpirationDate(),
       role: 'EMPLOYEE',
       isActive: true,
       emailVerified: true,
@@ -158,7 +167,8 @@ async function main() {
       id: 'user_viewer_001',
       organizationId: organization1.id,
       email: 'viewer@acme.dev',
-      passwordHash: await hashPassword('Viewer123!'),
+      passwordHash: await hashPassword('SimpleViewer123!'),
+      passwordExpiresAt: getPasswordExpirationDate(),
       role: 'VIEWER',
       isActive: true,
       emailVerified: true,
@@ -174,7 +184,8 @@ async function main() {
       id: 'user_tech_admin_001',
       organizationId: organization2.id,
       email: 'admin@techsolutions.dev',
-      passwordHash: await hashPassword('TechAdmin123!'),
+      passwordHash: await hashPassword('SimpleTechAdmin123!'),
+      passwordExpiresAt: getPasswordExpirationDate(),
       role: 'ADMIN',
       isActive: true,
       emailVerified: true,
@@ -184,31 +195,47 @@ async function main() {
     }
   });
 
-  console.log('✅ Simple database seeding completed successfully!');
-  console.log('\n🔑 Development Credentials:');
-  console.log('='.repeat(50));
-  console.log('Super Admin: admin@acme.dev / SuperAdmin123!');
-  console.log('Org Admin:   manager@acme.dev / OrgAdmin123!');
-  console.log('Manager:     sales@acme.dev / Manager123!');
-  console.log('Accountant:  accounting@acme.dev / Accountant123!');
-  console.log('Employee:    employee@acme.dev / Employee123!');
-  console.log('Viewer:      viewer@acme.dev / Viewer123!');
-  console.log('');
-  console.log('Tech Admin:  admin@techsolutions.dev / TechAdmin123!');
-  console.log('='.repeat(50));
-  console.log('\n📊 Seeded Data Summary:');
-  console.log('• 2 Organizations (Acme Corp, TechSolutions)');
-  console.log('• 7 Users (6 roles + multi-tenant)');
-  console.log('\n🌐 API Testing:');
-  console.log('Use these credentials to test different user roles and permissions.');
-  console.log('Organization isolation is enforced - users can only access their org data.');
+  console.error('✅ Simple database seeding completed successfully!');
+  console.error('\n🔑 Development Credentials:');
+  console.error('='.repeat(50));
+  console.error('Super Admin: admin@acme.dev / SimpleAdmin123!');
+  console.error('Org Admin:   manager@acme.dev / SimpleManager123!');
+  console.error('Manager:     sales@acme.dev / SimpleSales123!');
+  console.error('Accountant:  accounting@acme.dev / SimpleAcct123!@#');
+  console.error('Employee:    employee@acme.dev / SimpleEmployee123!');
+  console.error('Viewer:      viewer@acme.dev / SimpleViewer123!');
+  console.error('');
+  console.error('Tech Admin:  admin@techsolutions.dev / SimpleTechAdmin123!');
+  console.error('='.repeat(50));
+  console.error('\n⚠️  SECURITY NOTICE - v2.0:');
+  console.error('='.repeat(50));
+  console.error('');
+  console.error('Password Requirements:');
+  console.error('  ✓ Minimum 12 characters (all passwords meet this requirement)');
+  console.error('  ✓ Uppercase, lowercase, numbers, and special characters');
+  console.error('  ✓ Password expiration: 90 days from seed date');
+  console.error('');
+  console.error('Session Security:');
+  console.error('  ✓ 2-hour session timeout');
+  console.error('  ✓ 15-minute inactivity logout');
+  console.error('  ✓ Maximum 3 concurrent sessions');
+  console.error('  ✓ Device fingerprinting enabled');
+  console.error('');
+  console.error('⚠️  These are DEVELOPMENT credentials - change in production!');
+  console.error('='.repeat(50));
+  console.error('\n📊 Seeded Data Summary:');
+  console.error('• 2 Organizations (Acme Corp, TechSolutions)');
+  console.error('• 7 Users (6 roles + multi-tenant)');
+  console.error('\n🌐 API Testing:');
+  console.error('Use these credentials to test different user roles and permissions.');
+  console.error('Organization isolation is enforced - users can only access their org data.');
 }
 
-main()
-  .catch((e) => {
+void main()
+  .catch((e: Error) => {
     console.error('❌ Error during seeding:', e);
     process.exit(1);
   })
-  .finally(async () => {
-    await prisma.$disconnect();
+  .finally(() => {
+    void prisma.$disconnect();
   });

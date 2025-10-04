@@ -373,6 +373,61 @@ router.get(
 
 /**
  * @swagger
+ * /api/v1/organizations/{organizationId}/invoice-templates/preview:
+ *   post:
+ *     tags: [Invoice Templates]
+ *     summary: Preview invoice template with sample data
+ *     description: Generates an HTML preview of the specified template with sample invoice data. Returns rendered HTML for display in browser.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         description: Organization ID
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - templateId
+ *             properties:
+ *               templateId:
+ *                 type: string
+ *                 description: Template ID to preview
+ *                 example: "tpl_1234567890"
+ *               styleId:
+ *                 type: string
+ *                 description: Style ID to apply (optional)
+ *                 example: "sty_1234567890"
+ *     responses:
+ *       200:
+ *         description: Preview HTML generated successfully
+ *         content:
+ *           text/html:
+ *             schema:
+ *               type: string
+ *               description: Rendered HTML preview
+ *       400:
+ *         description: Invalid request parameters
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Template not found
+ *       500:
+ *         description: Failed to generate preview
+ */
+router.post(
+  '/templates/preview',
+  invoicePDFController.previewInvoiceTemplate.bind(invoicePDFController)
+);
+
+/**
+ * @swagger
  * /api/v1/organizations/{organizationId}/invoice-templates/{id}:
  *   get:
  *     tags: [Invoice Templates]

@@ -13,6 +13,46 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
+/**
+ * Password strength validation function
+ * Enforces strict password requirements for security
+ *
+ * Requirements:
+ * - Minimum 12 characters
+ * - At least one uppercase letter
+ * - At least one lowercase letter
+ * - At least one number
+ * - At least one special character
+ *
+ * @param password - The password to validate
+ * @returns Object with validation result and any error messages
+ */
+export function validatePasswordStrength(password: string): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (password.length < 12) {
+    errors.push('Password must be at least 12 characters long');
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Password must contain at least one uppercase letter');
+  }
+
+  if (!/[a-z]/.test(password)) {
+    errors.push('Password must contain at least one lowercase letter');
+  }
+
+  if (!/[0-9]/.test(password)) {
+    errors.push('Password must contain at least one number');
+  }
+
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    errors.push('Password must contain at least one special character (!@#$%^&*()_+-=[]{};\':"|,.<>/?)');
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
 export function generateRandomToken(length: number = 32): string {
   return crypto.randomBytes(length).toString('hex');
 }
@@ -90,13 +130,13 @@ export function generateOTP(secret: string): string {
   counterBuffer.writeBigInt64BE(BigInt(counter));
 
   const hash = hmac.update(counterBuffer).digest();
-  const offset = hash![hash!.length - 1]! & 0xf;
+  const offset = hash[hash.length - 1] & 0xf;
 
   const code = (
-    ((hash![offset]! & 0x7f) << 24) |
-    ((hash![offset + 1]! & 0xff) << 16) |
-    ((hash![offset + 2]! & 0xff) << 8) |
-    (hash![offset + 3]! & 0xff)
+    ((hash[offset] & 0x7f) << 24) |
+    ((hash[offset + 1] & 0xff) << 16) |
+    ((hash[offset + 2] & 0xff) << 8) |
+    (hash[offset + 3] & 0xff)
   ) % 1000000;
 
   return code.toString().padStart(6, '0');
@@ -110,13 +150,13 @@ export function verifyOTP(token: string, secret: string): boolean {
     counterBuffer.writeBigInt64BE(BigInt(counter));
 
     const hash = hmac.update(counterBuffer).digest();
-    const hashOffset = hash![hash!.length - 1]! & 0xf;
+    const hashOffset = hash[hash.length - 1] & 0xf;
 
     const code = (
-      ((hash![hashOffset]! & 0x7f) << 24) |
-      ((hash![hashOffset + 1]! & 0xff) << 16) |
-      ((hash![hashOffset + 2]! & 0xff) << 8) |
-      (hash![hashOffset + 3]! & 0xff)
+      ((hash[hashOffset] & 0x7f) << 24) |
+      ((hash[hashOffset + 1] & 0xff) << 16) |
+      ((hash[hashOffset + 2] & 0xff) << 8) |
+      (hash[hashOffset + 3] & 0xff)
     ) % 1000000;
 
     return code.toString().padStart(6, '0');

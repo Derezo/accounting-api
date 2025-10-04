@@ -130,7 +130,7 @@ describe('Multi-Tenant Financial Data Isolation Tests', () => {
 
       // Create e-Transfers in both tenants
       const tenant1ETransferData = {
-        customerId: tenant1.customers[0]!.id,
+        customerId: tenant1.customers[0].id,
         amount: 750.00,
         currency: 'CAD',
         recipientEmail: 'tenant1@customer.ca',
@@ -140,7 +140,7 @@ describe('Multi-Tenant Financial Data Isolation Tests', () => {
       };
 
       const tenant2ETransferData = {
-        customerId: tenant2.customers[0]!.id,
+        customerId: tenant2.customers[0].id,
         amount: 1250.00,
         currency: 'CAD',
         recipientEmail: 'tenant2@customer.ca',
@@ -675,7 +675,7 @@ describe('Multi-Tenant Financial Data Isolation Tests', () => {
         }
 
         // All attempts should fail with 404 (not found) or 403 (forbidden)
-        expect([403, 404].includes(response!.status)).toBe(true);
+        expect([403, 404].includes(response.status)).toBe(true);
       }
 
       // Verify tenant 2's invoice remains unchanged

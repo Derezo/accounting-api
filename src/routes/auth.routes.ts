@@ -7,6 +7,7 @@ import {
   validateResetPassword
 } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth.middleware';
+import { loginRateLimiter, registerRateLimiter, passwordResetRateLimiter } from '../middleware/rate-limit.middleware';
 
 const router = Router();
 
@@ -16,7 +17,7 @@ const router = Router();
  *   post:
  *     tags: [Authentication]
  *     summary: Register a new user
- *     description: Creates a new user account with email verification. Registration requires organization invitation or valid organization domain for multi-tenant security.
+ *     description: Creates a new user account with email verification. Registration requires organization invitation or valid organization domain for multi-tenant security. Rate limited to 3 attempts per hour per IP.
  *     requestBody:
  *       required: true
  *       content:
@@ -37,10 +38,10 @@ const router = Router();
  *                 example: "john.doe@example.com"
  *               password:
  *                 type: string
- *                 description: User password (min 8 chars, must include uppercase, lowercase, number, special char)
- *                 example: "SecurePass123!"
- *                 minLength: 8
- *                 pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
+ *                 description: User password (min 12 chars, must include uppercase, lowercase, number, special char)
+ *                 example: "SecurePass123!@#"
+ *                 minLength: 12
+ *                 pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$"
  *               firstName:
  *                 type: string
  *                 description: User's first name
@@ -100,10 +101,12 @@ const router = Router();
  *         description: Invalid input data or validation errors
  *       409:
  *         description: Conflict - Email already exists or organization invitation required
+ *       429:
+ *         description: Too many registration attempts - rate limited
  *       500:
  *         description: Internal server error
  */
-router.post('/register', validateRegister, (req: Request, res: Response) => authController.register(req, res));
+router.post('/register', registerRateLimiter, validateRegister, (req: Request, res: Response) => authController.register(req, res));
 
 /**
  * @swagger
@@ -111,7 +114,7 @@ router.post('/register', validateRegister, (req: Request, res: Response) => auth
  *   post:
  *     tags: [Authentication]
  *     summary: Authenticate user
- *     description: Authenticates user credentials and returns JWT access and refresh tokens. Supports multi-factor authentication and tracks login sessions.
+ *     description: Authenticates user credentials and returns JWT access and refresh tokens. Supports multi-factor authentication and tracks login sessions. Rate limited to 5 attempts per 15 minutes per IP.
  *     requestBody:
  *       required: true
  *       content:
@@ -130,7 +133,7 @@ router.post('/register', validateRegister, (req: Request, res: Response) => auth
  *               password:
  *                 type: string
  *                 description: User password
- *                 example: "SecurePass123!"
+ *                 example: "SecurePass123!@#"
  *               organizationId:
  *                 type: string
  *                 description: Optional organization ID for multi-tenant users
@@ -209,10 +212,12 @@ router.post('/register', validateRegister, (req: Request, res: Response) => auth
  *         description: Account locked, suspended, or requires verification
  *       423:
  *         description: Account temporarily locked due to failed attempts
+ *       429:
+ *         description: Too many login attempts - rate limited
  *       500:
  *         description: Internal server error
  */
-router.post('/login', validateLogin, (req: Request, res: Response) => authController.login(req, res));
+router.post('/login', loginRateLimiter, validateLogin, (req: Request, res: Response) => authController.login(req, res));
 
 /**
  * @swagger
@@ -270,7 +275,7 @@ router.post('/refresh', (req: Request, res: Response) => authController.refreshT
  *   post:
  *     tags: [Authentication]
  *     summary: Request password reset
- *     description: Initiates password reset process by sending a secure reset link to the user's email. Includes rate limiting to prevent abuse.
+ *     description: Initiates password reset process by sending a secure reset link to the user's email. Includes rate limiting to prevent abuse (3 attempts per hour per IP).
  *     requestBody:
  *       required: true
  *       content:
@@ -311,7 +316,7 @@ router.post('/refresh', (req: Request, res: Response) => authController.refreshT
  *       500:
  *         description: Internal server error
  */
-router.post('/reset-password-request', (req: Request, res: Response) => authController.resetPasswordRequest(req, res));
+router.post('/reset-password-request', passwordResetRateLimiter, (req: Request, res: Response) => authController.resetPasswordRequest(req, res));
 
 /**
  * @swagger
@@ -319,7 +324,7 @@ router.post('/reset-password-request', (req: Request, res: Response) => authCont
  *   post:
  *     tags: [Authentication]
  *     summary: Reset password
- *     description: Completes password reset process using the token received via email. The token is single-use and has limited validity.
+ *     description: Completes password reset process using the token received via email. The token is single-use and has limited validity. New password must meet security requirements (min 12 chars, uppercase, lowercase, number, special char) and cannot be one of the last 5 passwords used.
  *     requestBody:
  *       required: true
  *       content:
@@ -337,13 +342,13 @@ router.post('/reset-password-request', (req: Request, res: Response) => authCont
  *               newPassword:
  *                 type: string
  *                 description: New password (must meet security requirements)
- *                 example: "NewSecurePass123!"
- *                 minLength: 8
- *                 pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
+ *                 example: "NewSecurePass123!@#"
+ *                 minLength: 12
+ *                 pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$"
  *               confirmPassword:
  *                 type: string
  *                 description: Password confirmation (must match newPassword)
- *                 example: "NewSecurePass123!"
+ *                 example: "NewSecurePass123!@#"
  *     responses:
  *       200:
  *         description: Password reset successful
@@ -362,7 +367,7 @@ router.post('/reset-password-request', (req: Request, res: Response) => authCont
  *                   type: string
  *                   format: date-time
  *       400:
- *         description: Invalid token, password mismatch, or weak password
+ *         description: Invalid token, password mismatch, weak password, or password reuse
  *       401:
  *         description: Reset token expired or already used
  *       500:
@@ -468,7 +473,7 @@ router.post('/logout-all', (req: Request, res: Response) => authController.logou
  *   post:
  *     tags: [Authentication]
  *     summary: Change user password
- *     description: Changes the current user's password. Requires current password verification and logs out all other sessions for security.
+ *     description: Changes the current user's password. Requires current password verification and logs out all other sessions for security. New password must meet security requirements and cannot be one of the last 5 passwords used. Password expires after 90 days.
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -484,17 +489,17 @@ router.post('/logout-all', (req: Request, res: Response) => authController.logou
  *               currentPassword:
  *                 type: string
  *                 description: Current password for verification
- *                 example: "CurrentPass123!"
+ *                 example: "CurrentPass123!@#"
  *               newPassword:
  *                 type: string
  *                 description: New password (must meet security requirements)
- *                 example: "NewSecurePass123!"
- *                 minLength: 8
- *                 pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
+ *                 example: "NewSecurePass123!@#"
+ *                 minLength: 12
+ *                 pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$"
  *               confirmPassword:
  *                 type: string
  *                 description: Password confirmation (must match newPassword)
- *                 example: "NewSecurePass123!"
+ *                 example: "NewSecurePass123!@#"
  *               logoutOtherSessions:
  *                 type: boolean
  *                 default: true
@@ -513,6 +518,10 @@ router.post('/logout-all', (req: Request, res: Response) => authController.logou
  *                 changedAt:
  *                   type: string
  *                   format: date-time
+ *                 passwordExpiresAt:
+ *                   type: string
+ *                   format: date-time
+ *                   description: When the new password will expire (90 days)
  *                 otherSessionsLoggedOut:
  *                   type: boolean
  *                   description: Whether other sessions were logged out
@@ -531,7 +540,7 @@ router.post('/logout-all', (req: Request, res: Response) => authController.logou
  *                     expiresIn:
  *                       type: integer
  *       400:
- *         description: Invalid input data, password mismatch, or weak password
+ *         description: Invalid input data, password mismatch, weak password, or password reuse
  *       401:
  *         description: Current password is incorrect
  *       403:
@@ -623,6 +632,10 @@ router.post('/change-password', validateChangePassword, (req: Request, res: Resp
  *                     lastPasswordChange:
  *                       type: string
  *                       format: date-time
+ *                     passwordExpiresAt:
+ *                       type: string
+ *                       format: date-time
+ *                       description: When current password will expire
  *                     activeSessions:
  *                       type: integer
  *                       description: Number of active sessions
@@ -800,7 +813,7 @@ router.put('/profile', (req: Request, res: Response) => authController.updatePro
  *               password:
  *                 type: string
  *                 description: Current password for verification
- *                 example: "CurrentPass123!"
+ *                 example: "CurrentPass123!@#"
  *               method:
  *                 type: string
  *                 enum: ["app", "sms"]
@@ -939,7 +952,7 @@ router.post('/2fa/verify', (req: Request, res: Response) => authController.verif
  *               password:
  *                 type: string
  *                 description: Current password for verification
- *                 example: "CurrentPass123!"
+ *                 example: "CurrentPass123!@#"
  *               code:
  *                 type: string
  *                 description: 6-digit code from authenticator app

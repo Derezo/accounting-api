@@ -3,6 +3,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { InvoiceStatus } from '../types/enums';
 import { auditService } from './audit.service';
 import { prisma } from '../config/database';
+import { sendInvoiceEmail } from '../utils/email-helpers';
 
 export interface InvoiceStats {
   total: number;
@@ -382,7 +383,7 @@ export class InvoiceService {
       throw new Error('Only draft invoices can be updated');
     }
 
-    let updatedData: {
+    const updatedData: {
       dueDate?: Date;
       currency?: string;
       exchangeRate?: number;
@@ -516,10 +517,14 @@ export class InvoiceService {
         }
       }
 
-      // Fetch complete updated invoice
+      // Fetch complete updated invoice with only latest version of items
       return await tx.invoice.findUnique({
         where: { id },
-        include: { items: true }
+        include: {
+          items: {
+            where: { isLatestVersion: true }
+          }
+        }
       });
     });
 
@@ -645,6 +650,11 @@ export class InvoiceService {
         id,
         organizationId,
         deletedAt: null
+      },
+      include: {
+        customer: true,
+        organization: true,
+        items: true
       }
     });
 
@@ -679,7 +689,8 @@ export class InvoiceService {
       }
     );
 
-    // TODO: Send email notification to customer
+    // Send email notification to customer
+    await sendInvoiceEmail(invoice, auditContext.userId);
 
     return updatedInvoice;
   }

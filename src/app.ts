@@ -19,6 +19,7 @@ import paymentRoutes from "./routes/payment.routes";
 import projectRoutes from "./routes/project.routes";
 import etransferRoutes from "./routes/etransfer.routes";
 import manualPaymentRoutes from "./routes/manual-payment.routes";
+import etransferReviewRoutes from "./routes/etransfer-review.routes";
 import paymentAnalyticsRoutes from "./routes/payment-analytics.routes";
 import userRoutes from "./routes/user.routes";
 import auditRoutes from "./routes/audit.routes";
@@ -35,7 +36,18 @@ import inventoryRoutes from "./routes/inventory.routes";
 import publicIntakeRoutes from "./routes/public-intake.routes";
 import publicQuoteRoutes from "./routes/public-quote.routes";
 import publicAppointmentRoutes from "./routes/public-appointment.routes";
+import publicPaymentRoutes from "./routes/public-payment.routes";
 import intakeFormV2Routes from "./routes/intake-form-v2.routes";
+import googleOAuthRoutes from "./routes/google-oauth.routes";
+import calendarSyncRoutes from "./routes/calendar-sync.routes";
+import adminSystemRoutes from "./routes/admin-system.routes";
+import systemAnalyticsRoutes from "./routes/system-analytics.routes";
+import systemIntegrationsRoutes from "./routes/system-integrations.routes";
+import featureToggleRoutes from "./routes/feature-toggle.routes";
+import maintenanceWindowRoutes from "./routes/maintenance-window.routes";
+import subscriptionPlanRoutes from "./routes/subscription-plan.routes";
+import systemUsersRoutes from "./routes/system-users.routes";
+import systemBackupRoutes from "./routes/system-backup.routes";
 
 import { prisma } from "./config/database";
 import { logger } from "./utils/logger";
@@ -44,6 +56,7 @@ import {
   getOrganizationId,
 } from "./middleware/organization.middleware";
 import { authenticate } from "./middleware/auth.middleware";
+import { requireMasterOrgSuperAdmin } from "./middleware/master-org.middleware";
 import {
   errorHandler,
   errorConverter,
@@ -210,11 +223,85 @@ app.get(`/api/${config.API_VERSION}/health`, (_req: Request, res: Response) => {
 // Authentication routes (no organization context needed)
 app.use(`/api/${config.API_VERSION}/auth`, authRoutes);
 
+// Google OAuth routes (no organization context needed)
+app.use(`/api/${config.API_VERSION}/auth/google`, googleOAuthRoutes);
+
 // Organization management routes
 app.use(`/api/${config.API_VERSION}/organizations`, organizationRoutes);
 
 // Domain verification routes (part of organization management)
 app.use(`/api/${config.API_VERSION}/organizations`, domainVerificationRoutes);
+
+// Admin system routes (SUPER_ADMIN only, master org required)
+app.use(
+  `/api/${config.API_VERSION}/admin/system`,
+  authenticate as any,
+  requireMasterOrgSuperAdmin as any,
+  adminSystemRoutes
+);
+
+// Admin analytics routes (SUPER_ADMIN only, master org required)
+app.use(
+  `/api/${config.API_VERSION}/admin/analytics`,
+  authenticate as any,
+  requireMasterOrgSuperAdmin as any,
+  systemAnalyticsRoutes
+);
+
+// Admin integrations routes (SUPER_ADMIN or ADMIN, authentication required)
+app.use(
+  `/api/${config.API_VERSION}/admin/integrations`,
+  authenticate as any,
+  systemIntegrationsRoutes
+);
+
+// Admin feature toggles routes (SUPER_ADMIN only, master org required)
+app.use(
+  `/api/${config.API_VERSION}/admin/feature-toggles`,
+  authenticate as any,
+  requireMasterOrgSuperAdmin as any,
+  featureToggleRoutes
+);
+
+// Admin maintenance windows routes (SUPER_ADMIN only, master org required)
+
+// Admin subscription plan routes (SUPER_ADMIN only, master org required)
+app.use(
+  `/api/${config.API_VERSION}/admin/subscription-plans`,
+  authenticate as any,
+  requireMasterOrgSuperAdmin as any,
+  subscriptionPlanRoutes
+);
+
+// Admin organization subscription routes (SUPER_ADMIN only, master org required)
+app.use(
+  `/api/${config.API_VERSION}/admin/subscriptions`,
+  authenticate as any,
+  requireMasterOrgSuperAdmin as any,
+  subscriptionPlanRoutes
+);
+app.use(
+  `/api/${config.API_VERSION}/admin/maintenance-windows`,
+  authenticate as any,
+  requireMasterOrgSuperAdmin as any,
+  maintenanceWindowRoutes
+);
+
+// Admin users routes (SUPER_ADMIN only, master org required)
+app.use(
+  `/api/${config.API_VERSION}/admin/users`,
+  authenticate as any,
+  requireMasterOrgSuperAdmin as any,
+  systemUsersRoutes
+);
+
+// Admin backups routes (SUPER_ADMIN only, master org required)
+app.use(
+  `/api/${config.API_VERSION}/admin/backups`,
+  authenticate as any,
+  requireMasterOrgSuperAdmin as any,
+  systemBackupRoutes
+);
 
 // Public intake routes (no authentication required)
 app.use(`/api/${config.API_VERSION}/public/intake`, publicIntakeRoutes);
@@ -227,6 +314,9 @@ app.use(`/api/${config.API_VERSION}/public/appointments`, publicAppointmentRoute
 
 // V2 Intake Form routes (template-based, mixed auth)
 app.use(`/api/v2`, intakeFormV2Routes);
+
+// Public payment portal routes (no authentication required, secured with tokens)
+app.use(`/api/${config.API_VERSION}/public/payment`, publicPaymentRoutes);
 
 // NEW: Multi-tenant routes with organizationId in URL (preferred pattern)
 app.use(
@@ -291,6 +381,12 @@ app.use(
   etransferRoutes
 );
 app.use(
+  `/api/${config.API_VERSION}/organizations/:organizationId/etransfer/review`,
+  authenticate,
+  validateOrganizationAccess,
+  etransferReviewRoutes
+);
+app.use(
   `/api/${config.API_VERSION}/organizations/:organizationId/manual-payments`,
   authenticate,
   validateOrganizationAccess,
@@ -315,6 +411,14 @@ app.use(
   auditRoutes
 );
 // app.use(`/api/${config.API_VERSION}/organizations/:organizationId/documents`, validateOrganizationAccess, documentRoutes);
+
+// Calendar sync routes
+app.use(
+  `/api/${config.API_VERSION}/organizations/:organizationId/sync/calendar`,
+  authenticate,
+  validateOrganizationAccess,
+  calendarSyncRoutes
+);
 
 // Invoice PDF routes (merged with invoice routes above on line 168)
 

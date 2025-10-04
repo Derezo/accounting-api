@@ -412,7 +412,7 @@ describe('QuoteService', () => {
       );
 
       expect(result.quotes).toHaveLength(1);
-      expect(result.quotes[0]!.description).toBe('Website Development');
+      expect(result.quotes[0].description).toBe('Website Development');
     });
 
     it('should paginate results', async () => {

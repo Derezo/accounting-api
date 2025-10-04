@@ -475,7 +475,7 @@ describe('AuditService', () => {
       });
 
       expect(logs).toHaveLength(1);
-      const retrievedData = JSON.parse(logs[0].changes!);
+      const retrievedData = JSON.parse(logs[0].changes);
 
       expect(retrievedData.stringField).toBe(originalData.stringField);
       expect(retrievedData.numberField).toBe(originalData.numberField);
@@ -510,7 +510,7 @@ describe('AuditService', () => {
       });
 
       expect(logs).toHaveLength(1);
-      const retrievedData = JSON.parse(logs[0].changes!);
+      const retrievedData = JSON.parse(logs[0].changes);
 
       expect(retrievedData.unicode).toBe(specialData.unicode);
       expect(retrievedData.specialChars).toBe(specialData.specialChars);

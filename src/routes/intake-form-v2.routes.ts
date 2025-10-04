@@ -106,6 +106,19 @@ router.post(
 
 // ==================== PUBLIC ROUTES (No Auth Required) ====================
 
+// Public Template Access (read-only)
+router.get(
+  '/intake-forms/templates/default',
+  rateLimitMiddleware({ windowMs: 15 * 60 * 1000, max: 100 }),
+  controller.getDefaultTemplateByDomain
+);
+
+router.get(
+  '/intake-forms/templates/:id',
+  rateLimitMiddleware({ windowMs: 15 * 60 * 1000, max: 100 }),
+  controller.getPublicTemplate
+);
+
 // Session Management
 router.post(
   '/intake-forms/:templateId/sessions',

@@ -32,14 +32,15 @@ export class IntakeRateLimitService {
   private store: Map<string, { count: number; resetAt: Date }> = new Map();
 
   // Rate limit configurations
+  // 10x higher limits in development for testing
   private readonly LIMITS = {
     // IP-based limits
     ip: {
-      initialize: { limit: 5, windowMs: 60 * 60 * 1000 }, // 5 per hour
-      step: { limit: 10, windowMs: 60 * 1000 }, // 10 per minute
-      status: { limit: 30, windowMs: 60 * 1000 }, // 30 per minute
-      submit: { limit: 2, windowMs: 60 * 60 * 1000 }, // 2 per hour
-      total: { limit: 100, windowMs: 60 * 60 * 1000 } // 100 per hour
+      initialize: { limit: process.env.NODE_ENV === 'production' ? 5 : 50, windowMs: 60 * 60 * 1000 }, // 5/50 per hour
+      step: { limit: process.env.NODE_ENV === 'production' ? 10 : 100, windowMs: 60 * 1000 }, // 10/100 per minute
+      status: { limit: process.env.NODE_ENV === 'production' ? 30 : 300, windowMs: 60 * 1000 }, // 30/300 per minute
+      submit: { limit: process.env.NODE_ENV === 'production' ? 2 : 20, windowMs: 60 * 60 * 1000 }, // 2/20 per hour
+      total: { limit: process.env.NODE_ENV === 'production' ? 100 : 1000, windowMs: 60 * 60 * 1000 } // 100/1000 per hour
     },
     // Token-based limits
     token: {

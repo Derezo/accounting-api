@@ -143,7 +143,7 @@ export class IntakeFormConversionService {
     }
 
     // Check if customer already exists
-    let existingCustomer = await this.prisma.customer.findFirst({
+    const existingCustomer = await this.prisma.customer.findFirst({
       where: {
         organizationId,
         person: {

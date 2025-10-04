@@ -50,6 +50,7 @@ export class KeyRotationService {
   private readonly prisma: PrismaClient;
   private readonly activeJobs = new Map<string, KeyRotationJob>();
   private readonly rotationPolicies = new Map<string, KeyRotationPolicy>();
+  private rotationSchedulerInterval?: NodeJS.Timeout;
 
   // Configuration
   private readonly DEFAULT_BATCH_SIZE = 1000;
@@ -86,11 +87,22 @@ export class KeyRotationService {
    */
   private startRotationScheduler(): void {
     // Check for scheduled rotations every hour
-    setInterval(() => {
+    this.rotationSchedulerInterval = setInterval(() => {
       this.checkScheduledRotations();
     }, 3600000); // 1 hour
 
     logger.info('Key rotation scheduler started');
+  }
+
+  /**
+   * Stop the rotation scheduler
+   */
+  public stopScheduler(): void {
+    if (this.rotationSchedulerInterval) {
+      clearInterval(this.rotationSchedulerInterval);
+      this.rotationSchedulerInterval = undefined;
+      logger.info('Key rotation scheduler stopped');
+    }
   }
 
   /**
@@ -261,7 +273,7 @@ export class KeyRotationService {
         organizationId: job.organizationId,
         processedRecords: job.progress.processedRecords,
         failedRecords: job.progress.failedRecords,
-        duration: job.completedAt.getTime() - job.startedAt!.getTime()
+        duration: job.completedAt.getTime() - job.startedAt.getTime()
       });
 
     } catch (error) {

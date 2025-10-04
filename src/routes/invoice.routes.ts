@@ -9,6 +9,7 @@ import {
   validateCancelInvoice
 } from '../controllers/invoice.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
+import { checkResourceAccess, checkResourceOwnership } from '../middleware/resource-permission.middleware';
 import { auditMiddleware } from '../middleware/audit.middleware';
 import { UserRole } from '../types/enums';
 
@@ -845,6 +846,7 @@ router.get(
  */
 router.put(
   '/:id',
+  checkResourceOwnership('invoice', 'id'),
   authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.EMPLOYEE),
   validateUpdateInvoice,
   invoiceController.updateInvoice.bind(invoiceController)
@@ -1076,6 +1078,7 @@ router.post(
  */
 router.post(
   '/:id/cancel',
+  checkResourceAccess('invoice', 'id'),
   authorize(UserRole.ADMIN, UserRole.MANAGER),
   validateCancelInvoice,
   invoiceController.cancelInvoice.bind(invoiceController)

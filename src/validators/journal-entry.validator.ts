@@ -110,10 +110,10 @@ export class JournalEntryValidator {
     }, {});
 
     const duplicateAccounts = Object.entries(accountIdCounts)
-      .filter(([_, count]) => (count as number) > 1)
+      .filter(([_, count]) => (count) > 1)
       .map(([accountId, count]) => {
         const account = accounts.find(a => a.id === accountId);
-        return `${account?.accountNumber || accountId} appears ${count as number} times`;
+        return `${account?.accountNumber || accountId} appears ${count} times`;
       });
 
     if (duplicateAccounts.length > 0) {

@@ -485,7 +485,7 @@ describe('CustomerService', () => {
       );
 
       expect(result.customers).toHaveLength(1);
-      expect(result.customers[0]!.tier).toBe(CustomerTier.ENTERPRISE);
+      expect(result.customers[0].tier).toBe(CustomerTier.ENTERPRISE);
     });
 
     it('should filter by status', async () => {
@@ -495,7 +495,7 @@ describe('CustomerService', () => {
       );
 
       expect(result.customers).toHaveLength(1);
-      expect(result.customers[0]!.status).toBe(CustomerStatus.ACTIVE);
+      expect(result.customers[0].status).toBe(CustomerStatus.ACTIVE);
     });
 
     it('should search customers', async () => {
@@ -505,7 +505,7 @@ describe('CustomerService', () => {
       );
 
       expect(result.customers).toHaveLength(1);
-      expect(result.customers[0]!.person!.firstName).toBe('Alice');
+      expect(result.customers[0].person!.firstName).toBe('Alice');
     });
 
     it('should paginate results', async () => {

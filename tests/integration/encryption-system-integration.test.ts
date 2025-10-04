@@ -52,18 +52,18 @@ describe('Encryption System Tests', () => {
   });
 
   afterAll(async () => {
-    await prisma.$disconnect();
-
     // Shutdown services to clear intervals and prevent open handles
-    if (keyRotation && typeof keyRotation.shutdown === 'function') {
-      await keyRotation.shutdown();
+    if (keyRotation && typeof keyRotation.stopScheduler === 'function') {
+      keyRotation.stopScheduler();
+    }
+    if (performanceService && typeof performanceService.stopMonitoring === 'function') {
+      performanceService.stopMonitoring();
     }
     if (auditService && typeof auditService.shutdown === 'function') {
       await auditService.shutdown();
     }
-    if (performanceService && typeof performanceService.shutdown === 'function') {
-      await performanceService.shutdown();
-    }
+
+    await prisma.$disconnect();
   });
 
   beforeEach(() => {

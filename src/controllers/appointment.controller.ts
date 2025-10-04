@@ -122,7 +122,7 @@ export class AppointmentController {
       }
 
       const appointment = await appointmentService.getAppointment(
-        req.params.id!,
+        req.params.id,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -184,7 +184,7 @@ export class AppointmentController {
       if (req.body.locationId !== undefined) updateData.locationId = req.body.locationId;
 
       const appointment = await appointmentService.updateAppointment(
-        req.params.id!,
+        req.params.id,
         updateData,
         req.user.organizationId,
         {
@@ -283,7 +283,7 @@ export class AppointmentController {
       }
 
       const appointment = await appointmentService.confirmAppointment(
-        req.params.id!,
+        req.params.id,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -327,7 +327,7 @@ export class AppointmentController {
       const { notes } = req.body;
 
       const appointment = await appointmentService.completeAppointment(
-        req.params.id!,
+        req.params.id,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -373,7 +373,7 @@ export class AppointmentController {
       const { cancellationReason } = req.body;
 
       const appointment = await appointmentService.cancelAppointment(
-        req.params.id!,
+        req.params.id,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -419,7 +419,7 @@ export class AppointmentController {
       const { startTime, endTime } = req.body;
 
       const appointment = await appointmentService.rescheduleAppointment(
-        req.params.id!,
+        req.params.id,
         new Date(startTime),
         new Date(endTime),
         req.user.organizationId,

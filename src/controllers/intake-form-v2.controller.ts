@@ -95,6 +95,65 @@ export class IntakeFormV2Controller {
   };
 
   /**
+   * GET /api/v2/intake-forms/templates/default (PUBLIC)
+   * Get default template for organization based on domain header
+   * Uses X-Organization-Domain header to identify the organization
+   */
+  getDefaultTemplateByDomain = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const domain = req.headers['x-organization-domain'] as string || req.hostname;
+
+      if (!domain) {
+        res.status(400).json({
+          success: false,
+          error: 'Organization domain not provided'
+        });
+        return;
+      }
+
+      const template = await this.templateService.getDefaultTemplateByDomain(domain);
+
+      if (!template) {
+        res.status(404).json({
+          success: false,
+          error: 'No default template found for this organization'
+        });
+        return;
+      }
+
+      res.status(200).json({ success: true, data: template });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  };
+
+  /**
+   * GET /api/v2/intake-forms/templates/:id (PUBLIC)
+   * Get active template by ID (no authentication required)
+   * Only returns templates that are active and published
+   */
+  getPublicTemplate = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+
+      // Get template without org restriction (searches across all orgs)
+      const template = await this.templateService.getPublicTemplateById(id);
+
+      if (!template || !template.isActive) {
+        res.status(404).json({
+          success: false,
+          error: 'Template not found or inactive'
+        });
+        return;
+      }
+
+      res.status(200).json({ success: true, data: template });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  };
+
+  /**
    * PUT /api/v2/organizations/:orgId/intake-forms/templates/:id
    * Update template
    */

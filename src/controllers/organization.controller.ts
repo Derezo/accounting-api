@@ -75,7 +75,7 @@ export class OrganizationController {
       const organization = await organizationService.createOrganization(
         req.body,
         {
-          userId: req.user!.id,
+          userId: req.user.id,
           ipAddress: req.ip,
           userAgent: req.headers['user-agent']
         }
@@ -106,10 +106,10 @@ export class OrganizationController {
       }
 
       const organization = await organizationService.getOrganization(
-        req.params.id!,
-        req.user!.organizationId,
+        req.params.id,
+        req.user.organizationId,
         {
-          userId: req.user!.id,
+          userId: req.user.id,
           ipAddress: req.ip,
           userAgent: req.headers['user-agent']
         }
@@ -169,11 +169,11 @@ export class OrganizationController {
       }
 
       const organization = await organizationService.updateOrganization(
-        req.params.id!,
+        req.params.id,
         req.body,
-        req.user!.organizationId,
+        req.user.organizationId,
         {
-          userId: req.user!.id,
+          userId: req.user.id,
           ipAddress: req.ip,
           userAgent: req.headers['user-agent']
         }
@@ -254,10 +254,10 @@ export class OrganizationController {
       }
 
       const organization = await organizationService.deactivateOrganization(
-        req.params.id!,
+        req.params.id,
         'super-admin',
         {
-          userId: req.user!.id,
+          userId: req.user.id,
           ipAddress: req.ip,
           userAgent: req.headers['user-agent']
         }
@@ -285,8 +285,8 @@ export class OrganizationController {
       }
 
       const stats = await organizationService.getOrganizationStats(
-        req.params.id!,
-        req.user!.organizationId
+        req.params.id,
+        req.user.organizationId
       );
 
       res.json({ stats });
@@ -303,8 +303,8 @@ export class OrganizationController {
       }
 
       const settings = await organizationService.getOrganizationSettings(
-        req.params.id!,
-        req.user!.organizationId
+        req.params.id,
+        req.user.organizationId
       );
 
       res.json({ settings });
@@ -327,11 +327,11 @@ export class OrganizationController {
       }
 
       const settings = await organizationService.updateOrganizationSettings(
-        req.params.id!,
+        req.params.id,
         req.body,
-        req.user!.organizationId,
+        req.user.organizationId,
         {
-          userId: req.user!.id,
+          userId: req.user.id,
           ipAddress: req.ip,
           userAgent: req.headers['user-agent']
         }

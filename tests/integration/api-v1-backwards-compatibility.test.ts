@@ -248,7 +248,7 @@ describe('API v1 Backwards Compatibility Tests', () => {
       const { authTokens, organization, customers } = testContext;
 
       // Create customer-specific access scenarios
-      const customer = customers[0]!;
+      const customer = customers[0];
       const quote = await createTestQuote(
         prisma,
         organization.id,

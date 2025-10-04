@@ -55,22 +55,33 @@ afterAll(async () => {
   console.log('✅ Integration test shutdown complete');
 });
 
-beforeEach(async () => {
-  // Clean database before each test to ensure isolation
-  try {
-    await cleanupDatabase(prisma);
-  } catch (error) {
-    console.error('Error cleaning database:', error);
-    throw error;
-  }
-});
+// DISABLED: Global cleanup was causing issues with tests that manage their own data
+// Tests that need cleanup should call cleanupDatabase() explicitly in their own beforeEach
+// beforeEach(async () => {
+//   // Clean database before each test to ensure isolation
+//   try {
+//     await cleanupDatabase(prisma);
+//   } catch (error) {
+//     console.error('Error cleaning database:', error);
+//     throw error;
+//   }
+// });
 
 // Helper function to create authenticated request
+// Note: Returns the supertest agent, caller must specify HTTP method (.get(), .post(), etc.)
 export function authenticatedRequest(token: string) {
   if (!testApp) {
     throw new Error('testApp is not initialized. Make sure beforeAll has completed.');
   }
-  return supertest(testApp).set('Authorization', `Bearer ${token}`);
+  const agent = supertest(testApp);
+  // Return a wrapper that adds auth header to any request
+  return {
+    get: (url: string) => agent.get(url).set('Authorization', `Bearer ${token}`),
+    post: (url: string) => agent.post(url).set('Authorization', `Bearer ${token}`),
+    put: (url: string) => agent.put(url).set('Authorization', `Bearer ${token}`),
+    patch: (url: string) => agent.patch(url).set('Authorization', `Bearer ${token}`),
+    delete: (url: string) => agent.delete(url).set('Authorization', `Bearer ${token}`)
+  };
 }
 
 // Helper function to get base request

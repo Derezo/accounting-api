@@ -65,6 +65,7 @@ model Organization {
   securityEvents           SecurityEvent[]
   recurringInvoices        RecurringInvoice[]
   customerPaymentMethods   CustomerPaymentMethod[]
+  customerPaymentTokens    CustomerPaymentToken[]
   contractorPayments       ContractorPayment[]
   notifications            Notification[]
   webhooks                 Webhook[]
@@ -81,6 +82,13 @@ model Organization {
   quoteAcceptanceTokens    QuoteAcceptanceToken[]
   appointmentBookingTokens AppointmentBookingToken[]
   intakeFormTemplates      IntakeFormTemplate[]
+  userGoogleTokens         UserGoogleToken[]
+  smsMessages              SmsMessage[]
+  searchIndexes            SearchIndex[]
+  encryptionAuditLogs      EncryptionAuditLog[]
+  intakeSettings           IntakeSettings?
+  systemIntegrations       SystemIntegration[]
+  subscriptions             OrganizationSubscription[]
 
   @@index([domain])
   @@index([isActive])
@@ -92,31 +100,15 @@ model Organization {
 model User {
   id               String  @id @default(cuid())
   organizationId   String
-  email            String  @unique
+  email            String  @unique // Globally unique email across all organizations
   passwordHash     String
-  role             String  @default("EMPLOYEE") // UserRole
+  firstName        String
+  lastName         String
+  role             String // UserRole enum
   isActive         Boolean @default(true)
-  emailVerified    Boolean @default(false)
-  twoFactorEnabled Boolean @default(false)
-  twoFactorSecret  String?
-
-  // Profile
-  firstName String
-  lastName  String
-  avatar    String?
-  phone     String?
-
-  // CLIENT role support - links user to customer record
-  customerId String?   @unique
-  customer   Customer? @relation("UserCustomer", fields: [customerId], references: [id])
-
-  // Security
-  lastLoginAt          DateTime?
-  lastLoginIp          String?
-  failedAttempts       Int       @default(0)
-  lockedUntil          DateTime?
-  passwordResetToken   String?
-  passwordResetExpires DateTime?
+  lastLoginAt      DateTime?
+  failedLoginCount Int       @default(0)
+  lockoutUntil     DateTime?
 
   // Timestamps
   createdAt DateTime  @default(now())
@@ -124,81 +116,58 @@ model User {
   deletedAt DateTime?
 
   // Relationships
-  organization        Organization    @relation(fields: [organizationId], references: [id])
-  sessions            Session[]
-  uploadedDocuments   Document[]
-  auditLogs           AuditLog[]
-  createdQuotes       Quote[]         @relation("QuoteCreator")
-  assignedProjects    Project[]       @relation("ProjectAssignee")
-  securityEvents      SecurityEvent[]
-  notifications       Notification[]
-  createdCustomers    Customer[]      @relation("CustomerCreator")
-  createdInvoices     Invoice[]       @relation("InvoiceCreator")
-  createdPayments     Payment[]       @relation("PaymentCreator")
-  createdProjects     Project[]       @relation("ProjectCreator")
-  createdAppointments Appointment[]   @relation("AppointmentCreator")
+  organization            Organization              @relation(fields: [organizationId], references: [id])
+  documents               Document[]
+  auditLogs               AuditLog[]
+  apiKeys                 ApiKey[]
+  securityEvents          SecurityEvent[]
+  notifications           Notification[]
+  googleTokens            UserGoogleToken[]
+  createdSystemIntegrations SystemIntegration[] @relation("CreatedSystemIntegrations")
+  createdSystemBackups SystemBackup[] @relation("CreatedSystemBackups")
+  deletedSystemBackups SystemBackup[] @relation("DeletedSystemBackups")
 
+  // Keep compound unique for backward compatibility and additional validation
+  @@unique([organizationId, email])
   @@index([organizationId])
-  @@index([email])
-  @@index([customerId])
+  @@index([role])
   @@map("users")
 }
 
-model Session {
-  id           String   @id @default(cuid())
-  userId       String
-  token        String   @unique
-  refreshToken String   @unique
-  ipAddress    String
-  userAgent    String?
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-
-  // Relationships
-  user User @relation(fields: [userId], references: [id])
-
-  @@index([userId])
-  @@index([token])
-  @@map("sessions")
-}
-
 model ApiKey {
-  id             String    @id @default(cuid())
+  id             String  @id @default(cuid())
   organizationId String
+  userId         String
   name           String
-  key            String    @unique
-  hashedKey      String    @unique
-  permissions    String // JSON stored as string
-  lastUsedAt     DateTime?
-  lastUsedIp     String?
+  keyHash        String  @unique
+  permissions    String // JSON array
+  isActive       Boolean @default(true)
   expiresAt      DateTime?
-  isActive       Boolean   @default(true)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
 
   // Relationships
   organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
 
   @@index([organizationId])
-  @@index([hashedKey])
+  @@index([userId])
   @@map("api_keys")
 }
 
-// ==================== NORMALIZED ENTITIES (3NF) ====================
+// ==================== PERSON & BUSINESS ENTITIES ====================
 
 model Person {
-  id              String    @id @default(cuid())
-  organizationId  String
-  firstName       String
-  lastName        String
-  middleName      String?
-  dateOfBirth     DateTime?
-  socialInsNumber String? // Encrypted
+  id             String @id @default(cuid())
+  organizationId String
 
-  // Contact
-  email  String?
-  phone  String?
-  mobile String?
+  // Personal Information
+  firstName String
+  lastName  String
+  email     String
+  phone     String
 
   // Timestamps
   createdAt DateTime  @default(now())
@@ -207,28 +176,31 @@ model Person {
 
   // Relationships
   organization Organization @relation(fields: [organizationId], references: [id])
-  customer     Customer?
-  employee     Employee?
-  contractor   Contractor?
+  customers    Customer[]
+  employees    Employee[]
+  contractors  Contractor[]
 
   @@index([organizationId])
+  @@index([email])
   @@map("persons")
 }
 
 model Business {
-  id                String    @id @default(cuid())
-  organizationId    String
-  legalName         String
-  tradeName         String?
-  businessNumber    String?
-  taxNumber         String?
-  incorporationDate DateTime?
-  businessType      String // BusinessType
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Business Information
+  legalName      String
+  tradingName    String?
+  businessNumber String?
+  taxNumber      String?
+  type           String // BusinessType enum
+  industry       String?
+  website        String?
 
   // Contact
-  email   String?
-  phone   String?
-  website String?
+  email String
+  phone String
 
   // Timestamps
   createdAt DateTime  @default(now())
@@ -237,36 +209,343 @@ model Business {
 
   // Relationships
   organization Organization @relation(fields: [organizationId], references: [id])
-  customer     Customer?
-  vendor       Vendor?
+  customers    Customer[]
+  vendors      Vendor[]
 
-  @@unique([organizationId, businessNumber])
   @@index([organizationId])
+  @@index([businessNumber])
   @@map("businesses")
 }
 
-// ==================== CUSTOMERS & VENDORS ====================
+model Address {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Address Information
+  type        String // BILLING, SHIPPING, PHYSICAL, MAILING
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  province     String
+  postalCode   String
+  country      String @default("CA")
+
+  // Polymorphic Relationship
+  entityType String // Customer, Vendor, Location, etc.
+  entityId   String
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([entityType, entityId])
+  @@map("addresses")
+}
+
+// ==================== CUSTOMER MANAGEMENT ====================
 
 model Customer {
-  id             String  @id @default(cuid())
+  id             String @id @default(cuid())
   organizationId String
-  customerNumber String
-  personId       String? @unique
-  businessId     String? @unique
 
-  // Customer Details
-  tier              String   @default("PERSONAL") // CustomerTier
-  status            String   @default("PROSPECT") // CustomerStatus
-  creditLimit       Decimal?
-  paymentTerms      Int      @default(15) // Days
-  taxExempt         Boolean  @default(false)
-  preferredCurrency String   @default("CAD")
-  notes             String?
+  // Reference
+  customerNumber String @unique
+  type           String // CustomerType (PERSON or BUSINESS)
+  status         String @default("PROSPECT") // CustomerStatus
+  tier           String @default("PERSONAL") // CustomerTier
 
-  // Audit fields
-  createdBy String?
-  updatedBy String?
-  deletedBy String?
+  // Person or Business Reference
+  personId   String?
+  businessId String?
+
+  // Contact (denormalized for performance)
+  email String
+  phone String
+  name  String // Full name or business name
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization      Organization        @relation(fields: [organizationId], references: [id])
+  person            Person?             @relation(fields: [personId], references: [id])
+  business          Business?           @relation(fields: [businessId], references: [id])
+  quotes            Quote[]
+  invoices          Invoice[]
+  payments          Payment[]
+  projects          Project[]
+  appointments      Appointment[]
+  paymentMethods    CustomerPaymentMethod[]
+  paymentTokens     CustomerPaymentToken[]
+
+  @@index([organizationId])
+  @@index([customerNumber])
+  @@index([email])
+  @@index([status])
+  @@index([tier])
+  @@map("customers")
+}
+
+model Vendor {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Reference
+  vendorNumber String @unique
+  type         String // PERSON or BUSINESS
+
+  // Person or Business Reference
+  businessId String?
+
+  // Contact
+  email String
+  phone String
+  name  String
+
+  // Payment Terms
+  paymentTerms    String?
+  defaultCurrency String  @default("CAD")
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization    Organization      @relation(fields: [organizationId], references: [id])
+  business        Business?         @relation(fields: [businessId], references: [id])
+  expenses        Expense[]
+  purchaseOrders  PurchaseOrder[]
+  bills           Bill[]
+  vendorPayments  VendorPayment[]
+
+  @@index([organizationId])
+  @@index([vendorNumber])
+  @@map("vendors")
+}
+
+model Employee {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Reference
+  employeeNumber String @unique
+  personId       String
+
+  // Employment Details
+  jobTitle   String
+  department String?
+  hireDate   DateTime
+  endDate    DateTime?
+  isActive   Boolean  @default(true)
+
+  // Compensation
+  salary       Decimal?
+  hourlyRate   Decimal?
+  payFrequency String? // WEEKLY, BIWEEKLY, MONTHLY
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization    Organization          @relation(fields: [organizationId], references: [id])
+  person          Person                @relation(fields: [personId], references: [id])
+  timeEntries     EmployeeTimeEntry[]
+
+  @@index([organizationId])
+  @@index([employeeNumber])
+  @@map("employees")
+}
+
+model Contractor {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Reference
+  contractorNumber String @unique
+  personId         String
+
+  // Contract Details
+  specialty       String?
+  hourlyRate      Decimal
+  isActive        Boolean @default(true)
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization       Organization         @relation(fields: [organizationId], references: [id])
+  person             Person               @relation(fields: [personId], references: [id])
+  contractorPayments ContractorPayment[]
+
+  @@index([organizationId])
+  @@index([contractorNumber])
+  @@map("contractors")
+}
+
+model Location {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Location Details
+  name        String
+  code        String
+  description String?
+  isActive    Boolean @default(true)
+
+  // Address
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  province     String
+  postalCode   String
+  country      String @default("CA")
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  appointments Appointment[]
+
+  @@index([organizationId])
+  @@index([code])
+  @@map("locations")
+}
+
+// ==================== PRODUCTS & SERVICES ====================
+
+model Product {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Product Information
+  sku         String  @unique
+  name        String
+  description String?
+  categoryId  String?
+
+  // Pricing
+  unitPrice Decimal
+  cost      Decimal?
+  currency  String  @default("CAD")
+
+  // Inventory
+  trackInventory Boolean @default(false)
+  stockQuantity  Int     @default(0)
+  reorderLevel   Int?
+
+  // Tax
+  isTaxable Boolean @default(true)
+  taxCode   String?
+
+  // Status
+  isActive Boolean @default(true)
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization          Organization            @relation(fields: [organizationId], references: [id])
+  category              ProductCategory?        @relation(fields: [categoryId], references: [id])
+  quoteLineItems        QuoteLineItem[]
+  invoiceLineItems      InvoiceLineItem[]
+  inventoryItems        InventoryItem[]
+  inventoryTransactions InventoryTransaction[]
+
+  @@index([organizationId])
+  @@index([sku])
+  @@index([categoryId])
+  @@map("products")
+}
+
+model Service {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Service Information
+  code        String  @unique
+  name        String
+  description String?
+  categoryId  String?
+
+  // Pricing
+  defaultRate Decimal
+  unit        String  @default("HOUR") // HOUR, DAY, FIXED, etc.
+  currency    String  @default("CAD")
+
+  // Tax
+  isTaxable Boolean @default(true)
+  taxCode   String?
+
+  // Status
+  isActive Boolean @default(true)
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  category         ServiceCategory?  @relation(fields: [categoryId], references: [id])
+  quoteLineItems   QuoteLineItem[]
+  invoiceLineItems InvoiceLineItem[]
+
+  @@index([organizationId])
+  @@index([code])
+  @@index([categoryId])
+  @@map("services")
+}
+
+// ==================== QUOTING SYSTEM ====================
+
+model Quote {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Reference
+  quoteNumber String @unique
+  customerId  String
+
+  // Quote Details
+  subject     String?
+  description String?
+  status      String  @default("DRAFT") // QuoteStatus
+  validUntil  DateTime
+
+  // Financial
+  subtotal       Decimal
+  taxTotal       Decimal
+  total          Decimal
+  currency       String  @default("CAD")
+  depositAmount  Decimal?
+  depositPercent Decimal?
+
+  // Acceptance
+  acceptedAt     DateTime?
+  acceptedBy     String? // Email or name
+  acceptanceNote String?
+
+  // Conversion
+  convertedToInvoice Boolean   @default(false)
+  invoiceId          String?
+  convertedAt        DateTime?
 
   // Timestamps
   createdAt DateTime  @default(now())
@@ -275,822 +554,109 @@ model Customer {
 
   // Relationships
   organization      Organization            @relation(fields: [organizationId], references: [id])
-  person            Person?                 @relation(fields: [personId], references: [id])
-  business          Business?               @relation(fields: [businessId], references: [id])
-  creator           User?                   @relation("CustomerCreator", fields: [createdBy], references: [id])
-  addresses         CustomerAddress[]
-  quotes            Quote[]
-  invoices          Invoice[]
-  payments          Payment[]
-  projects          Project[]
-  appointments      Appointment[]
-  recurringInvoices RecurringInvoice[]
-  paymentMethods    CustomerPaymentMethod[]
-  linkedUser        User?                   @relation("UserCustomer")
-
-  @@unique([organizationId, customerNumber])
-  @@index([organizationId])
-  @@index([createdBy])
-  @@index([status])
-  @@map("customers")
-}
-
-model Vendor {
-  id             String @id @default(cuid())
-  organizationId String
-  vendorNumber   String
-  businessId     String @unique
-
-  // Vendor Details
-  category               String
-  paymentTerms           Int     @default(30) // Days
-  taxNumber              String?
-  preferredPaymentMethod String  @default("BANK_TRANSFER") // PaymentMethod
-  bankAccount            String? // Encrypted JSON
-  notes                  String?
-  isActive               Boolean @default(true)
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization   Organization    @relation(fields: [organizationId], references: [id])
-  business       Business        @relation(fields: [businessId], references: [id])
-  addresses      VendorAddress[]
-  expenses       Expense[]
-  purchaseOrders PurchaseOrder[]
-  bills          Bill[]
-  payments       VendorPayment[]
-
-  @@unique([organizationId, vendorNumber])
-  @@index([organizationId])
-  @@map("vendors")
-}
-
-// ==================== EMPLOYEES & CONTRACTORS ====================
-
-model Employee {
-  id             String @id @default(cuid())
-  organizationId String
-  personId       String @unique
-  employeeNumber String
-
-  // Employment Details
-  position        String
-  department      String?
-  hireDate        DateTime
-  terminationDate DateTime?
-  salary          Decimal? // Encrypted
-  hourlyRate      Decimal?
-  isActive        Boolean   @default(true)
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization Organization        @relation(fields: [organizationId], references: [id])
-  person       Person              @relation(fields: [personId], references: [id])
-  timeEntries  EmployeeTimeEntry[]
-
-  @@unique([organizationId, employeeNumber])
-  @@index([organizationId])
-  @@map("employees")
-}
-
-model Contractor {
-  id               String @id @default(cuid())
-  organizationId   String
-  personId         String @unique
-  contractorNumber String
-
-  // Contractor Details
-  businessNumber String?
-  hourlyRate     Decimal
-  specialization String
-  t4aRequired    Boolean @default(true)
-  isActive       Boolean @default(true)
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization       Organization        @relation(fields: [organizationId], references: [id])
-  person             Person              @relation(fields: [personId], references: [id])
-  expenses           Expense[]
-  contractorPayments ContractorPayment[]
-
-  @@unique([organizationId, contractorNumber])
-  @@index([organizationId])
-  @@map("contractors")
-}
-
-// ==================== ADDRESSES (NORMALIZED) ====================
-
-model Address {
-  id             String @id @default(cuid())
-  organizationId String
-
-  // Address Details
-  line1           String
-  line2           String?
-  city            String
-  stateProvinceId String?
-  postalCode      String
-  countryId       String
-
-  // Geolocation
-  latitude  Float?
-  longitude Float?
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relationships
-  organization      Organization      @relation(fields: [organizationId], references: [id])
-  country           Country           @relation(fields: [countryId], references: [id])
-  stateProvince     StateProvince?    @relation(fields: [stateProvinceId], references: [id])
-  customerAddresses CustomerAddress[]
-  vendorAddresses   VendorAddress[]
-  locations         Location[]
+  customer          Customer                @relation(fields: [customerId], references: [id])
+  lineItems         QuoteLineItem[]
+  acceptanceTokens  QuoteAcceptanceToken[]
 
   @@index([organizationId])
-  @@index([countryId])
-  @@map("addresses")
-}
-
-model CustomerAddress {
-  id          String  @id @default(cuid())
-  customerId  String
-  addressId   String
-  addressType String  @default("BILLING") // BILLING, SHIPPING, OTHER
-  isPrimary   Boolean @default(false)
-
-  // Relationships
-  customer Customer @relation(fields: [customerId], references: [id])
-  address  Address  @relation(fields: [addressId], references: [id])
-
-  @@unique([customerId, addressId, addressType])
-  @@map("customer_addresses")
-}
-
-model VendorAddress {
-  id          String  @id @default(cuid())
-  vendorId    String
-  addressId   String
-  addressType String  @default("BILLING")
-  isPrimary   Boolean @default(false)
-
-  // Relationships
-  vendor  Vendor  @relation(fields: [vendorId], references: [id])
-  address Address @relation(fields: [addressId], references: [id])
-
-  @@unique([vendorId, addressId, addressType])
-  @@map("vendor_addresses")
-}
-
-// ==================== LOCATIONS ====================
-
-model Location {
-  id             String  @id @default(cuid())
-  organizationId String
-  name           String
-  code           String
-  addressId      String
-  phone          String?
-  email          String?
-  isHeadquarters Boolean @default(false)
-  isActive       Boolean @default(true)
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization          Organization           @relation(fields: [organizationId], references: [id])
-  address               Address                @relation(fields: [addressId], references: [id])
-  appointments          Appointment[]
-  inventoryItems        InventoryItem[]
-  inventoryTransactions InventoryTransaction[]
-
-  @@unique([organizationId, code])
-  @@index([organizationId])
-  @@map("locations")
-}
-
-// ==================== PRODUCTS & SERVICES ====================
-
-model Product {
-  id             String   @id @default(cuid())
-  organizationId String
-  sku            String
-  name           String
-  description    String?
-  categoryId     String
-  unitPrice      Decimal
-  cost           Decimal?
-  taxable        Boolean  @default(true)
-  isActive       Boolean  @default(true)
-
-  // Inventory
-  trackInventory Boolean @default(false)
-  quantity       Int     @default(0)
-  reorderPoint   Int?
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization       Organization            @relation(fields: [organizationId], references: [id])
-  category           ProductCategory         @relation(fields: [categoryId], references: [id])
-  quoteItems         QuoteItem[]
-  invoiceItems       InvoiceItem[]
-  purchaseOrderItems PurchaseOrderLineItem[]
-  billItems          BillLineItem[]
-  inventoryItems     InventoryItem[]
-
-  @@unique([organizationId, sku])
-  @@index([organizationId])
-  @@index([categoryId])
-  @@map("products")
-}
-
-model Service {
-  id             String  @id @default(cuid())
-  organizationId String
-  code           String
-  name           String
-  description    String?
-  categoryId     String
-  hourlyRate     Decimal
-  minimumHours   Decimal @default(0.25)
-  taxable        Boolean @default(true)
-  isActive       Boolean @default(true)
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization Organization    @relation(fields: [organizationId], references: [id])
-  category     ServiceCategory @relation(fields: [categoryId], references: [id])
-  quoteItems   QuoteItem[]
-  invoiceItems InvoiceItem[]
-
-  @@unique([organizationId, code])
-  @@index([organizationId])
-  @@index([categoryId])
-  @@map("services")
-}
-
-// ==================== QUOTES & INVOICES ====================
-
-model Quote {
-  id             String @id @default(cuid())
-  organizationId String
-  quoteNumber    String
-  customerId     String
-  createdById    String
-
-  // Quote Details
-  status       String   @default("DRAFT") // QuoteStatus
-  validUntil   DateTime
-  currency     String   @default("CAD")
-  exchangeRate Decimal  @default(1.0)
-
-  // Amounts (stored for performance, calculated from items)
-  subtotal  Decimal
-  taxAmount Decimal
-  total     Decimal
-
-  // Content
-  description String?
-  terms       String?
-  notes       String?
-
-  // Tracking
-  sentAt          DateTime?
-  viewedAt        DateTime?
-  acceptedAt      DateTime?
-  rejectedAt      DateTime?
-  rejectionReason String?
-  expiresAt       DateTime? // Expiration date for quote validation
-
-  // Intake Integration
-  intakeSessionId String? // Link to intake session that created this quote
-  customFields    String? // JSON string for dynamic/custom fields
-
-  // Public Access (for quote acceptance workflow)
-  publicViewEnabled Boolean @default(false)
-  publicViewToken   String? @unique // Token for viewing quote publicly
-  acceptanceToken   String? @unique // Token for accepting quote
-
-  // Audit fields
-  updatedBy String?
-  deletedBy String?
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization     Organization              @relation(fields: [organizationId], references: [id])
-  customer         Customer                  @relation(fields: [customerId], references: [id])
-  createdBy        User                      @relation("QuoteCreator", fields: [createdById], references: [id])
-  items            QuoteItem[]
-  invoice          Invoice?
-  acceptanceTokens QuoteAcceptanceToken[]
-  appointments     Appointment[]
-  bookingTokens    AppointmentBookingToken[]
-
-  @@unique([organizationId, quoteNumber])
-  @@index([organizationId])
+  @@index([quoteNumber])
   @@index([customerId])
-  @@index([createdById])
   @@index([status])
-  @@index([intakeSessionId])
-  @@index([publicViewToken])
-  @@index([acceptanceToken])
   @@map("quotes")
 }
 
-model QuoteItem {
-  id        String  @id @default(cuid())
-  quoteId   String
-  productId String?
-  serviceId String?
+model QuoteLineItem {
+  id             String @id @default(cuid())
+  quoteId        String
+
+  // Line Item Type
+  type       String // PRODUCT, SERVICE, CUSTOM
+  productId  String?
+  serviceId  String?
 
   // Item Details
-  description     String
-  quantity        Decimal
-  unitPrice       Decimal
-  discountPercent Decimal @default(0)
-  taxRate         Decimal
+  description String
+  quantity    Decimal
+  unitPrice   Decimal
+  discount    Decimal @default(0)
+  taxAmount   Decimal @default(0)
+  total       Decimal
 
-  // Calculated (stored for performance)
-  subtotal       Decimal
-  discountAmount Decimal
-  taxAmount      Decimal
-  total          Decimal
+  // Tax
+  isTaxable Boolean @default(true)
+  taxCode   String?
+  taxRate   Decimal?
 
-  // Ordering
-  sortOrder Int
+  // Sort Order
+  sortOrder Int @default(0)
 
   // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   // Relationships
-  quote   Quote    @relation(fields: [quoteId], references: [id])
-  product Product? @relation(fields: [productId], references: [id])
-  service Service? @relation(fields: [serviceId], references: [id])
+  quote   Quote     @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  product Product?  @relation(fields: [productId], references: [id])
+  service Service?  @relation(fields: [serviceId], references: [id])
 
   @@index([quoteId])
-  @@map("quote_items")
+  @@map("quote_line_items")
 }
 
 model QuoteAcceptanceToken {
   id             String @id @default(cuid())
-  quoteId        String
   organizationId String
+  quoteId        String
 
   // Token Details
-  tokenHash    String @unique // bcrypt hash of token
-  tokenVersion Int    @default(1)
+  token      String   @unique
+  expiresAt  DateTime
+  isUsed     Boolean  @default(false)
+  usedAt     DateTime?
 
-  // Status
-  status      String    @default("ACTIVE") // ACTIVE, USED, EXPIRED, INVALIDATED
-  usedAt      DateTime?
-  invalidated Boolean   @default(false)
-
-  // Security Context (when token was generated)
-  generatedBy   String? // User ID who generated the token
-  ipAddressUsed String? // IP address when token was used
-
-  // Acceptance Details
-  acceptedBy      String? // Customer email who accepted
-  acceptanceNotes String? // Optional notes from customer during acceptance
-
-  // Expiration
-  expiresAt DateTime
+  // Security
+  ipAddress String?
+  userAgent String?
 
   // Timestamps
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   // Relationships
-  quote        Quote        @relation(fields: [quoteId], references: [id])
   organization Organization @relation(fields: [organizationId], references: [id])
+  quote        Quote        @relation(fields: [quoteId], references: [id])
 
+  @@index([organizationId])
   @@index([quoteId])
-  @@index([tokenHash])
-  @@index([status])
+  @@index([token])
   @@index([expiresAt])
   @@map("quote_acceptance_tokens")
 }
 
-model Invoice {
-  id             String  @id @default(cuid())
-  organizationId String
-  invoiceNumber  String
-  customerId     String
-  quoteId        String? @unique
-  templateId     String? // Optional invoice template
-
-  // Invoice Details
-  status       String   @default("DRAFT") // InvoiceStatus
-  issueDate    DateTime @default(now())
-  dueDate      DateTime
-  currency     String   @default("CAD")
-  exchangeRate Decimal  @default(1.0)
-
-  // Amounts (stored for performance)
-  subtotal        Decimal
-  taxAmount       Decimal
-  total           Decimal
-  depositRequired Decimal
-  amountPaid      Decimal @default(0)
-  balance         Decimal
-
-  // Content
-  terms String?
-  notes String?
-
-  // Tracking
-  sentAt   DateTime?
-  viewedAt DateTime?
-  paidAt   DateTime?
-
-  // Audit fields
-  createdBy String?
-  updatedBy String?
-  deletedBy String?
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization  Organization        @relation(fields: [organizationId], references: [id])
-  customer      Customer            @relation(fields: [customerId], references: [id])
-  quote         Quote?              @relation(fields: [quoteId], references: [id])
-  template      InvoiceTemplate?    @relation(fields: [templateId], references: [id])
-  creator       User?               @relation("InvoiceCreator", fields: [createdBy], references: [id])
-  items         InvoiceItem[]
-  payments      Payment[]
-  generatedPDFs GeneratedPDF[]
-  project       Project?
-  timeEntries   EmployeeTimeEntry[]
-
-  @@unique([organizationId, invoiceNumber])
-  @@index([organizationId])
-  @@index([customerId])
-  @@index([createdBy])
-  @@index([status])
-  @@map("invoices")
-}
-
-model InvoiceItem {
-  id        String  @id @default(cuid())
-  invoiceId String
-  productId String?
-  serviceId String?
-
-  // Item Details
-  description     String
-  quantity        Decimal
-  unitPrice       Decimal
-  discountPercent Decimal @default(0)
-  taxRate         Decimal
-
-  // Calculated
-  subtotal       Decimal
-  discountAmount Decimal
-  taxAmount      Decimal
-  total          Decimal
-
-  // Ordering
-  sortOrder Int
-
-  // Versioning for financial record immutability
-  version        Int      @default(1)
-  supersededAt   DateTime?
-  supersededById String?
-  supersededBy   InvoiceItem? @relation("InvoiceItemVersions", fields: [supersededById], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  previousVersions InvoiceItem[] @relation("InvoiceItemVersions")
-  isLatestVersion Boolean  @default(true)
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relationships
-  invoice Invoice  @relation(fields: [invoiceId], references: [id])
-  product Product? @relation(fields: [productId], references: [id])
-  service Service? @relation(fields: [serviceId], references: [id])
-
-  @@index([invoiceId])
-  @@index([invoiceId, isLatestVersion])
-  @@index([supersededById])
-  @@map("invoice_items")
-}
-
-// ==================== PAYMENTS ====================
-
-model Payment {
-  id             String  @id @default(cuid())
-  organizationId String
-  paymentNumber  String
-  customerId     String
-  invoiceId      String?
-
-  // Payment Details
-  paymentMethod String // PaymentMethod
-  amount        Decimal
-  currency      String   @default("CAD")
-  paymentDate   DateTime
-
-  // Payment References
-  referenceNumber       String? // E-transfer ref, cash receipt, etc.
-  stripePaymentIntentId String?
-  stripeChargeId        String?
-  bankReference         String?
-
-  // Status
-  status        String  @default("PENDING") // PaymentStatus
-  failureReason String?
-
-  // Processing
-  processorFee Decimal?
-  netAmount    Decimal?
-
-  // Notes
-  customerNotes String?
-  adminNotes    String?
-  metadata      String? // JSON stored as string
-
-  // Audit fields
-  createdBy String?
-  updatedBy String?
-  deletedBy String?
-
-  // Timestamps
-  processedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-
-  // Relationships
-  organization     Organization      @relation(fields: [organizationId], references: [id])
-  customer         Customer          @relation(fields: [customerId], references: [id])
-  invoice          Invoice?          @relation(fields: [invoiceId], references: [id])
-  creator          User?             @relation("PaymentCreator", fields: [createdBy], references: [id])
-  bankTransactions BankTransaction[]
-  stripePayment    StripePayment?
-
-  @@unique([organizationId, paymentNumber])
-  @@index([organizationId])
-  @@index([customerId])
-  @@index([invoiceId])
-  @@index([status])
-  @@map("payments")
-}
-
-// ==================== ACCOUNTING ====================
-
-model Account {
-  id             String  @id @default(cuid())
-  organizationId String
-  accountNumber  String
-  name           String
-  type           String // AccountType
-  parentId       String?
-
-  // Account Details
-  description     String?
-  isActive        Boolean @default(true)
-  isSystemAccount Boolean @default(false)
-
-  // Balance (calculated, cached for performance)
-  balance Decimal @default(0)
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization   Organization    @relation(fields: [organizationId], references: [id])
-  parent         Account?        @relation("AccountHierarchy", fields: [parentId], references: [id])
-  children       Account[]       @relation("AccountHierarchy")
-  transactions   JournalEntry[]
-  vendorPayments VendorPayment[]
-  billLineItems  BillLineItem[]
-
-  @@unique([organizationId, accountNumber])
-  @@index([organizationId])
-  @@index([type])
-  @@map("accounts")
-}
-
-model JournalEntry {
-  id            String @id @default(cuid())
-  accountId     String
-  transactionId String
-
-  // Entry Details
-  type          String // TransactionType
-  amount        Decimal
-  description   String
-  referenceType String? // INVOICE, PAYMENT, EXPENSE, etc.
-  referenceId   String?
-
-  // Timestamps
-  entryDate DateTime
-  createdAt DateTime @default(now())
-
-  // Relationships
-  account     Account     @relation(fields: [accountId], references: [id])
-  transaction Transaction @relation(fields: [transactionId], references: [id])
-
-  @@index([accountId])
-  @@index([transactionId])
-  @@index([entryDate])
-  @@map("journal_entries")
-}
-
-model Transaction {
-  id                String   @id @default(cuid())
-  transactionNumber String   @unique
-  date              DateTime
-  description       String
-
-  // Transaction must balance (debits = credits)
-  totalDebits  Decimal
-  totalCredits Decimal
-
-  // Timestamps
-  createdAt  DateTime  @default(now())
-  reversedAt DateTime?
-  reversalId String?
-
-  // Relationships
-  entries    JournalEntry[]
-  reversal   Transaction?   @relation("TransactionReversal", fields: [reversalId], references: [id])
-  reversedBy Transaction[]  @relation("TransactionReversal")
-
-  @@index([date])
-  @@map("transactions")
-}
-
-// ==================== EXPENSES ====================
-
-model Expense {
-  id             String  @id @default(cuid())
-  organizationId String
-  expenseNumber  String
-  vendorId       String?
-  contractorId   String?
-
-  // Expense Details
-  category    String // ExpenseCategory
-  amount      Decimal
-  taxAmount   Decimal  @default(0)
-  currency    String   @default("CAD")
-  expenseDate DateTime
-
-  // Payment
-  paymentMethod String? // PaymentMethod
-  paymentStatus String    @default("PENDING") // PaymentStatus
-  paidAt        DateTime?
-
-  // Documentation
-  description String
-  receipt     String? // S3 URL
-  notes       String?
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization Organization @relation(fields: [organizationId], references: [id])
-  vendor       Vendor?      @relation(fields: [vendorId], references: [id])
-  contractor   Contractor?  @relation(fields: [contractorId], references: [id])
-
-  @@unique([organizationId, expenseNumber])
-  @@index([organizationId])
-  @@index([category])
-  @@map("expenses")
-}
-
-// ==================== PROJECTS & APPOINTMENTS ====================
-
-model Project {
-  id             String  @id @default(cuid())
-  organizationId String
-  projectNumber  String
-  customerId     String
-  assignedToId   String?
-
-  // Project Details
-  name        String
-  description String?
-  status      String  @default("QUOTED") // ProjectStatus
-  priority    Int     @default(3) // 1=Critical, 2=High, 3=Normal, 4=Low
-
-  // Timeline
-  startDate       DateTime?
-  endDate         DateTime?
-  actualStartDate DateTime?
-  actualEndDate   DateTime?
-
-  // Budget
-  estimatedHours Decimal?
-  actualHours    Decimal?
-  hourlyRate     Decimal?
-  fixedPrice     Decimal?
-
-  // Deposit tracking
-  depositPaid   Boolean   @default(false)
-  depositPaidAt DateTime?
-  invoiceId     String?   @unique
-
-  // Audit fields
-  createdBy String?
-  updatedBy String?
-  deletedBy String?
-
-  // Timestamps
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  completedAt DateTime?
-  deletedAt   DateTime?
-
-  // Relationships
-  organization Organization        @relation(fields: [organizationId], references: [id])
-  customer     Customer            @relation(fields: [customerId], references: [id])
-  assignedTo   User?               @relation("ProjectAssignee", fields: [assignedToId], references: [id])
-  creator      User?               @relation("ProjectCreator", fields: [createdBy], references: [id])
-  invoice      Invoice?            @relation(fields: [invoiceId], references: [id])
-  appointments Appointment[]
-  timeEntries  EmployeeTimeEntry[]
-
-  @@unique([organizationId, projectNumber])
-  @@index([organizationId])
-  @@index([customerId])
-  @@index([createdBy])
-  @@index([status])
-  @@index([depositPaid])
-  @@map("projects")
-}
+// ==================== APPOINTMENT SCHEDULING ====================
 
 model Appointment {
-  id             String  @id @default(cuid())
+  id             String @id @default(cuid())
   organizationId String
-  customerId     String
-  quoteId        String? // Link to accepted quote
-  projectId      String?
-  locationId     String?
+
+  // Reference
+  appointmentNumber String @unique
+  customerId        String
 
   // Appointment Details
   title       String
   description String?
-  startTime   DateTime
-  endTime     DateTime
-  duration    Int // Minutes
+  status      String  @default("SCHEDULED") // SCHEDULED, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW
+  locationId  String?
 
-  // Meeting Integration
-  meetingLink String? // Google Meet link
-  meetingId   String? // Google Meet meeting ID
+  // Schedule
+  scheduledStart DateTime
+  scheduledEnd   DateTime
+  actualStart    DateTime?
+  actualEnd      DateTime?
 
-  // Status
-  confirmed          Boolean @default(false)
-  completed          Boolean @default(false)
-  cancelled          Boolean @default(false)
-  cancellationReason String?
-
-  // Reminders
+  // Notifications
   reminderSent   Boolean   @default(false)
   reminderSentAt DateTime?
-
-  // Audit fields
-  createdBy String?
-  updatedBy String?
-  deletedBy String?
 
   // Timestamps
   createdAt DateTime  @default(now())
@@ -1100,87 +666,1218 @@ model Appointment {
   // Relationships
   organization  Organization              @relation(fields: [organizationId], references: [id])
   customer      Customer                  @relation(fields: [customerId], references: [id])
-  quote         Quote?                    @relation(fields: [quoteId], references: [id])
-  project       Project?                  @relation(fields: [projectId], references: [id])
   location      Location?                 @relation(fields: [locationId], references: [id])
-  creator       User?                     @relation("AppointmentCreator", fields: [createdBy], references: [id])
   bookingTokens AppointmentBookingToken[]
 
   @@index([organizationId])
+  @@index([appointmentNumber])
   @@index([customerId])
-  @@index([quoteId])
-  @@index([createdBy])
-  @@index([startTime])
+  @@index([status])
+  @@index([scheduledStart])
   @@map("appointments")
 }
 
 model AppointmentBookingToken {
-  id             String  @id @default(cuid())
-  quoteId        String // Quote that this booking token is for
-  appointmentId  String? // Created appointment (once booked)
+  id             String @id @default(cuid())
   organizationId String
+  appointmentId  String
 
   // Token Details
-  tokenHash    String @unique // bcrypt hash of token
-  tokenVersion Int    @default(1)
+  token      String   @unique
+  expiresAt  DateTime
+  isUsed     Boolean  @default(false)
+  usedAt     DateTime?
+
+  // Security
+  ipAddress String?
+  userAgent String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  appointment  Appointment  @relation(fields: [appointmentId], references: [id])
+
+  @@index([organizationId])
+  @@index([appointmentId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("appointment_booking_tokens")
+}
+
+// ==================== INVOICING SYSTEM ====================
+
+model Invoice {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Reference
+  invoiceNumber String @unique
+  customerId    String
+  quoteId       String? // If converted from quote
+
+  // Invoice Details
+  subject     String?
+  description String?
+  status      String  @default("DRAFT") // InvoiceStatus
+  issueDate   DateTime
+  dueDate     DateTime
+
+  // Financial
+  subtotal      Decimal
+  taxTotal      Decimal
+  total         Decimal
+  amountPaid    Decimal @default(0)
+  amountDue     Decimal
+  currency      String  @default("CAD")
+
+  // Payment Terms
+  paymentTerms String?
+  notes        String?
+
+  // Deposits
+  depositAmount Decimal?
+  depositPaid   Boolean @default(false)
+  depositPaidAt DateTime?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  sentAt    DateTime?
+  paidAt    DateTime?
+
+  // Relationships
+  organization     Organization        @relation(fields: [organizationId], references: [id])
+  customer         Customer            @relation(fields: [customerId], references: [id])
+  lineItems        InvoiceLineItem[]
+  payments         Payment[]
+  generatedPDFs    GeneratedPDF[]
+
+  @@index([organizationId])
+  @@index([invoiceNumber])
+  @@index([customerId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("invoices")
+}
+
+model InvoiceLineItem {
+  id             String @id @default(cuid())
+  invoiceId      String
+
+  // Line Item Type
+  type       String // PRODUCT, SERVICE, CUSTOM
+  productId  String?
+  serviceId  String?
+
+  // Item Details
+  description String
+  quantity    Decimal
+  unitPrice   Decimal
+  discount    Decimal @default(0)
+  taxAmount   Decimal @default(0)
+  total       Decimal
+
+  // Tax
+  isTaxable Boolean @default(true)
+  taxCode   String?
+  taxRate   Decimal?
+
+  // Sort Order
+  sortOrder Int @default(0)
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relationships
+  invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+  service Service? @relation(fields: [serviceId], references: [id])
+
+  @@index([invoiceId])
+  @@map("invoice_line_items")
+}
+
+model RecurringInvoice {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Reference
+  customerId String
+
+  // Recurrence Details
+  frequency      String   @default("MONTHLY") // WEEKLY, MONTHLY, QUARTERLY, YEARLY
+  startDate      DateTime
+  endDate        DateTime?
+  nextIssueDate  DateTime
+  isActive       Boolean  @default(true)
+
+  // Invoice Template
+  subject        String?
+  description    String?
+  paymentTerms   String?
+  notes          String?
+
+  // Financial
+  subtotal       Decimal
+  taxTotal       Decimal
+  total          Decimal
+  currency       String  @default("CAD")
+
+  // Last Generation
+  lastGeneratedAt     DateTime?
+  lastGeneratedInvoiceId String?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([nextIssueDate])
+  @@index([isActive])
+  @@map("recurring_invoices")
+}
+
+// ==================== PAYMENT PROCESSING ====================
+
+model Payment {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Reference
+  paymentNumber String @unique
+  customerId    String
+  invoiceId     String?
+
+  // Payment Details
+  amount       Decimal
+  currency     String  @default("CAD")
+  method       String // PaymentMethod
+  status       String  @default("PENDING") // PaymentStatus
+  reference    String?
+
+  // Stripe Integration
+  stripePaymentIntentId String?
+  stripeChargeId        String?
+  stripeRefundId        String?
+
+  // e-Transfer Integration
+  eTransferEmail       String?
+  eTransferReference   String?
+  eTransferSecurityQ   String?
+  eTransferSecurityA   String?
+
+  // Processing
+  processedAt DateTime?
+  failedAt    DateTime?
+  failureReason String?
+
+  // Refunds
+  isRefunded      Boolean   @default(false)
+  refundedAt      DateTime?
+  refundAmount    Decimal?
+  refundReason    String?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  customer     Customer     @relation(fields: [customerId], references: [id])
+  invoice      Invoice?     @relation(fields: [invoiceId], references: [id])
+
+  @@index([organizationId])
+  @@index([paymentNumber])
+  @@index([customerId])
+  @@index([invoiceId])
+  @@index([status])
+  @@index([stripePaymentIntentId])
+  @@map("payments")
+}
+
+model CustomerPaymentMethod {
+  id             String @id @default(cuid())
+  organizationId String
+  customerId     String
+
+  // Payment Method Details
+  type              String // STRIPE_CARD, BANK_ACCOUNT, etc.
+  isDefault         Boolean @default(false)
+
+  // Stripe
+  stripePaymentMethodId String?
+  cardBrand             String?
+  cardLast4             String?
+  cardExpMonth          Int?
+  cardExpYear           Int?
+
+  // Bank Account
+  bankName          String?
+  accountLast4      String?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  customer     Customer     @relation(fields: [customerId], references: [id])
+
+  @@index([organizationId])
+  @@index([customerId])
+  @@map("customer_payment_methods")
+}
+
+model CustomerPaymentToken {
+  id             String @id @default(cuid())
+  organizationId String
+  customerId     String
+  invoiceId      String
+
+  // Token Details
+  token      String   @unique
+  expiresAt  DateTime
+  isUsed     Boolean  @default(false)
+  usedAt     DateTime?
+
+  // Security
+  ipAddress String?
+  userAgent String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  customer     Customer     @relation(fields: [customerId], references: [id])
+
+  @@index([organizationId])
+  @@index([customerId])
+  @@index([invoiceId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("customer_payment_tokens")
+}
+
+// ==================== EXPENSE MANAGEMENT ====================
+
+model Expense {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Reference
+  expenseNumber String @unique
+  vendorId      String?
+
+  // Expense Details
+  description String
+  category    String // ExpenseCategory
+  amount      Decimal
+  currency    String  @default("CAD")
+  date        DateTime
+
+  // Tax
+  taxAmount Decimal @default(0)
+  taxCode   String?
+
+  // Payment
+  isPaid     Boolean   @default(false)
+  paidAt     DateTime?
+  paymentMethod String?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  vendor       Vendor?      @relation(fields: [vendorId], references: [id])
+
+  @@index([organizationId])
+  @@index([expenseNumber])
+  @@index([vendorId])
+  @@index([category])
+  @@index([date])
+  @@map("expenses")
+}
+
+model ContractorPayment {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Reference
+  paymentNumber String @unique
+  contractorId  String
+
+  // Payment Details
+  description String
+  amount      Decimal
+  currency    String  @default("CAD")
+  hoursWorked Decimal?
+  hourlyRate  Decimal?
+
+  // Payment
+  isPaid     Boolean   @default(false)
+  paidAt     DateTime?
+  method     String?
+  reference  String?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  contractor   Contractor   @relation(fields: [contractorId], references: [id])
+
+  @@index([organizationId])
+  @@index([paymentNumber])
+  @@index([contractorId])
+  @@map("contractor_payments")
+}
+
+// ==================== PROJECT MANAGEMENT ====================
+
+model Project {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Reference
+  projectNumber String @unique
+  customerId    String
+
+  // Project Details
+  name        String
+  description String?
+  status      String  @default("QUOTED") // ProjectStatus
+
+  // Schedule
+  startDate    DateTime?
+  endDate      DateTime?
+  estimatedHours Decimal?
+
+  // Financial
+  budget       Decimal?
+  actualCost   Decimal?
+  currency     String  @default("CAD")
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  customer     Customer     @relation(fields: [customerId], references: [id])
+
+  @@index([organizationId])
+  @@index([projectNumber])
+  @@index([customerId])
+  @@index([status])
+  @@map("projects")
+}
+
+// ==================== ACCOUNTING SYSTEM ====================
+
+model Account {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Account Details
+  accountCode String @unique
+  name        String
+  type        String // AccountType
+  subtype     String?
+  description String?
+
+  // Financial
+  normalBalance String // DEBIT or CREDIT
+  balance       Decimal @default(0)
+  currency      String  @default("CAD")
 
   // Status
-  status      String    @default("ACTIVE") // ACTIVE, USED, EXPIRED, INVALIDATED
-  usedAt      DateTime?
-  invalidated Boolean   @default(false)
+  isActive Boolean @default(true)
+  isSystem Boolean @default(false)
 
-  // Booking Details
-  bookedBy     String? // Customer email who booked
-  bookedIp     String? // IP address when token was used
-  bookingNotes String? // Optional notes from customer
+  // Parent Account (for hierarchical chart of accounts)
+  parentId String?
 
-  // Expiration
-  expiresAt DateTime
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization    Organization      @relation(fields: [organizationId], references: [id])
+  parent          Account?          @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children        Account[]         @relation("AccountHierarchy")
+  journalEntries  JournalEntry[]
+
+  @@index([organizationId])
+  @@index([accountCode])
+  @@index([type])
+  @@map("accounts")
+}
+
+model JournalEntry {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Entry Details
+  entryNumber String   @unique
+  accountId   String
+  date        DateTime
+  description String
+
+  // Transaction
+  type   String // DEBIT or CREDIT
+  amount Decimal
+
+  // References
+  entityType String? // Invoice, Payment, Expense, etc.
+  entityId   String?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relationships
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@index([organizationId])
+  @@index([entryNumber])
+  @@index([accountId])
+  @@index([date])
+  @@index([entityType, entityId])
+  @@map("journal_entries")
+}
+
+model TaxRecord {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Tax Period
+  year    Int
+  quarter Int?
+  month   Int?
+
+  // Tax Amounts
+  gstCollected Decimal @default(0)
+  gstPaid      Decimal @default(0)
+  gstOwing     Decimal @default(0)
+
+  hstCollected Decimal @default(0)
+  hstPaid      Decimal @default(0)
+  hstOwing     Decimal @default(0)
+
+  pstCollected Decimal @default(0)
+  pstPaid      Decimal @default(0)
+  pstOwing     Decimal @default(0)
+
+  qstCollected Decimal @default(0)
+  qstPaid      Decimal @default(0)
+  qstOwing     Decimal @default(0)
+
+  // Filing
+  isFiled   Boolean   @default(false)
+  filedAt   DateTime?
+  dueDate   DateTime?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, year, quarter, month])
+  @@index([organizationId])
+  @@index([year])
+  @@map("tax_records")
+}
+
+// ==================== BANKING ====================
+
+model BankAccount {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Account Details
+  accountName   String
+  accountNumber String
+  institution   String
+  branchNumber  String?
+  transitNumber String?
+  currency      String  @default("CAD")
+
+  // Balance
+  currentBalance Decimal @default(0)
+
+  // Status
+  isActive Boolean @default(true)
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  transactions BankTransaction[]
+
+  @@index([organizationId])
+  @@index([accountNumber])
+  @@map("bank_accounts")
+}
+
+model BankTransaction {
+  id             String @id @default(cuid())
+  organizationId String
+  bankAccountId  String
+
+  // Transaction Details
+  date          DateTime
+  description   String
+  amount        Decimal
+  type          String // DEBIT or CREDIT
+  balance       Decimal?
+
+  // Reconciliation
+  isReconciled  Boolean   @default(false)
+  reconciledAt  DateTime?
 
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relationships
-  quote        Quote        @relation(fields: [quoteId], references: [id])
-  appointment  Appointment? @relation(fields: [appointmentId], references: [id])
   organization Organization @relation(fields: [organizationId], references: [id])
+  bankAccount  BankAccount  @relation(fields: [bankAccountId], references: [id])
 
-  @@index([quoteId])
-  @@index([appointmentId])
-  @@index([tokenHash])
-  @@index([status])
-  @@index([expiresAt])
-  @@map("appointment_booking_tokens")
+  @@index([organizationId])
+  @@index([bankAccountId])
+  @@index([date])
+  @@map("bank_transactions")
 }
 
-// ==================== REFERENCE TABLES (3NF) ====================
+// ==================== AUDIT & SECURITY ====================
 
-model Country {
-  id        String  @id @default(cuid())
-  code      String  @unique // ISO 3166-1 alpha-2
-  code3     String  @unique // ISO 3166-1 alpha-3
-  name      String
-  phoneCode String?
-  currency  String?
+model AuditLog {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String?
+
+  // Action Details
+  action      String // AuditAction enum
+  entityType  String // Customer, Invoice, Payment, etc.
+  entityId    String?
+  description String?
+
+  // Changes
+  changes String? // JSON of before/after values
+
+  // Request Context
+  ipAddress String?
+  userAgent String?
+
+  // Timestamp
+  timestamp DateTime @default(now())
 
   // Relationships
-  addresses      Address[]
-  stateProvinces StateProvince[]
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User?        @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+model SecurityEvent {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String?
+
+  // Event Details
+  eventType   String // LOGIN_SUCCESS, LOGIN_FAILED, PASSWORD_RESET, etc.
+  severity    String // LOW, MEDIUM, HIGH, CRITICAL
+  description String
+
+  // Context
+  ipAddress String?
+  userAgent String?
+  metadata  String? // JSON
+
+  // Timestamp
+  timestamp DateTime @default(now())
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User?        @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([eventType])
+  @@index([severity])
+  @@index([timestamp])
+  @@map("security_events")
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String
+
+  // Notification Details
+  type    String // EMAIL, SMS, IN_APP
+  title   String
+  message String
+  link    String?
+
+  // Status
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
+  // Timestamp
+  createdAt DateTime @default(now())
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ==================== WEBHOOKS ====================
+
+model Webhook {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Webhook Configuration
+  url          String
+  events       String // JSON array of event types
+  secret       String
+  isActive     Boolean @default(true)
+
+  // Retry Settings
+  maxRetries   Int     @default(3)
+  retryDelay   Int     @default(60) // seconds
+
+  // Last Delivery
+  lastDeliveredAt DateTime?
+  lastStatus      String?
+  lastError       String?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([isActive])
+  @@map("webhooks")
+}
+
+// ==================== PDF GENERATION & TEMPLATES ====================
+
+model InvoiceTemplate {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Template Details
+  name        String
+  description String?
+  isDefault   Boolean @default(false)
+  isActive    Boolean @default(true)
+
+  // Template Content (Handlebars)
+  htmlTemplate String
+  cssStyles    String?
+
+  // Customization
+  showLogo          Boolean @default(true)
+  showCompanyInfo   Boolean @default(true)
+  showPaymentTerms  Boolean @default(true)
+  showNotes         Boolean @default(true)
+  footerText        String?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([isDefault])
+  @@map("invoice_templates")
+}
+
+model InvoiceStyle {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Style Details
+  name        String
+  description String?
+  isDefault   Boolean @default(false)
+  isActive    Boolean @default(true)
+
+  // Colors
+  primaryColor   String @default("#000000")
+  secondaryColor String @default("#666666")
+  accentColor    String @default("#0066cc")
+
+  // Typography
+  fontFamily     String @default("Arial, sans-serif")
+  fontSize       Int    @default(12)
+  headingFont    String @default("Arial, sans-serif")
+
+  // Layout
+  pageSize       String @default("A4")
+  orientation    String @default("portrait")
+  marginTop      Int    @default(20)
+  marginBottom   Int    @default(20)
+  marginLeft     Int    @default(20)
+  marginRight    Int    @default(20)
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([isDefault])
+  @@map("invoice_styles")
+}
+
+model OrganizationBranding {
+  id             String @id @default(cuid())
+  organizationId String @unique
+
+  // Logo
+  logoUrl       String?
+  logoWidth     Int?
+  logoHeight    Int?
+
+  // Colors
+  primaryColor   String @default("#000000")
+  secondaryColor String @default("#666666")
+  accentColor    String @default("#0066cc")
+
+  // Contact Information for Documents
+  displayName    String?
+  displayEmail   String?
+  displayPhone   String?
+  displayAddress String?
+  displayWebsite String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@map("organization_branding")
+}
+
+model GeneratedPDF {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // PDF Details
+  entityType String // INVOICE, QUOTE, STATEMENT, etc.
+  entityId   String
+  filename   String
+  filePath   String
+  fileSize   Int
+
+  // Generation Details
+  templateId String?
+  styleId    String?
+  version    Int     @default(1)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  invoice      Invoice?     @relation(fields: [entityId], references: [id])
+
+  @@index([organizationId])
+  @@index([entityType, entityId])
+  @@map("generated_pdfs")
+}
+
+// ==================== PURCHASE ORDERS & BILLS ====================
+
+model PurchaseOrder {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Reference
+  poNumber String @unique
+  vendorId String
+
+  // PO Details
+  description String?
+  status      String @default("DRAFT") // DRAFT, SENT, APPROVED, RECEIVED, CANCELLED
+  orderDate   DateTime
+  expectedDate DateTime?
+
+  // Financial
+  subtotal Decimal
+  taxTotal Decimal
+  total    Decimal
+  currency String  @default("CAD")
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  vendor       Vendor       @relation(fields: [vendorId], references: [id])
+
+  @@index([organizationId])
+  @@index([poNumber])
+  @@index([vendorId])
+  @@map("purchase_orders")
+}
+
+model Bill {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Reference
+  billNumber String @unique
+  vendorId   String
+
+  // Bill Details
+  description String?
+  status      String @default("UNPAID") // UNPAID, PARTIALLY_PAID, PAID, OVERDUE, CANCELLED
+  billDate    DateTime
+  dueDate     DateTime
+
+  // Financial
+  subtotal   Decimal
+  taxTotal   Decimal
+  total      Decimal
+  amountPaid Decimal @default(0)
+  amountDue  Decimal
+  currency   String  @default("CAD")
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  vendor         Vendor           @relation(fields: [vendorId], references: [id])
+  vendorPayments VendorPayment[]
+
+  @@index([organizationId])
+  @@index([billNumber])
+  @@index([vendorId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("bills")
+}
+
+model VendorPayment {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Reference
+  paymentNumber String @unique
+  vendorId      String
+  billId        String?
+
+  // Payment Details
+  amount    Decimal
+  currency  String @default("CAD")
+  method    String
+  reference String?
+
+  // Processing
+  processedAt DateTime?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  vendor       Vendor       @relation(fields: [vendorId], references: [id])
+  bill         Bill?        @relation(fields: [billId], references: [id])
+
+  @@index([organizationId])
+  @@index([paymentNumber])
+  @@index([vendorId])
+  @@index([billId])
+  @@map("vendor_payments")
+}
+
+// ==================== INVENTORY ====================
+
+model InventoryItem {
+  id             String @id @default(cuid())
+  organizationId String
+  productId      String
+
+  // Location
+  locationCode String?
+  binLocation  String?
+
+  // Quantities
+  quantityOnHand      Int @default(0)
+  quantityReserved    Int @default(0)
+  quantityAvailable   Int @default(0)
+  reorderLevel        Int?
+  reorderQuantity     Int?
+
+  // Costing
+  averageCost   Decimal?
+  lastCost      Decimal?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization           @relation(fields: [organizationId], references: [id])
+  product      Product                @relation(fields: [productId], references: [id])
+  transactions InventoryTransaction[]
+
+  @@unique([organizationId, productId, locationCode])
+  @@index([organizationId])
+  @@index([productId])
+  @@map("inventory_items")
+}
+
+model InventoryTransaction {
+  id             String @id @default(cuid())
+  organizationId String
+  productId      String
+  inventoryItemId String
+
+  // Transaction Details
+  type        String // PURCHASE, SALE, ADJUSTMENT, TRANSFER
+  quantity    Int
+  unitCost    Decimal?
+  totalCost   Decimal?
+
+  // References
+  referenceType String? // PurchaseOrder, Invoice, etc.
+  referenceId   String?
+
+  // Notes
+  notes String?
+
+  // Timestamp
+  transactionDate DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  // Relationships
+  organization  Organization  @relation(fields: [organizationId], references: [id])
+  product       Product       @relation(fields: [productId], references: [id])
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  @@index([organizationId])
+  @@index([productId])
+  @@index([inventoryItemId])
+  @@index([transactionDate])
+  @@map("inventory_transactions")
+}
+
+// ==================== TIME TRACKING ====================
+
+model EmployeeTimeEntry {
+  id             String @id @default(cuid())
+  organizationId String
+  employeeId     String
+
+  // Time Details
+  startTime DateTime
+  endTime   DateTime?
+  hours     Decimal?
+
+  // Work Details
+  description String?
+  projectId   String?
+  isBillable  Boolean @default(false)
+  hourlyRate  Decimal?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+
+  @@index([organizationId])
+  @@index([employeeId])
+  @@index([startTime])
+  @@map("employee_time_entries")
+}
+
+// ==================== INTAKE FORMS ====================
+
+model IntakeFormTemplate {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Template Details
+  name        String
+  description String?
+  isDefault   Boolean @default(false)
+  isActive    Boolean @default(true)
+
+  // Form Configuration (JSON)
+  formSchema   String // JSON schema for form fields
+  validationRules String? // JSON validation rules
+
+  // Branding
+  headerText      String?
+  footerText      String?
+  thankYouMessage String?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([isDefault])
+  @@map("intake_form_templates")
+}
+
+// ==================== GOOGLE CALENDAR INTEGRATION ====================
+
+model UserGoogleToken {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String
+
+  // OAuth Tokens
+  accessToken  String
+  refreshToken String
+  tokenType    String  @default("Bearer")
+  expiresAt    DateTime
+
+  // Scope
+  scope String // Space-separated scopes
+
+  // Status
+  isActive Boolean @default(true)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("user_google_tokens")
+}
+
+// ==================== SMS MESSAGING ====================
+
+model SmsMessage {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Message Details
+  to      String
+  from    String
+  body    String
+  status  String @default("PENDING") // PENDING, SENT, DELIVERED, FAILED
+
+  // Twilio Details
+  twilioSid       String?
+  twilioStatus    String?
+  twilioErrorCode String?
+  twilioErrorMsg  String?
+
+  // Entity Reference
+  entityType String? // Appointment, Quote, Invoice, etc.
+  entityId   String?
+
+  // Timestamps
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("sms_messages")
+}
+
+// ==================== REFERENCE DATA ====================
+
+model Country {
+  id          String @id @default(cuid())
+  code        String @unique
+  name        String
+  phonePrefix String
 
   @@map("countries")
 }
 
 model Currency {
-  id            String @id @default(cuid())
-  code          String @unique // ISO 4217
-  name          String
-  symbol        String
-  decimalPlaces Int    @default(2)
-
-  // Relationships
-  fromExchangeRates ExchangeRate[] @relation("FromCurrency")
-  toExchangeRates   ExchangeRate[] @relation("ToCurrency")
+  id     String @id @default(cuid())
+  code   String @unique
+  name   String
+  symbol String
 
   @@map("currencies")
 }
@@ -1286,1435 +1983,354 @@ model Document {
   // Relationships
   organization Organization @relation(fields: [organizationId], references: [id])
   uploadedBy   User         @relation(fields: [uploadedById], references: [id])
-  parent       Document?    @relation("DocumentVersions", fields: [parentId], references: [id])
-  versions     Document[]   @relation("DocumentVersions")
 
   @@index([organizationId])
-  @@index([entityType, entityId])
+  @@index([uploadedById])
   @@index([category])
-  @@index([createdAt])
+  @@index([entityType, entityId])
   @@index([hash])
   @@map("documents")
 }
 
-// ==================== AUDIT & COMPLIANCE ====================
+// ==================== SEARCHABLE ENCRYPTION ====================
 
-model AuditLog {
-  id             String  @id @default(cuid())
+model SearchIndex {
+  id             String @id @default(cuid())
   organizationId String
-  userId         String?
 
-  // Audit Details
-  action     String // CREATE, UPDATE, DELETE, VIEW, etc.
-  entityType String // Model name
+  // Entity reference
+  entityType String
   entityId   String
-  changes    String? // JSON stored as string
+  fieldName  String
 
-  // Context
-  ipAddress String?
-  userAgent String?
-  requestId String?
+  // Search indexes
+  blindIndex   String // Hash for exact matching
+  searchTokens String // JSON array of tokens for partial matching
 
-  // Timestamp (immutable)
-  timestamp DateTime @default(now())
+  // Key information
+  keyVersion Int
+  algorithm  String
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  expiresAt DateTime? // Optional TTL for PII compliance
 
   // Relationships
   organization Organization @relation(fields: [organizationId], references: [id])
-  user         User?        @relation(fields: [userId], references: [id])
 
+  @@unique([blindIndex])
   @@index([organizationId])
   @@index([entityType, entityId])
-  @@index([timestamp])
-  @@map("audit_logs")
+  @@index([fieldName])
+  @@index([blindIndex])
+  @@index([expiresAt])
+  @@map("search_indexes")
 }
 
-// ==================== CRITICAL FINANCIAL INFRASTRUCTURE ====================
-
-model StateProvince {
-  id        String   @id @default(cuid())
-  countryId String
-  code      String // Province/State code (e.g., "ON", "CA")
-  name      String
-  taxRate   Decimal? // Provincial tax rate
-  isActive  Boolean  @default(true)
-
-  // Relationships
-  country    Country     @relation(fields: [countryId], references: [id])
-  addresses  Address[]
-  taxRecords TaxRecord[]
-
-  @@unique([countryId, code])
-  @@index([countryId])
-  @@index([isActive])
-  @@map("state_provinces")
-}
-
-model ExchangeRate {
-  id               String   @id @default(cuid())
-  fromCurrencyCode String
-  toCurrencyCode   String
-  rate             Decimal // High precision for exchange rates
-  effectiveDate    DateTime @default(now())
-  source           String? // Rate source (e.g., "Bank of Canada")
-
-  // Relationships
-  fromCurrency Currency @relation("FromCurrency", fields: [fromCurrencyCode], references: [code])
-  toCurrency   Currency @relation("ToCurrency", fields: [toCurrencyCode], references: [code])
-
-  @@unique([fromCurrencyCode, toCurrencyCode, effectiveDate])
-  @@index([effectiveDate])
-  @@map("exchange_rates")
-}
-
-model TaxRecord {
-  id              String  @id @default(cuid())
-  organizationId  String
-  taxYear         Int
-  taxPeriod       String // "Q1", "Q2", "Q3", "Q4", "ANNUAL"
-  jurisdiction    String // "FEDERAL", "PROVINCIAL", "MUNICIPAL"
-  stateProvinceId String?
-
-  // Tax Details
-  taxType       String // "INCOME", "GST", "HST", "PST", "PROPERTY"
-  grossIncome   Decimal
-  taxableIncome Decimal
-  taxOwed       Decimal
-  taxPaid       Decimal
-  taxBalance    Decimal
-
-  // Filing Information
-  filedDate DateTime?
-  dueDate   DateTime
-  status    String    @default("PENDING") // PENDING, FILED, PAID, OVERDUE
-
-  // Documents
-  returnDocument String? // Path to tax return
-  supportingDocs String? // JSON array of document paths
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relationships
-  organization  Organization   @relation(fields: [organizationId], references: [id])
-  stateProvince StateProvince? @relation(fields: [stateProvinceId], references: [id])
-
-  @@index([organizationId])
-  @@index([taxYear, taxPeriod])
-  @@index([dueDate])
-  @@index([status])
-  @@map("tax_records")
-}
-
-model BankAccount {
-  id             String  @id @default(cuid())
-  organizationId String
-  accountName    String
-  accountNumber  String // Encrypted
-  routingNumber  String? // Encrypted
-  bankName       String
-  accountType    String // "CHECKING", "SAVINGS", "CREDIT"
-  currency       String  @default("CAD")
-
-  // Balance tracking
-  currentBalance   Decimal
-  availableBalance Decimal
-  lastReconciled   DateTime?
-
-  // Account status
-  isActive  Boolean @default(true)
-  isDefault Boolean @default(false)
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization Organization      @relation(fields: [organizationId], references: [id])
-  transactions BankTransaction[]
-
-  @@unique([organizationId, accountNumber])
-  @@index([organizationId])
-  @@index([isActive])
-  @@map("bank_accounts")
-}
-
-model BankTransaction {
+model EncryptionAuditLog {
   id             String @id @default(cuid())
   organizationId String
-  bankAccountId  String
 
-  // Transaction Details
-  transactionDate DateTime
-  description     String
-  amount          Decimal
-  transactionType String // "DEBIT", "CREDIT"
-  category        String?
-  reference       String? // Bank reference number
+  // Operation details
+  operation  String // ENCRYPT, DECRYPT, KEY_ROTATION, KEY_DERIVATION
+  entityType String?
+  entityId   String?
+  fieldName  String?
 
-  // Reconciliation
-  isReconciled     Boolean   @default(false)
-  reconciledDate   DateTime?
-  reconciledBy     String? // User ID
-  matchedPaymentId String? // Link to Payment record
+  // Performance metrics
+  duration Int // Milliseconds
+  dataSize Int? // Bytes
 
-  // Import tracking
-  importId   String? // Batch import identifier
-  importedAt DateTime?
+  // Key information
+  keyVersion Int
+  algorithm  String
 
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relationships
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  bankAccount    BankAccount  @relation(fields: [bankAccountId], references: [id])
-  matchedPayment Payment?     @relation(fields: [matchedPaymentId], references: [id])
-
-  @@unique([bankAccountId, reference])
-  @@index([organizationId])
-  @@index([bankAccountId])
-  @@index([transactionDate])
-  @@index([isReconciled])
-  @@map("bank_transactions")
-}
-
-model SecurityEvent {
-  id             String  @id @default(cuid())
-  organizationId String? // Null for system-wide events
-  userId         String?
-
-  // Event Details
-  eventType   String // "LOGIN_FAILED", "SUSPICIOUS_ACTIVITY", "ACCOUNT_LOCKED", etc.
-  severity    String // "LOW", "MEDIUM", "HIGH", "CRITICAL"
-  description String
-  source      String? // "WEB", "API", "MOBILE"
-
-  // Context
+  // Security context
+  userId    String?
   ipAddress String?
   userAgent String?
-  location  String? // Geo-location
-  requestId String?
-  sessionId String?
-
-  // Additional Data
-  metadata String? // JSON stored as string
-
-  // Resolution
-  resolved   Boolean   @default(false)
-  resolvedAt DateTime?
-  resolvedBy String? // User ID
-  resolution String? // Description of resolution
-
-  // Timestamp (immutable)
-  timestamp DateTime @default(now())
-
-  // Relationships
-  organization Organization? @relation(fields: [organizationId], references: [id])
-  user         User?         @relation(fields: [userId], references: [id])
-
-  @@index([organizationId])
-  @@index([eventType])
-  @@index([severity])
-  @@index([timestamp])
-  @@index([resolved])
-  @@map("security_events")
-}
-
-// ==================== ENHANCED BUSINESS OPERATIONS ====================
-
-model StripePayment {
-  id             String   @id @default(cuid())
-  paymentId      String   @unique
-  stripeChargeId String?  @unique
-  stripeIntentId String?  @unique
-  customerId     String? // Stripe customer ID
-  amount         Decimal
-  currency       String   @default("cad")
-  status         String
-  metadata       String? // JSON stored as string
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // Relationships
-  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-
-  @@index([stripeChargeId])
-  @@index([stripeIntentId])
-  @@map("stripe_payments")
-}
-
-model RecurringInvoice {
-  id             String    @id @default(cuid())
-  organizationId String
-  customerId     String
-  templateId     String // Reference to invoice template
-  frequency      String // "MONTHLY", "QUARTERLY", "YEARLY"
-  nextIssueDate  DateTime
-  lastIssueDate  DateTime?
-  endDate        DateTime?
-  isActive       Boolean   @default(true)
-  autoSend       Boolean   @default(false)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  // Relationships
-  organization Organization @relation(fields: [organizationId], references: [id])
-  customer     Customer     @relation(fields: [customerId], references: [id])
-
-  @@index([organizationId])
-  @@index([customerId])
-  @@index([nextIssueDate])
-  @@map("recurring_invoices")
-}
-
-model CustomerPaymentMethod {
-  id             String   @id @default(cuid())
-  organizationId String
-  customerId     String
-  type           String // "CARD", "BANK_ACCOUNT", "PAYPAL"
-  isDefault      Boolean  @default(false)
-  stripeMethodId String?  @unique
-  last4          String?
-  brand          String?
-  expiryMonth    Int?
-  expiryYear     Int?
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // Relationships
-  organization Organization @relation(fields: [organizationId], references: [id])
-  customer     Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  @@index([organizationId])
-  @@index([customerId])
-  @@index([stripeMethodId])
-  @@map("customer_payment_methods")
-}
-
-model ContractorPayment {
-  id             String    @id @default(cuid())
-  organizationId String
-  contractorId   String
-  amount         Decimal
-  description    String
-  periodStart    DateTime
-  periodEnd      DateTime
-  status         String    @default("PENDING") // PaymentStatus
-  paidAt         DateTime?
-  reference      String?
-  t4aIssued      Boolean   @default(false)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  // Relationships
-  organization Organization @relation(fields: [organizationId], references: [id])
-  contractor   Contractor   @relation(fields: [contractorId], references: [id])
-
-  @@index([organizationId])
-  @@index([contractorId])
-  @@index([status])
-  @@map("contractor_payments")
-}
-
-model Notification {
-  id             String    @id @default(cuid())
-  organizationId String?
-  userId         String?
-  email          String?
-  type           String // "INVOICE_DUE", "PAYMENT_RECEIVED", "QUOTE_EXPIRED"
-  title          String
-  message        String
-  data           String? // JSON stored as string
-  status         String    @default("PENDING") // "PENDING", "SENT", "FAILED"
-  sentAt         DateTime?
-  readAt         DateTime?
-  createdAt      DateTime  @default(now())
-
-  // Relationships
-  organization Organization? @relation(fields: [organizationId], references: [id])
-  user         User?         @relation(fields: [userId], references: [id])
-
-  @@index([organizationId])
-  @@index([userId])
-  @@index([status])
-  @@map("notifications")
-}
-
-model Webhook {
-  id             String    @id @default(cuid())
-  organizationId String
-  url            String
-  events         String // JSON array of event types
-  secret         String
-  isActive       Boolean   @default(true)
-  lastTriggered  DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  // Relationships
-  organization Organization      @relation(fields: [organizationId], references: [id])
-  deliveries   WebhookDelivery[]
-
-  @@index([organizationId])
-  @@index([isActive])
-  @@map("webhooks")
-}
-
-model WebhookDelivery {
-  id           String    @id @default(cuid())
-  webhookId    String
-  eventType    String
-  payload      String // JSON stored as string
-  status       String    @default("PENDING") // "PENDING", "SUCCESS", "FAILED"
-  responseCode Int?
-  responseBody String?
-  attempts     Int       @default(0)
-  nextRetryAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  // Relationships
-  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
-
-  @@index([webhookId])
-  @@index([status])
-  @@index([nextRetryAt])
-  @@map("webhook_deliveries")
-}
-
-// ==================== INVOICE TEMPLATES & CUSTOMIZATION ====================
-
-model InvoiceTemplate {
-  id             String  @id @default(cuid())
-  organizationId String
-  name           String
-  description    String?
-  templateType   String  @default("STANDARD") // STANDARD, MINIMAL, MODERN, CUSTOM
-
-  // Template Content
-  htmlTemplate String // Handlebars template
-  isDefault    Boolean @default(false)
-  isSystem     Boolean @default(false) // System-provided templates
-
-  // Template Metadata
-  version    String  @default("1.0")
-  tags       String? // JSON array of tags
-  previewUrl String? // Preview image URL
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization  Organization   @relation(fields: [organizationId], references: [id])
-  invoiceStyles InvoiceStyle[]
-  generatedPDFs GeneratedPDF[]
-  invoices      Invoice[]
-
-  @@unique([organizationId, name])
-  @@index([organizationId])
-  @@index([templateType])
-  @@index([isDefault])
-  @@map("invoice_templates")
-}
-
-model InvoiceStyle {
-  id             String  @id @default(cuid())
-  organizationId String
-  templateId     String? // Nullable for global styles
-  name           String
-  description    String?
-
-  // Style Configuration
-  cssContent  String // CSS styles
-  colorScheme String // JSON color configuration
-  fontFamily  String  @default("Arial, sans-serif")
-  isDefault   Boolean @default(false)
-  isSystem    Boolean @default(false) // System-provided styles
-
-  // Template Metadata
-  version    String  @default("1.0")
-  tags       String? // JSON array of tags
-  previewUrl String? // Preview image URL
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization  Organization     @relation(fields: [organizationId], references: [id])
-  template      InvoiceTemplate? @relation(fields: [templateId], references: [id])
-  generatedPDFs GeneratedPDF[]
-
-  @@unique([organizationId, name])
-  @@index([organizationId])
-  @@index([templateId])
-  @@index([isDefault])
-  @@map("invoice_styles")
-}
-
-model OrganizationBranding {
-  id             String @id @default(cuid())
-  organizationId String @unique
-
-  // Logo Configuration
-  logoUrl     String? // URL to uploaded logo
-  logoWidth   Int? // Logo display width in pixels
-  logoHeight  Int? // Logo display height in pixels
-  showLogo    Boolean @default(true)
-  showOrgName Boolean @default(true)
-
-  // Color Scheme
-  primaryColor    String @default("#000000")
-  secondaryColor  String @default("#666666")
-  accentColor     String @default("#0066cc")
-  backgroundColor String @default("#ffffff")
-  textColor       String @default("#000000")
-
-  // Invoice Display Settings
-  displaySettings String // JSON: { dateFormat, currency, layout, etc. }
-  customCss       String? // Additional custom CSS
-
-  // Tax Settings
-  taxesEnabled       Boolean @default(true)
-  defaultTaxExempt   Boolean @default(false)
-  taxDisplaySettings String? // JSON tax configuration
-
-  // Template Selection
-  defaultTemplateId String?
-  defaultStyleId    String?
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relationships
-  organization Organization @relation(fields: [organizationId], references: [id])
-
-  @@map("organization_branding")
-}
-
-model GeneratedPDF {
-  id             String  @id @default(cuid())
-  organizationId String
-  invoiceId      String
-  templateId     String?
-  styleId        String?
-
-  // PDF Information
-  filename String // Generated PDF filename
-  fileSize Int // File size in bytes
-  filePath String // Storage path/URL
-  fileHash String // SHA-256 hash for integrity
-
-  // Generation Context
-  templateVersion  String  @default("1.0")
-  generatedBy      String // User ID who generated
-  generationParams String? // JSON generation parameters
 
   // Status
-  status       String  @default("GENERATED") // GENERATED, FAILED, PROCESSING
+  success      Boolean
   errorMessage String?
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  expiresAt DateTime? // Optional expiration for cleanup
-
-  // Relationships
-  organization Organization     @relation(fields: [organizationId], references: [id])
-  invoice      Invoice          @relation(fields: [invoiceId], references: [id])
-  template     InvoiceTemplate? @relation(fields: [templateId], references: [id])
-  style        InvoiceStyle?    @relation(fields: [styleId], references: [id])
-
-  @@unique([invoiceId, templateId, styleId]) // One PDF per template/style combo
-  @@index([organizationId])
-  @@index([invoiceId])
-  @@index([createdAt])
-  @@index([status])
-  @@map("generated_pdfs")
-}
-
-// ==================== PURCHASE ORDERS & BILLS ====================
-
-model PurchaseOrder {
-  id             String @id @default(cuid())
-  organizationId String
-  poNumber       String // Auto-generated PO number
-  vendorId       String
-
-  // Order Details
-  status       String    @default("DRAFT") // DRAFT, SENT, ACKNOWLEDGED, PARTIALLY_RECEIVED, RECEIVED, CANCELLED
-  orderDate    DateTime  @default(now())
-  expectedDate DateTime? // Expected delivery date
-  receivedDate DateTime? // Actual receipt date
-
-  // Amounts
-  subtotal       Decimal
-  taxAmount      Decimal
-  totalAmount    Decimal
-  receivedAmount Decimal @default(0)
-
-  // Additional Info
-  currency      String  @default("CAD")
-  notes         String?
-  internalNotes String?
-  terms         String? // Payment terms
-
-  // Tracking
-  createdBy  String
-  approvedBy String?
-  approvedAt DateTime?
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization Organization            @relation(fields: [organizationId], references: [id])
-  vendor       Vendor                  @relation(fields: [vendorId], references: [id])
-  lineItems    PurchaseOrderLineItem[]
-  bills        Bill[]
-
-  @@unique([organizationId, poNumber])
-  @@index([organizationId])
-  @@index([vendorId])
-  @@index([status])
-  @@map("purchase_orders")
-}
-
-model PurchaseOrderLineItem {
-  id              String  @id @default(cuid())
-  purchaseOrderId String
-  productId       String? // Optional - can be service or non-inventoried item
-
-  // Line Item Details
-  description String
-  quantity    Decimal
-  unitPrice   Decimal
-  taxRate     Decimal @default(0)
-  taxAmount   Decimal
-  lineTotal   Decimal
-
-  // Receiving Status
-  quantityReceived Decimal @default(0)
-  quantityBilled   Decimal @default(0)
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relationships
-  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
-  product       Product?      @relation(fields: [productId], references: [id])
-
-  @@index([purchaseOrderId])
-  @@index([productId])
-  @@map("purchase_order_line_items")
-}
-
-model Bill {
-  id              String  @id @default(cuid())
-  organizationId  String
-  billNumber      String // Auto-generated or vendor's invoice number
-  vendorId        String
-  purchaseOrderId String? // Optional - can create bill without PO
-
-  // Bill Details
-  status   String   @default("RECEIVED") // RECEIVED, VERIFIED, APPROVED, PAID, DISPUTED, CANCELLED
-  billDate DateTime // Date on vendor's invoice
-  dueDate  DateTime
-
-  // Amounts
-  subtotal      Decimal
-  taxAmount     Decimal
-  totalAmount   Decimal
-  paidAmount    Decimal @default(0)
-  balanceAmount Decimal // totalAmount - paidAmount
-
-  // Additional Info
-  currency            String  @default("CAD")
-  notes               String?
-  internalNotes       String?
-  vendorInvoiceNumber String? // Their reference number
-
-  // Tracking
-  createdBy  String
-  approvedBy String?
-  approvedAt DateTime?
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization  Organization    @relation(fields: [organizationId], references: [id])
-  vendor        Vendor          @relation(fields: [vendorId], references: [id])
-  purchaseOrder PurchaseOrder?  @relation(fields: [purchaseOrderId], references: [id])
-  lineItems     BillLineItem[]
-  payments      VendorPayment[]
-
-  @@unique([organizationId, billNumber])
-  @@index([organizationId])
-  @@index([vendorId])
-  @@index([purchaseOrderId])
-  @@index([status])
-  @@index([dueDate])
-  @@map("bills")
-}
-
-model BillLineItem {
-  id        String  @id @default(cuid())
-  billId    String
-  productId String?
-  accountId String? // Expense account for this line
-
-  // Line Item Details
-  description String
-  quantity    Decimal
-  unitPrice   Decimal
-  taxRate     Decimal @default(0)
-  taxAmount   Decimal
-  lineTotal   Decimal
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relationships
-  bill    Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
-  product Product? @relation(fields: [productId], references: [id])
-  account Account? @relation(fields: [accountId], references: [id])
-
-  @@index([billId])
-  @@index([productId])
-  @@index([accountId])
-  @@map("bill_line_items")
-}
-
-model VendorPayment {
-  id             String  @id @default(cuid())
-  organizationId String
-  paymentNumber  String // Auto-generated
-  vendorId       String
-  billId         String? // Optional - can make payment without specific bill
-  accountId      String // Bank account used for payment
-
-  // Payment Details
-  amount          Decimal
-  paymentDate     DateTime @default(now())
-  paymentMethod   String // CHEQUE, BANK_TRANSFER, CREDIT_CARD, CASH, OTHER
-  referenceNumber String? // Cheque number, transfer confirmation, etc.
-
-  // Status
-  status      String    @default("PENDING") // PENDING, COMPLETED, CANCELLED, FAILED
-  clearedDate DateTime? // When payment cleared bank
-
-  // Additional Info
-  currency     String  @default("CAD")
-  exchangeRate Decimal @default(1.0)
-  notes        String?
-
-  // Tracking
-  createdBy  String
-  approvedBy String?
-  approvedAt DateTime?
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization Organization @relation(fields: [organizationId], references: [id])
-  vendor       Vendor       @relation(fields: [vendorId], references: [id])
-  bill         Bill?        @relation(fields: [billId], references: [id])
-  account      Account      @relation(fields: [accountId], references: [id])
-
-  @@unique([organizationId, paymentNumber])
-  @@index([organizationId])
-  @@index([vendorId])
-  @@index([billId])
-  @@index([accountId])
-  @@index([status])
-  @@index([paymentDate])
-  @@map("vendor_payments")
-}
-
-// ==================== INVENTORY MANAGEMENT ====================
-
-model InventoryItem {
-  id             String  @id @default(cuid())
-  organizationId String
-  productId      String
-  locationId     String? // Optional - null means company-wide
-
-  // Quantities
-  quantityOnHand    Decimal @default(0)
-  quantityReserved  Decimal @default(0) // Reserved for orders
-  quantityAvailable Decimal @default(0) // onHand - reserved
-
-  // Reorder Management
-  reorderPoint    Decimal?
-  reorderQuantity Decimal?
-  maxQuantity     Decimal?
-
-  // Valuation (for costing)
-  averageCost    Decimal?
-  lastCost       Decimal?
-  lastStockCount DateTime?
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relationships
-  organization Organization           @relation(fields: [organizationId], references: [id])
-  product      Product                @relation(fields: [productId], references: [id])
-  location     Location?              @relation(fields: [locationId], references: [id])
-  transactions InventoryTransaction[]
-
-  @@unique([productId, locationId])
-  @@index([organizationId])
-  @@index([productId])
-  @@index([locationId])
-  @@map("inventory_items")
-}
-
-model InventoryTransaction {
-  id              String @id @default(cuid())
-  organizationId  String
-  inventoryItemId String
-
-  // Transaction Details
-  type      String // RECEIPT, SALE, ADJUSTMENT, TRANSFER, RETURN
-  quantity  Decimal // Positive for increase, negative for decrease
-  unitCost  Decimal?
-  totalCost Decimal?
-
-  // Reference
-  referenceType   String? // PURCHASE_ORDER, INVOICE, ADJUSTMENT, TRANSFER
-  referenceId     String? // ID of related document
-  referenceNumber String? // Human-readable reference
-
-  // Transfer Details (if type is TRANSFER)
-  fromLocationId String?
-  toLocationId   String?
-
-  // Additional Info
-  reason String?
-  notes  String?
-
-  // Tracking
-  createdBy       String
-  transactionDate DateTime @default(now())
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relationships
-  organization  Organization  @relation(fields: [organizationId], references: [id])
-  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
-  fromLocation  Location?     @relation(fields: [fromLocationId], references: [id])
-
-  @@index([organizationId])
-  @@index([inventoryItemId])
-  @@index([referenceType, referenceId])
-  @@index([transactionDate])
-  @@index([fromLocationId])
-  @@map("inventory_transactions")
-}
-
-// ==================== TIME TRACKING ====================
-
-model EmployeeTimeEntry {
-  id             String  @id @default(cuid())
-  organizationId String
-  employeeId     String
-  projectId      String? // Optional - can be general time
-
-  // Time Details
-  date      DateTime
-  startTime DateTime?
-  endTime   DateTime?
-  hours     Decimal // Total hours worked
-
-  // Description & Billing
-  description String?
-  billable    Boolean  @default(false)
-  hourlyRate  Decimal? // Rate at time of entry
-
-  // Approval
-  status          String    @default("PENDING") // PENDING, APPROVED, REJECTED
-  approvedBy      String?
-  approvedAt      DateTime?
-  rejectionReason String?
-
-  // Invoicing
-  invoiced  Boolean @default(false)
-  invoiceId String?
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization Organization @relation(fields: [organizationId], references: [id])
-  employee     Employee     @relation(fields: [employeeId], references: [id])
-  project      Project?     @relation(fields: [projectId], references: [id])
-  invoice      Invoice?     @relation(fields: [invoiceId], references: [id])
-
-  @@index([organizationId])
-  @@index([employeeId])
-  @@index([projectId])
-  @@index([date])
-  @@index([status])
-  @@map("employee_time_entries")
-}
-
-// ==================== DOMAIN VERIFICATION ====================
-
-model DomainVerification {
-  id                String    @id @default(cuid())
-  domain            String    @unique
-  verificationToken String
-  status            String    @default("PENDING") // PENDING, VERIFIED, FAILED, EXPIRED
-  attempts          Int       @default(0)
-  lastAttemptAt     DateTime?
-  verifiedAt        DateTime?
-  expiresAt         DateTime
-
-  // Audit fields
-  requestedBy String?
-  verifiedBy  String?
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([domain, status])
-  @@index([status])
-  @@index([expiresAt])
-  @@map("domain_verifications")
-}
-
-// ==================== PUBLIC INTAKE WORKFLOW ====================
-
-model IntakeSession {
-  id String @id @default(cuid())
-
-  // Token Management
-  tokenHash    String @unique // bcrypt hash of token
-  tokenVersion Int    @default(1)
-
-  // Session Metadata
-  status         String @default("ACTIVE") // ACTIVE, COMPLETED, EXPIRED, ABANDONED, BLOCKED
-  currentStep    String @default("EMAIL_CAPTURE") // Current workflow step
-  completedSteps String @default("[]") // JSON array of completed steps
-
-  // Security Context
-  ipAddress   String
-  userAgent   String?
-  fingerprint String? // Browser fingerprint
-  origin      String? // Request origin
-
-  // Bot Detection Flags
-  suspicionScore    Int     @default(0) // 0-100, higher = more suspicious
-  botFlags          String? // JSON array of triggered bot detection rules
-  honeypotTriggered Boolean @default(false)
-
-  // Timing Analysis
-  sessionStartedAt DateTime @default(now())
-  lastActivityAt   DateTime @default(now())
-  stepTimings      String? // JSON object with step completion times
-
-  // Request Tracking
-  requestCount       Int @default(0)
-  submissionAttempts Int @default(0)
-
-  // Data References
-  customerDataId String? @unique
-  quoteDataId    String? @unique
-
-  // Conversion Tracking
-  convertedAt           DateTime?
-  convertedToCustomerId String?
-  convertedToQuoteId    String?
-
-  // Compliance & Retention
-  privacyPolicyAccepted Boolean @default(false)
-  termsAccepted         Boolean @default(false)
-  marketingConsent      Boolean @default(false)
-
-  // Expiration
-  expiresAt DateTime
-  deletedAt DateTime?
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relationships
-  customerData   IntakeCustomerData?
-  quoteData      IntakeQuoteData?
-  securityEvents IntakeSecurityEvent[]
-
-  @@index([tokenHash])
-  @@index([ipAddress])
-  @@index([status])
-  @@index([expiresAt])
-  @@index([suspicionScore])
-  @@index([sessionStartedAt])
-  @@map("intake_sessions")
-}
-
-model IntakeCustomerData {
-  id        String @id @default(cuid())
-  sessionId String @unique
-
-  // Profile Type
-  profileType String? // RESIDENTIAL, COMMERCIAL
-
-  // Email (captured first)
-  email         String // Encrypted
-  emailVerified Boolean @default(false)
-
-  // Personal Information (RESIDENTIAL)
-  firstName String?
-  lastName  String?
-  phone     String? // Encrypted
-
-  // Business Information (COMMERCIAL)
-  businessName  String?
-  contactName   String?
-  businessPhone String? // Encrypted
-
-  // Address Information
-  addressLine1 String?
-  addressLine2 String?
-  city         String?
-  province     String? // State/Province
-  postalCode   String?
-  country      String? @default("CA")
-
-  // Additional Details
-  notes          String? // Customer-provided notes
-  referralSource String? // How did you hear about us?
-
-  // Data Completeness
-  completionPercentage Int @default(0) // 0-100
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relationships
-  session IntakeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@index([email])
-  @@index([sessionId])
-  @@map("intake_customer_data")
-}
-
-model IntakeQuoteData {
-  id        String @id @default(cuid())
-  sessionId String @unique
-
-  // Service Category
-  category    String? // HVAC, PLUMBING, ELECTRICAL, etc.
-  subcategory String?
-
-  // Quote Details
-  serviceType   String? // REPAIR, INSTALLATION, MAINTENANCE, CONSULTATION
-  urgency       String? // EMERGENCY, URGENT, ROUTINE, SCHEDULED
-  preferredDate DateTime? // Preferred service date
-
-  // Description
-  description String? // Detailed description of needs
-  attachments String? // JSON array of uploaded file references
-
-  // Budget
-  estimatedBudget String? // UNDER_1000, 1000_5000, 5000_10000, 10000_PLUS, UNSURE
-
-  // Location (if different from customer address)
-  serviceAddressLine1 String?
-  serviceAddressLine2 String?
-  serviceCity         String?
-  serviceProvince     String?
-  servicePostalCode   String?
-  serviceCountry      String? @default("CA")
-
-  // Additional Questions
-  propertyType       String? // RESIDENTIAL, COMMERCIAL, INDUSTRIAL
-  accessInstructions String? // How to access property
-  additionalNotes    String? // Additional customer notes
-
-  // Custom/Dynamic Fields
-  customFields String? // JSON string for industry-specific or dynamic fields
-
-  // Data Completeness
-  completionPercentage Int @default(0) // 0-100
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relationships
-  session IntakeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@index([category])
-  @@index([urgency])
-  @@index([sessionId])
-  @@map("intake_quote_data")
-}
-
-model IntakeSecurityEvent {
-  id              String  @id @default(cuid())
-  intakeSessionId String? // V1 intake session (legacy)
-  formSessionId   String? // V2 form session (template-based)
-
-  // Event Classification
-  eventType String // BOT_DETECTED, RATE_LIMIT_EXCEEDED, HONEYPOT_TRIGGERED, etc.
-  severity  String // LOW, MEDIUM, HIGH, CRITICAL
-
-  // Event Details
-  description   String
-  ruleTriggered String? // Which bot detection rule triggered
-  metadata      String? // JSON metadata
-
-  // Context
-  ipAddress     String
-  userAgent     String?
-  requestPath   String?
-  requestMethod String?
-  requestBody   String? // Sanitized request body
-
-  // Action Taken
-  actionTaken String // LOGGED, BLOCKED, CHALLENGED, RATE_LIMITED
-  blocked     Boolean @default(false)
 
   // Timestamp
   timestamp DateTime @default(now())
 
   // Relationships
-  intakeSession IntakeSession?     @relation(fields: [intakeSessionId], references: [id], onDelete: SetNull)
-  formSession   IntakeFormSession? @relation("FormSessionEvents", fields: [formSessionId], references: [id], onDelete: SetNull)
+  organization Organization @relation(fields: [organizationId], references: [id])
 
-  @@index([intakeSessionId])
-  @@index([formSessionId])
-  @@index([eventType])
-  @@index([severity])
-  @@index([ipAddress])
-  @@index([timestamp])
-  @@index([blocked])
-  @@map("intake_security_events")
-}
-
-// ==================== TEMPLATE-BASED INTAKE SYSTEM (V2) ====================
-
-model IntakeFormTemplate {
-  id             String @id @default(cuid())
-  organizationId String
-
-  // Template Identification
-  name        String
-  description String?
-  version     String  @default("1.0.0")
-
-  // Template Type & Status
-  templateType String  @default("CUSTOM") // SYSTEM, CUSTOM, INDUSTRY
-  industry     String? // HVAC, PLUMBING, ELECTRICAL, LEGAL, MEDICAL, etc.
-  isActive     Boolean @default(true)
-  isDefault    Boolean @default(false)
-  isPublic     Boolean @default(false) // Available to all organizations
-
-  // Form Configuration
-  config String // JSON: { theme, layout, branding, notifications }
-
-  // Completion Rules
-  completionRules String // JSON: Defines what makes the form "complete"
-
-  // Conversion Settings
-  autoConvert        Boolean @default(false) // Auto-create customer/quote on completion
-  conversionSettings String? // JSON: Mapping rules for conversion
-
-  // Analytics
-  submissionCount Int @default(0)
-  conversionCount Int @default(0)
-
-  // Timestamps
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Relationships
-  organization Organization        @relation(fields: [organizationId], references: [id])
-  steps        IntakeFormStep[]
-  fields       IntakeFormField[]
-  sessions     IntakeFormSession[]
-
-  @@unique([organizationId, name, version])
   @@index([organizationId])
-  @@index([templateType])
-  @@index([industry])
-  @@index([isActive])
-  @@index([isDefault])
-  @@map("intake_form_templates")
+  @@index([operation])
+  @@index([timestamp])
+  @@index([success])
+  @@map("encryption_audit_logs")
 }
 
-model IntakeFormStep {
-  id         String @id @default(cuid())
-  templateId String
+// ==================== ADMIN PANEL BACKEND ====================
 
-  // Step Identification
-  stepKey     String // Unique key within template (e.g., "email_capture", "service_details")
-  name        String // Display name
-  description String?
+model SystemLog {
+  id             String @id @default(cuid())
+  timestamp      DateTime @default(now())
+  level          String // DEBUG, INFO, WARN, ERROR
+  message        String
+  source         String // Service/module name (e.g., 'auth', 'invoice', 'encryption')
 
-  // Ordering & Flow
-  sortOrder Int
+  // Context
+  userId         String?
+  organizationId String?
+  metadata       String? // JSON metadata
+  stackTrace     String? // For errors
 
-  // Step Behavior
-  isRequired      Boolean @default(true)
-  canSkip         Boolean @default(false)
-  skipCondition   String? // JSON: Conditional logic for skipping
-  completionRules String? // JSON: Rules to mark step as complete
+  // Timestamps
+  createdAt DateTime @default(now())
 
-  // UI Configuration
-  layout       String  @default("SINGLE_COLUMN") // SINGLE_COLUMN, TWO_COLUMN, GRID
-  displayStyle String? // JSON: Custom styling
-  helpText     String?
+  @@index([timestamp])
+  @@index([level])
+  @@index([source])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("system_logs")
+}
+
+model IntakeSettings {
+  id             String @id @default(cuid())
+  organizationId String @unique
+
+  // General settings
+  enabled                      Boolean @default(true)
+  requireApproval              Boolean @default(false)
+  notifyOnSubmission           Boolean @default(true)
+
+  // Email notifications
+  notificationEmails           String? // JSON array of admin emails
+  customerConfirmationEmail    Boolean @default(true)
+
+  // Form configuration
+  customFields                 String? // JSON array of IntakeCustomField objects
+  requiredFields               String? // JSON array of required field names
+
+  // Branding
+  thankYouMessage              String?
+  redirectUrl                  String?
 
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relationships
-  template    IntakeFormTemplate     @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  fields      IntakeFormField[]
-  transitions IntakeFormTransition[] @relation("FromStep")
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@unique([templateId, stepKey])
-  @@index([templateId])
-  @@index([sortOrder])
-  @@map("intake_form_steps")
+  @@index([organizationId])
+  @@map("intake_settings")
 }
 
-model IntakeFormField {
-  id         String  @id @default(cuid())
-  templateId String
-  stepId     String?
+model SystemIntegration {
+  id             String @id @default(cuid())
+  name           String
+  type           String // STRIPE, QUICKBOOKS, SENDGRID, TWILIO, SLACK, CUSTOM
+  status         String @default("INACTIVE") // ACTIVE, INACTIVE, ERROR, TESTING
+  enabled        Boolean @default(false)
 
-  // Field Identification
-  fieldKey    String // Unique key within template
-  label       String
-  placeholder String?
-  helpText    String?
+  // Configuration (encrypted in database)
+  configEncrypted String // Encrypted JSON configuration
 
-  // Field Type
-  fieldType String // text, email, phone, number, select, multiselect, radio, checkbox, textarea, date, datetime, file, signature, rating, scale, matrix, address, custom
-  dataType  String @default("string") // string, number, boolean, date, array, object
+  // Monitoring
+  lastSync        DateTime?
+  lastError       String?
+  syncFrequency   String? // HOURLY, DAILY, WEEKLY, MANUAL
 
-  // Validation
-  isRequired      Boolean @default(false)
-  validationRules String? // JSON: { min, max, pattern, custom }
-  validationError String? // Custom error message
-
-  // Field Options (for select, radio, etc.)
-  options      String? // JSON array of options
-  defaultValue String? // Default value (JSON-encoded)
-
-  // Conditional Display
-  showIf    String? // JSON: Conditional logic
-  requireIf String? // JSON: Conditional requirement
-
-  // UI Configuration
-  sortOrder    Int
-  width        String  @default("FULL") // FULL, HALF, THIRD, QUARTER
-  displayStyle String? // JSON: Custom styling
-  autocomplete String? // HTML autocomplete attribute
-
-  // Data Mapping
-  mappingPath String? // Dot notation path for data storage (e.g., "customer.email")
-  encrypted   Boolean @default(false)
+  // Scope
+  organizationId  String? // Null for system-wide integrations
 
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relationships
-  template IntakeFormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  step     IntakeFormStep?    @relation(fields: [stepId], references: [id], onDelete: SetNull)
-
-  @@unique([templateId, fieldKey])
-  @@index([templateId])
-  @@index([stepId])
-  @@index([sortOrder])
-  @@map("intake_form_fields")
-}
-
-model IntakeFormTransition {
-  id         String @id @default(cuid())
-  templateId String
-  fromStepId String
-  toStepKey  String // Key of next step (allows dynamic routing)
-
-  // Transition Logic
-  condition String? // JSON: Conditional logic for this transition
-  priority  Int     @default(0) // Higher priority transitions evaluated first
-
-  // Transition Behavior
-  action       String? // JSON: Actions to perform during transition
-  requirements String? // JSON: Requirements that must be met
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relationships
-  fromStep IntakeFormStep @relation("FromStep", fields: [fromStepId], references: [id], onDelete: Cascade)
-
-  @@index([fromStepId])
-  @@index([priority])
-  @@map("intake_form_transitions")
-}
-
-model IntakeFormAction {
-  id         String @id @default(cuid())
-  templateId String
-
-  // Action Configuration
-  actionType String // webhook, email, slack, custom
-  trigger    String // on_submit, on_step_complete, on_field_change, on_conversion
-
-  // Action Details
-  config   String // JSON: Action-specific configuration
-  priority Int     @default(0)
-  isActive Boolean @default(true)
-
-  // Conditional Execution
-  condition String? // JSON: When to execute this action
-
-  // Retry & Error Handling
-  retryCount Int @default(3)
-  timeout    Int @default(30000) // milliseconds
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([templateId])
-  @@index([trigger])
-  @@index([isActive])
-  @@map("intake_form_actions")
-}
-
-model IntakeFormSession {
-  id         String @id @default(cuid())
-  templateId String
-
-  // Token Management
-  tokenHash    String @unique
-  tokenVersion Int    @default(1)
-
-  // Session Metadata
-  status         String @default("ACTIVE") // ACTIVE, COMPLETED, EXPIRED, ABANDONED, BLOCKED
-  currentStepKey String // Current step key
-  visitedSteps   String @default("[]") // JSON array of visited step keys
-  completedSteps String @default("[]") // JSON array of completed step keys
-
-  // Security Context
-  ipAddress   String
-  userAgent   String?
-  fingerprint String?
-  origin      String?
-
-  // Bot Detection
-  suspicionScore    Int     @default(0)
-  botFlags          String? // JSON array
-  honeypotTriggered Boolean @default(false)
-
-  // Timing
-  sessionStartedAt DateTime @default(now())
-  lastActivityAt   DateTime @default(now())
-  stepTimings      String? // JSON object
-
-  // Request Tracking
-  requestCount       Int @default(0)
-  submissionAttempts Int @default(0)
-
-  // Data Storage
-  formDataId String? @unique
-
-  // Conversion
-  convertedAt           DateTime?
-  convertedToCustomerId String?
-  convertedToQuoteId    String?
-
-  // Compliance
-  privacyPolicyAccepted Boolean @default(false)
-  termsAccepted         Boolean @default(false)
-  marketingConsent      Boolean @default(false)
-
-  // Expiration
-  expiresAt DateTime
   deletedAt DateTime?
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdBy String
 
   // Relationships
-  template       IntakeFormTemplate    @relation(fields: [templateId], references: [id])
-  formData       IntakeFormData?
-  securityEvents IntakeSecurityEvent[] @relation("FormSessionEvents")
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  creator      User          @relation("CreatedSystemIntegrations", fields: [createdBy], references: [id])
 
-  @@index([tokenHash])
-  @@index([templateId])
+  @@index([type])
   @@index([status])
-  @@index([expiresAt])
-  @@index([suspicionScore])
-  @@map("intake_form_sessions")
+  @@index([organizationId])
+  @@index([enabled])
+  @@map("system_integrations")
 }
 
-model IntakeFormData {
-  id        String @id @default(cuid())
-  sessionId String @unique
+model FeatureToggle {
+  id  String @id @default(cuid())
+  key String @unique // Unique key (e.g., 'beta_dashboard')
 
-  // EAV (Entity-Attribute-Value) Storage
-  data String // JSON: Complete form data
+  // Toggle Details
+  name        String
+  description String
+  enabled     Boolean @default(false)
+
+  // Targeting
+  scope               String  @default("GLOBAL") // GLOBAL, ORGANIZATION, USER
+  targetOrganizations String? // JSON array of organization IDs
+  targetUsers         String? // JSON array of user IDs
+  rolloutPercentage   Int?    @default(0) // 0-100, gradual rollout
 
   // Metadata
-  completionPercentage Int     @default(0)
-  isValid              Boolean @default(false)
-  validationErrors     String? // JSON array of validation errors
+  createdBy String
+  updatedBy String?
 
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relationships
-  session IntakeFormSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  @@index([key])
+  @@index([enabled])
+  @@index([scope])
+  @@map("feature_toggles")
+}
+// ==================== MAINTENANCE WINDOWS ====================
 
-  @@index([sessionId])
-  @@map("intake_form_data")
+model MaintenanceWindow {
+  id    String @id @default(cuid())
+  title String
+  description String
+
+  // Status
+  status String @default("PLANNED") // PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
+
+  // Schedule
+  scheduledStart DateTime
+  scheduledEnd   DateTime
+  actualStart    DateTime?
+  actualEnd      DateTime?
+  duration       Int // Estimated duration in minutes
+
+  // Impact
+  impact           String // LOW, MEDIUM, HIGH, CRITICAL
+  affectedServices String // JSON array of service names
+  notifyUsers      Boolean @default(false)
+
+  // Details
+  tasks           String // JSON array of MaintenanceTask objects
+  notes           String?
+  completionNotes String?
+
+  // Metadata
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([scheduledStart])
+  @@index([createdAt])
+  @@map("maintenance_windows")
 }
 
-// Add relationship to Organization model
-model IntakeFormTemplateOrganization {
-  id             String   @id @default(cuid())
-  organizationId String
-  templateId     String
-  createdAt      DateTime @default(now())
+// ==================== SUBSCRIPTION & PLAN MANAGEMENT ====================
 
-  @@unique([organizationId, templateId])
-  @@map("intake_form_template_organizations")
+model SubscriptionPlan {
+  id          String  @id @default(cuid())
+  name        String // e.g., 'Professional', 'Enterprise'
+  description String
+  
+  // Pricing
+  price    Decimal
+  interval String // MONTHLY, QUARTERLY, YEARLY
+  currency String @default("CAD")
+  
+  // Features
+  features String // JSON array of feature keys
+  
+  // Limits
+  maxUsers         Int?
+  maxOrganizations Int?
+  
+  // Status
+  status   String  @default("ACTIVE") // ACTIVE, INACTIVE
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relationships
+  subscriptions OrganizationSubscription[]
+  
+  @@index([status])
+  @@map("subscription_plans")
+}
+
+model OrganizationSubscription {
+  id             String @id @default(cuid())
+  organizationId String
+  planId         String
+  
+  // Status
+  status String @default("ACTIVE") // ACTIVE, CANCELLED, EXPIRED, SUSPENDED
+  
+  // Billing
+  startDate       DateTime
+  endDate         DateTime?
+  nextBillingDate DateTime?
+  autoRenew       Boolean  @default(true)
+  
+  // Payment
+  paymentMethod   String?
+  lastPaymentDate DateTime?
+  
+  // Cancellation
+  cancelledAt DateTime?
+  cancelReason String?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relationships
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan         SubscriptionPlan @relation(fields: [planId], references: [id])
+  
+  @@index([organizationId])
+  @@index([planId])
+  @@index([status])
+  @@index([nextBillingDate])
+  @@map("organization_subscriptions")
+}
+
+// ==================== SYSTEM BACKUPS ====================
+
+model SystemBackup {
+  id       String @id @default(cuid())
+  type     String // FULL, INCREMENTAL, DATABASE_ONLY, FILES_ONLY
+  status   String @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, FAILED
+  
+  // Backup details
+  filename String
+  size     BigInt @default(0) // Size in bytes
+  
+  // Timing
+  startedAt    DateTime?
+  completedAt  DateTime?
+  
+  // Error tracking
+  error    String?
+  
+  // Metadata (encrypted if contains sensitive info)
+  metadata String? // JSON - backup configuration, retention policy, etc.
+  
+  // Audit
+  createdBy String
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+  deletedBy String?
+  
+  // Relationships
+  creator User  @relation("CreatedSystemBackups", fields: [createdBy], references: [id])
+  deleter User? @relation("DeletedSystemBackups", fields: [deletedBy], references: [id])
+  
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@index([startedAt])
+  @@map("system_backups")
 }

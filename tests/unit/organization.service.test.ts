@@ -269,7 +269,7 @@ describe('OrganizationService', () => {
       });
 
       expect(auditLogs.length).toBeGreaterThan(0);
-      const changes = JSON.parse(auditLogs[0]!.changes!);
+      const changes = JSON.parse(auditLogs[0].changes!);
       expect(changes.name.old).toBe('Update Test Org');
       expect(changes.name.new).toBe('Audit Update Test');
     });

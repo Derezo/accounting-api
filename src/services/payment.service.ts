@@ -326,13 +326,13 @@ export class PaymentService {
 
     switch (event.type) {
       case 'payment_intent.succeeded':
-        await this.handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
+        await this.handlePaymentIntentSucceeded(event.data.object);
         break;
       case 'payment_intent.payment_failed':
-        await this.handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
+        await this.handlePaymentIntentFailed(event.data.object);
         break;
       case 'charge.succeeded':
-        await this.handleChargeSucceeded(event.data.object as Stripe.Charge);
+        await this.handleChargeSucceeded(event.data.object);
         break;
       default:
         logger.warn('Unhandled Stripe webhook event type', { eventType: event.type });

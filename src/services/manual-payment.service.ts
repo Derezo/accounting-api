@@ -186,7 +186,7 @@ export class ManualPaymentService {
     const currency = data.currency || config.DEFAULT_CURRENCY;
 
     // Handle multi-currency payments
-    let finalAmount = data.amount;
+    const finalAmount = data.amount;
     let exchangeData = null;
 
     if (data.originalCurrency && data.originalCurrency !== currency) {

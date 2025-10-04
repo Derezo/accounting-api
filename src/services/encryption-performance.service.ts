@@ -75,6 +75,8 @@ export class EncryptionPerformanceService {
   private readonly redisClient?: RedisClientType;
   private readonly performanceMetrics: PerformanceMetrics[] = [];
   private readonly optimizationProfiles = new Map<string, OptimizationProfile>();
+  private performanceMonitorInterval?: NodeJS.Timeout;
+  private cacheHealthMonitorInterval?: NodeJS.Timeout;
 
   // Cache configuration
   private readonly DEFAULT_TTL = 3600; // 1 hour
@@ -512,14 +514,29 @@ export class EncryptionPerformanceService {
    */
   private startPerformanceMonitoring(): void {
     // Monitor performance metrics every 5 minutes
-    setInterval(() => {
+    this.performanceMonitorInterval = setInterval(() => {
       this.analyzePerformance();
     }, 300000);
 
     // Monitor cache health every minute
-    setInterval(() => {
+    this.cacheHealthMonitorInterval = setInterval(() => {
       this.monitorCacheHealth();
     }, 60000);
+  }
+
+  /**
+   * Stop performance monitoring
+   */
+  public stopMonitoring(): void {
+    if (this.performanceMonitorInterval) {
+      clearInterval(this.performanceMonitorInterval);
+      this.performanceMonitorInterval = undefined;
+    }
+    if (this.cacheHealthMonitorInterval) {
+      clearInterval(this.cacheHealthMonitorInterval);
+      this.cacheHealthMonitorInterval = undefined;
+    }
+    logger.info('Performance monitoring stopped');
   }
 
   /**

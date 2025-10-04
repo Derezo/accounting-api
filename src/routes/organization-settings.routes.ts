@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { organizationSettingsController } from '../controllers/organization-settings.controller';
+import { getIntakeSettings, updateIntakeSettings } from '../controllers/intake-settings.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { uploadSingle } from '../middleware/upload.middleware';
 import { UserRole } from '../types/enums';
@@ -1851,5 +1852,133 @@ router.post(
   authorize(UserRole.ADMIN, UserRole.MANAGER),
   organizationSettingsController.testNotificationConfiguration.bind(organizationSettingsController)
 );
+
+// ==================== INTAKE FORM SETTINGS ROUTES ====================
+
+/**
+ * @swagger
+ * /api/v1/organizations/{organizationId}/settings/intake:
+ *   get:
+ *     tags: [Intake Settings]
+ *     summary: Get intake form settings
+ *     description: Retrieve intake form configuration for an organization. Automatically creates default settings if none exist. Requires Admin or Manager role.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         description: Organization ID
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Intake form settings retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 organizationId:
+ *                   type: string
+ *                 enabled:
+ *                   type: boolean
+ *                 requireApproval:
+ *                   type: boolean
+ *                 notifyOnSubmission:
+ *                   type: boolean
+ *                 notificationEmails:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                 customerConfirmationEmail:
+ *                   type: boolean
+ *                 customFields:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 requiredFields:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                 thankYouMessage:
+ *                   type: string
+ *                 redirectUrl:
+ *                   type: string
+ *                 createdAt:
+ *                   type: string
+ *                 updatedAt:
+ *                   type: string
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Failed to fetch intake settings
+ */
+router.get('/intake', getIntakeSettings);
+
+/**
+ * @swagger
+ * /api/v1/organizations/{organizationId}/settings/intake:
+ *   put:
+ *     tags: [Intake Settings]
+ *     summary: Update intake form settings
+ *     description: Update intake form configuration for an organization. Requires Admin or Manager role.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         description: Organization ID
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               enabled:
+ *                 type: boolean
+ *               requireApproval:
+ *                 type: boolean
+ *               notifyOnSubmission:
+ *                 type: boolean
+ *               notificationEmails:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               customerConfirmationEmail:
+ *                 type: boolean
+ *               customFields:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *               requiredFields:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               thankYouMessage:
+ *                 type: string
+ *               redirectUrl:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Settings updated successfully
+ *       400:
+ *         description: Invalid request data
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Failed to update intake settings
+ */
+router.put('/intake', authorize(UserRole.ADMIN, UserRole.MANAGER), updateIntakeSettings);
 
 export default router;

@@ -1,4 +1,5 @@
 import { Quote, QuoteItem, Invoice, InvoiceItem } from '@prisma/client';
+import { sendQuoteEmail } from '../utils/email-helpers';
 import { Decimal } from '@prisma/client/runtime/library';
 import { QuoteStatus } from '../types/enums';
 import { auditService } from './audit.service';
@@ -146,8 +147,8 @@ export class QuoteService {
 
       // Create quote items with calculations
       for (let i = 0; i < data.items.length; i++) {
-        const itemData = data.items[i]!;
-        const calc = itemCalculations[i]!;
+        const itemData = data.items[i];
+        const calc = itemCalculations[i];
 
         await tx.quoteItem.create({
           data: {
@@ -348,8 +349,8 @@ export class QuoteService {
 
         // Create new items with calculations
         for (let i = 0; i < data.items.length; i++) {
-          const itemData = data.items[i]!;
-          const calc = itemCalculations[i]!;
+          const itemData = data.items[i];
+          const calc = itemCalculations[i];
 
           await tx.quoteItem.create({
             data: {
@@ -495,6 +496,11 @@ export class QuoteService {
         id,
         organizationId,
         deletedAt: null
+      },
+      include: {
+        customer: true,
+        organization: true,
+        items: true
       }
     });
 
@@ -528,7 +534,8 @@ export class QuoteService {
       }
     );
 
-    // TODO: Send email notification to customer
+    // Send email notification to customer
+    await sendQuoteEmail(quote, auditContext.userId);
 
     return updatedQuote;
   }

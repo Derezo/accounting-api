@@ -120,7 +120,7 @@ export class IntakeController {
 
       // Transition to the specified step (requires current step as fromStep)
       const currentStep = req.intakeSession.currentStep;
-      await intakeWorkflowService.transitionStep(sessionId, currentStep as any, step as any);
+      await intakeWorkflowService.transitionStep(sessionId, currentStep as any, step);
 
       // Fetch updated session
       const updatedSession = await prisma.intakeSession.findUnique({

@@ -12,17 +12,21 @@ const generateEncryptionKey = (): string => {
   return randomUUID().replace(/-/g, '');
 };
 
-async function main() {
-  console.log('🌱 Adding development seed data...');
+const getPasswordExpirationDate = (): Date => {
+  return new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 days
+};
+
+async function main(): Promise<void> {
+  console.error('🌱 Adding development seed data...');
 
   // Check existing data
   const existingOrgs = await prisma.organization.count();
   const existingUsers = await prisma.user.count();
 
-  console.log(`📊 Current data: ${existingOrgs} organizations, ${existingUsers} users`);
+  console.error(`📊 Current data: ${existingOrgs} organizations, ${existingUsers} users`);
 
   // ==================== CREATE ORGANIZATIONS ====================
-  console.log('🏢 Creating additional organizations...');
+  console.error('🏢 Creating additional organizations...');
 
   // Check if Acme Corp already exists
   let acmeOrg = await prisma.organization.findFirst({
@@ -50,9 +54,9 @@ async function main() {
         website: 'https://acme.dev'
       }
     });
-    console.log('✅ Created Acme Corporation');
+    console.error('✅ Created Acme Corporation');
   } else {
-    console.log('ℹ️  Acme Corporation already exists');
+    console.error('ℹ️  Acme Corporation already exists');
   }
 
   // Check if TechSolutions already exists
@@ -81,18 +85,18 @@ async function main() {
         website: 'https://techsolutions.dev'
       }
     });
-    console.log('✅ Created TechSolutions Inc');
+    console.error('✅ Created TechSolutions Inc');
   } else {
-    console.log('ℹ️  TechSolutions Inc already exists');
+    console.error('ℹ️  TechSolutions Inc already exists');
   }
 
   // ==================== CREATE USERS WITH DIFFERENT ROLES ====================
-  console.log('👥 Creating users with different roles...');
+  console.error('👥 Creating users with different roles...');
 
   const users = [
     {
       email: 'admin@acme.dev',
-      password: 'SuperAdmin123!',
+      password: 'DevAdmin123!',
       role: 'SUPER_ADMIN',
       firstName: 'Sarah',
       lastName: 'Administrator',
@@ -100,7 +104,7 @@ async function main() {
     },
     {
       email: 'manager@acme.dev',
-      password: 'OrgAdmin123!',
+      password: 'DevManager123!',
       role: 'ADMIN',
       firstName: 'Michael',
       lastName: 'Manager',
@@ -108,7 +112,7 @@ async function main() {
     },
     {
       email: 'sales@acme.dev',
-      password: 'Manager123!',
+      password: 'DevSales123!',
       role: 'MANAGER',
       firstName: 'Jennifer',
       lastName: 'Sales',
@@ -116,7 +120,7 @@ async function main() {
     },
     {
       email: 'accounting@acme.dev',
-      password: 'Accountant123!',
+      password: 'DevAcct123!@#',
       role: 'ACCOUNTANT',
       firstName: 'David',
       lastName: 'Numbers',
@@ -124,7 +128,7 @@ async function main() {
     },
     {
       email: 'employee@acme.dev',
-      password: 'Employee123!',
+      password: 'DevEmployee123!',
       role: 'EMPLOYEE',
       firstName: 'Lisa',
       lastName: 'Worker',
@@ -132,7 +136,7 @@ async function main() {
     },
     {
       email: 'viewer@acme.dev',
-      password: 'Viewer123!',
+      password: 'DevViewer123!',
       role: 'VIEWER',
       firstName: 'Robert',
       lastName: 'Observer',
@@ -140,7 +144,7 @@ async function main() {
     },
     {
       email: 'admin@techsolutions.dev',
-      password: 'TechAdmin123!',
+      password: 'DevTechAdmin123!',
       role: 'ADMIN',
       firstName: 'Alex',
       lastName: 'Tech',
@@ -159,6 +163,7 @@ async function main() {
           organizationId: userData.org.id,
           email: userData.email,
           passwordHash: await hashPassword(userData.password),
+          passwordExpiresAt: getPasswordExpirationDate(),
           role: userData.role,
           isActive: true,
           emailVerified: true,
@@ -167,9 +172,9 @@ async function main() {
           phone: '+1-416-555-010' + Math.floor(Math.random() * 10)
         }
       });
-      console.log(`✅ Created user: ${userData.email}`);
+      console.error(`✅ Created user: ${userData.email}`);
     } else {
-      console.log(`ℹ️  User already exists: ${userData.email}`);
+      console.error(`ℹ️  User already exists: ${userData.email}`);
     }
   }
 
@@ -177,36 +182,50 @@ async function main() {
   const finalOrgs = await prisma.organization.count();
   const finalUsers = await prisma.user.count();
 
-  console.log('\n✅ Development seed data completed successfully!');
-  console.log('\n🔑 Development Credentials:');
-  console.log('='.repeat(60));
-  console.log('Super Admin: admin@acme.dev / SuperAdmin123!');
-  console.log('Org Admin:   manager@acme.dev / OrgAdmin123!');
-  console.log('Manager:     sales@acme.dev / Manager123!');
-  console.log('Accountant:  accounting@acme.dev / Accountant123!');
-  console.log('Employee:    employee@acme.dev / Employee123!');
-  console.log('Viewer:      viewer@acme.dev / Viewer123!');
-  console.log('');
-  console.log('Tech Admin:  admin@techsolutions.dev / TechAdmin123!');
-  console.log('='.repeat(60));
-  console.log('\n📊 Final Data Summary:');
-  console.log(`• ${finalOrgs} Organizations`);
-  console.log(`• ${finalUsers} Users`);
-  console.log('\n🌐 API Testing:');
-  console.log('Use these credentials to test different user roles and permissions.');
-  console.log('Organization isolation is enforced - users can only access their org data.');
-  console.log('\n🔗 Test the API:');
-  console.log('• Health Check: curl http://localhost:3000/health');
-  console.log('• API Health: curl http://localhost:3000/api/v1/health');
-  console.log('• Login: POST http://localhost:3000/api/v1/auth/login');
-  console.log('• Documentation: http://127.0.0.1:8080 (if docs server running)');
+  console.error('\n✅ Development seed data completed successfully!');
+  console.error('\n🔑 Development Credentials:');
+  console.error('='.repeat(60));
+  console.error('Super Admin: admin@acme.dev / DevAdmin123!');
+  console.error('Org Admin:   manager@acme.dev / DevManager123!');
+  console.error('Manager:     sales@acme.dev / DevSales123!');
+  console.error('Accountant:  accounting@acme.dev / DevAcct123!@#');
+  console.error('Employee:    employee@acme.dev / DevEmployee123!');
+  console.error('Viewer:      viewer@acme.dev / DevViewer123!');
+  console.error('');
+  console.error('Tech Admin:  admin@techsolutions.dev / DevTechAdmin123!');
+  console.error('='.repeat(60));
+  console.error('\n⚠️  SECURITY NOTICE - v2.0:');
+  console.error('='.repeat(60));
+  console.error('');
+  console.error('Password Requirements:');
+  console.error('  ✓ Minimum 12 characters');
+  console.error('  ✓ Uppercase, lowercase, numbers, and special characters');
+  console.error('  ✓ Expires after 90 days');
+  console.error('');
+  console.error('Session Security:');
+  console.error('  ✓ 2-hour session expiration');
+  console.error('  ✓ 15-minute inactivity timeout');
+  console.error('  ✓ Maximum 3 concurrent sessions per user');
+  console.error('  ✓ Device fingerprinting enabled');
+  console.error('='.repeat(60));
+  console.error('\n📊 Final Data Summary:');
+  console.error(`• ${finalOrgs} Organizations`);
+  console.error(`• ${finalUsers} Users`);
+  console.error('\n🌐 API Testing:');
+  console.error('Use these credentials to test different user roles and permissions.');
+  console.error('Organization isolation is enforced - users can only access their org data.');
+  console.error('\n🔗 Test the API:');
+  console.error('• Health Check: curl http://localhost:3000/health');
+  console.error('• API Health: curl http://localhost:3000/api/v1/health');
+  console.error('• Login: POST http://localhost:3000/api/v1/auth/login');
+  console.error('• Documentation: http://127.0.0.1:8080 (if docs server running)');
 }
 
-main()
-  .catch((e) => {
+void main()
+  .catch((e: Error) => {
     console.error('❌ Error during seeding:', e);
     process.exit(1);
   })
-  .finally(async () => {
-    await prisma.$disconnect();
+  .finally(() => {
+    void prisma.$disconnect();
   });

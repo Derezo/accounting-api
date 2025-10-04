@@ -238,12 +238,12 @@ describe('Financial Role Permissions Integration Tests', () => {
       const testInvoice = await createTestInvoice(
         prisma,
         organization.id,
-        customers[0]!.id
+        customers[0].id
       );
 
       const paymentData = {
         invoiceId: testInvoice.id,
-        customerId: customers[0]!.id,
+        customerId: customers[0].id,
         amount: 500.00,
         paymentMethod: 'STRIPE_CARD',
         currency: 'CAD',
@@ -401,7 +401,7 @@ describe('Financial Role Permissions Integration Tests', () => {
       const { authTokens, customers } = testContext;
 
       const etransferData = {
-        customerId: customers[0]!.id,
+        customerId: customers[0].id,
         amount: 1000.00,
         currency: 'CAD',
         recipientEmail: 'customer@test.com',

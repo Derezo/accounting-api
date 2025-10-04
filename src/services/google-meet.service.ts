@@ -287,7 +287,7 @@ export class GoogleMeetService {
     const businessHourStart = 9;
     const businessHourEnd = 17;
 
-    let currentDate = new Date(startDate);
+    const currentDate = new Date(startDate);
     currentDate.setHours(businessHourStart, 0, 0, 0);
 
     while (currentDate < endDate) {
@@ -347,7 +347,7 @@ export class GoogleMeetService {
     const businessHourStart = 9;
     const businessHourEnd = 17;
 
-    let currentDate = new Date(startDate);
+    const currentDate = new Date(startDate);
     currentDate.setHours(businessHourStart, 0, 0, 0);
 
     while (currentDate < endDate && slots.length < 20) { // Limit to 20 slots

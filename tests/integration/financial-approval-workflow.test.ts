@@ -94,7 +94,7 @@ describe('Financial Approval Workflow Tests', () => {
 
         // Create payment requiring approval
         const paymentData = {
-          customerId: customers[0]!.id,
+          customerId: customers[0].id,
           amount: transaction.amount,
           currency: 'CAD',
           paymentMethod: 'BANK_TRANSFER',
@@ -192,7 +192,7 @@ describe('Financial Approval Workflow Tests', () => {
         const invoice = await createTestInvoice(
           prisma,
           testContext.organization.id,
-          customers[0]!.id
+          customers[0].id
         );
 
         // Update invoice amount to test scenario
@@ -257,7 +257,7 @@ describe('Financial Approval Workflow Tests', () => {
 
       // Create high-value transaction requiring multiple approvals
       const highValueTransaction = {
-        customerId: customers[0]!.id,
+        customerId: customers[0].id,
         amount: 45000.00, // Requires 3 approvals
         currency: 'CAD',
         paymentMethod: 'WIRE_TRANSFER',
@@ -425,7 +425,7 @@ describe('Financial Approval Workflow Tests', () => {
 
       // Create transaction with timeout requirements
       const timeoutTransaction = {
-        customerId: customers[0]!.id,
+        customerId: customers[0].id,
         amount: 12000.00,
         currency: 'CAD',
         description: 'Time-sensitive vendor payment',
@@ -514,7 +514,7 @@ describe('Financial Approval Workflow Tests', () => {
       for (const scenario of emergencyScenarios) {
         // Test emergency approval request
         const emergencyApprovalData = {
-          customerId: customers[0]!.id,
+          customerId: customers[0].id,
           amount: scenario.amount,
           emergencyType: scenario.type,
           justification: scenario.justification,
@@ -569,7 +569,7 @@ describe('Financial Approval Workflow Tests', () => {
 
       // Create transaction requiring approval with full audit trail
       const auditableTransaction = {
-        customerId: customers[0]!.id,
+        customerId: customers[0].id,
         amount: 18500.00,
         currency: 'CAD',
         description: 'Major consulting contract - full audit trail required',
@@ -682,7 +682,7 @@ describe('Financial Approval Workflow Tests', () => {
 
       for (const scenario of segregationScenarios) {
         const transactionData = {
-          customerId: customers[0]!.id,
+          customerId: customers[0].id,
           amount: 5500.00, // Requires approval
           currency: 'CAD',
           description: `Segregation test: ${scenario.description}`,

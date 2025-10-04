@@ -10,6 +10,7 @@ import {
   validatePaymentId
 } from '../controllers/payment.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
+import { checkResourceAccess } from '../middleware/resource-permission.middleware';
 import { auditMiddleware } from '../middleware/audit.middleware';
 import { UserRole } from '../types/enums';
 
@@ -817,6 +818,7 @@ router.get(
  */
 router.put(
   '/:id/status',
+  checkResourceAccess('payment', 'id'),
   authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT),
   validateUpdatePaymentStatus,
   paymentController.updatePaymentStatus.bind(paymentController)
@@ -1355,6 +1357,7 @@ router.get(
  */
 router.post(
   '/:id/refund',
+  checkResourceAccess('payment', 'id'),
   authorize(UserRole.ADMIN, UserRole.MANAGER),
   validateRefundPayment,
   paymentController.refundPayment.bind(paymentController)

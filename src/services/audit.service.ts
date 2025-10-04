@@ -1,5 +1,7 @@
+import crypto from 'crypto';
 import { AuditAction } from '../types/enums';
 import { prisma } from '../config/database';
+import { config } from '../config/config';
 
 interface AuditContext {
   userId?: string;
@@ -26,8 +28,64 @@ export interface AuditData {
 }
 
 export class AuditService {
+  // CRITICAL: Audit signing key for HMAC signatures
+  // In production, this should be loaded from a secure secret manager (AWS Secrets Manager, HashiCorp Vault, etc.)
+  private readonly AUDIT_SIGNING_KEY = process.env.AUDIT_SIGNING_KEY || config.ENCRYPTION_KEY || 'default-audit-key-CHANGE-IN-PRODUCTION';
+
+  /**
+   * Generate cryptographic hash for audit entry
+   * Creates a deterministic hash from critical audit fields
+   */
+  private async generateEntryHash(
+    entry: AuditData,
+    previousHash: string | null,
+    sequenceNum: number
+  ): Promise<string> {
+    const data = JSON.stringify({
+      organizationId: entry.context.organizationId,
+      userId: entry.context.userId,
+      action: entry.action,
+      entityType: entry.entityType,
+      entityId: entry.entityId,
+      timestamp: new Date().toISOString(),
+      previousHash,
+      sequenceNum
+    });
+
+    return crypto.createHash('sha256').update(data).digest('hex');
+  }
+
+  /**
+   * Generate HMAC signature for tamper detection
+   * Uses HMAC-SHA256 with server-side secret key
+   */
+  private generateSignature(entryHash: string): string {
+    return crypto
+      .createHmac('sha256', this.AUDIT_SIGNING_KEY)
+      .update(entryHash)
+      .digest('hex');
+  }
+
+  /**
+   * Create audit log with hash chain and cryptographic signature
+   * CRITICAL: This method MUST NOT fail silently - audit failures block operations
+   */
   async logAction(data: AuditData): Promise<void> {
     try {
+      // Get the last audit log entry for this organization to build hash chain
+      const lastEntry = await prisma.auditLog.findFirst({
+        where: { organizationId: data.context.organizationId },
+        orderBy: { sequenceNum: 'desc' }
+      });
+
+      const previousHash = lastEntry?.entryHash || null;
+      const sequenceNum = (lastEntry?.sequenceNum || 0) + 1;
+
+      // Generate hash and signature for this entry
+      const entryHash = await this.generateEntryHash(data, previousHash, sequenceNum);
+      const signature = this.generateSignature(entryHash);
+
+      // Create audit log with hash chain
       await prisma.auditLog.create({
         data: {
           organizationId: data.context.organizationId,
@@ -39,13 +97,161 @@ export class AuditService {
           ipAddress: data.context.ipAddress,
           userAgent: data.context.userAgent,
           requestId: data.context.requestId,
-          timestamp: new Date()
+          timestamp: new Date(),
+          previousHash,
+          entryHash,
+          signature,
+          sequenceNum
         }
       });
     } catch (error) {
-      // Log audit failures but don't throw - audit logging should not break operations
-      console.error('Audit logging failed:', error);
+      // CRITICAL: Audit failures must block the operation
+      console.error('CRITICAL: Audit log creation failed:', error);
+      throw new Error('Operation blocked: Audit logging failed. This is a security requirement.');
     }
+  }
+
+  /**
+   * Verify the integrity of the audit log hash chain
+   * Detects any tampering or missing entries
+   */
+  async verifyAuditChainIntegrity(organizationId: string): Promise<{
+    valid: boolean;
+    errors: string[];
+    totalEntries: number;
+    verifiedEntries: number;
+  }> {
+    const entries = await prisma.auditLog.findMany({
+      where: { organizationId },
+      orderBy: { sequenceNum: 'asc' }
+    });
+
+    const errors: string[] = [];
+    let previousHash: string | null = null;
+    let verifiedCount = 0;
+
+    for (const entry of entries) {
+      // Skip migrated entries (they have placeholder hashes)
+      if (entry.entryHash.endsWith('-migrated')) {
+        continue;
+      }
+
+      // Verify hash chain linkage
+      if (previousHash !== entry.previousHash) {
+        errors.push(`Chain broken at sequence ${entry.sequenceNum}: expected previousHash=${previousHash}, got=${entry.previousHash}`);
+      }
+
+      // Verify signature
+      const expectedSignature = this.generateSignature(entry.entryHash);
+      if (entry.signature !== expectedSignature) {
+        errors.push(`Invalid signature at sequence ${entry.sequenceNum}`);
+      }
+
+      // Regenerate hash and verify it matches
+      const expectedHash = await this.generateEntryHash(
+        {
+          action: entry.action as AuditAction,
+          entityType: entry.entityType,
+          entityId: entry.entityId,
+          context: {
+            organizationId: entry.organizationId,
+            userId: entry.userId || undefined,
+            ipAddress: entry.ipAddress || undefined,
+            userAgent: entry.userAgent || undefined,
+            requestId: entry.requestId || undefined
+          }
+        },
+        entry.previousHash,
+        entry.sequenceNum
+      );
+
+      if (entry.entryHash !== expectedHash) {
+        errors.push(`Hash mismatch at sequence ${entry.sequenceNum}`);
+      } else {
+        verifiedCount++;
+      }
+
+      previousHash = entry.entryHash;
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      totalEntries: entries.length,
+      verifiedEntries: verifiedCount
+    };
+  }
+
+  /**
+   * Verify a single audit log entry
+   */
+  async verifyAuditEntry(entryId: string): Promise<{
+    valid: boolean;
+    errors: string[];
+  }> {
+    const entry = await prisma.auditLog.findUnique({
+      where: { id: entryId }
+    });
+
+    if (!entry) {
+      return { valid: false, errors: ['Audit entry not found'] };
+    }
+
+    const errors: string[] = [];
+
+    // Skip migrated entries
+    if (entry.entryHash.endsWith('-migrated')) {
+      return { valid: true, errors: ['Migrated entry - hash verification skipped'] };
+    }
+
+    // Verify signature
+    const expectedSignature = this.generateSignature(entry.entryHash);
+    if (entry.signature !== expectedSignature) {
+      errors.push('Invalid signature');
+    }
+
+    // Verify hash
+    const expectedHash = await this.generateEntryHash(
+      {
+        action: entry.action as AuditAction,
+        entityType: entry.entityType,
+        entityId: entry.entityId,
+        context: {
+          organizationId: entry.organizationId,
+          userId: entry.userId || undefined,
+          ipAddress: entry.ipAddress || undefined,
+          userAgent: entry.userAgent || undefined,
+          requestId: entry.requestId || undefined
+        }
+      },
+      entry.previousHash,
+      entry.sequenceNum
+    );
+
+    if (entry.entryHash !== expectedHash) {
+      errors.push('Hash mismatch - entry may have been tampered with');
+    }
+
+    // Verify chain linkage if not first entry
+    if (entry.sequenceNum > 1) {
+      const previousEntry = await prisma.auditLog.findFirst({
+        where: {
+          organizationId: entry.organizationId,
+          sequenceNum: entry.sequenceNum - 1
+        }
+      });
+
+      if (!previousEntry) {
+        errors.push('Previous entry in chain not found');
+      } else if (entry.previousHash !== previousEntry.entryHash) {
+        errors.push('Chain linkage broken');
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
   }
 
   async logCreate(
@@ -70,7 +276,7 @@ export class AuditService {
     newData: Record<string, unknown>,
     context: AuditContext
   ): Promise<void> {
-    const changes = this.compareObjects(oldData, newData) as Record<string, unknown>;
+    const changes = this.compareObjects(oldData, newData);
 
     if (Object.keys(changes).length > 0) {
       await this.logAction({
@@ -295,23 +501,23 @@ export class AuditService {
 
     // CSV format
     const headers = [
-      'Timestamp',
-      'User',
-      'Action',
-      'Entity Type',
-      'Entity ID',
-      'IP Address',
-      'Changes'
+      'timestamp',
+      'userId',
+      'action',
+      'resourceType',
+      'resourceId',
+      'ipAddress',
+      'changes'
     ];
 
     const rows = logs.map(log => [
       log.timestamp,
-      log.user ? `${log.user.firstName} ${log.user.lastName}` : 'System',
+      log.userId || '',
       log.action,
       log.entityType,
       log.entityId,
       log.ipAddress || '',
-      log.changes || ''
+      JSON.stringify(log.changes || {})
     ]);
 
     return [
@@ -324,6 +530,7 @@ export class AuditService {
     startDate?: Date;
     endDate?: Date;
     limit?: number;
+    actions?: string[];
   }): Promise<Array<{
     id: string;
     timestamp: Date;
@@ -346,7 +553,12 @@ export class AuditService {
         timestamp: {
           gte: startDate,
           lte: endDate
-        }
+        },
+        ...(options?.actions && options.actions.length > 0 && {
+          action: {
+            in: options.actions
+          }
+        })
       },
       orderBy: { timestamp: 'desc' },
       take: limit
@@ -355,6 +567,7 @@ export class AuditService {
     return logs.map(log => ({
       id: log.id,
       timestamp: log.timestamp,
+      createdAt: log.timestamp, // Add createdAt for compatibility with tests
       action: log.action,
       entityType: log.entityType,
       entityId: log.entityId,

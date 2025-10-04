@@ -93,7 +93,7 @@ export class WorkflowStateMachineService {
       };
     }
 
-    const allowedTransitions = entityTransitions[fromStatus] as string[];
+    const allowedTransitions = entityTransitions[fromStatus];
 
     return {
       valid: allowedTransitions.includes(toStatus),
@@ -115,7 +115,7 @@ export class WorkflowStateMachineService {
       return [];
     }
 
-    let availableTransitions = entityTransitions[currentStatus] as string[];
+    let availableTransitions = entityTransitions[currentStatus];
 
     // Filter based on user role permissions
     availableTransitions = this.filterTransitionsByRole(

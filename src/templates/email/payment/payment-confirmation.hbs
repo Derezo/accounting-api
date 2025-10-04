@@ -1,0 +1,78 @@
+<h1>Payment Received - Thank You!</h1>
+
+<p>Dear {{customerName}},</p>
+
+<p>We have successfully received your payment. Thank you for your business!</p>
+
+<div style="background-color: #d1fae5; border-left: 4px solid #10b981; padding: 20px; margin: 20px 0; border-radius: 4px; text-align: center;">
+    <div style="font-size: 36px; font-weight: bold; color: #065f46; margin-bottom: 10px;">
+        {{formatCurrency amount currency}}
+    </div>
+    <div style="font-size: 18px; color: #047857;">
+        ✓ Payment Confirmed
+    </div>
+</div>
+
+<div class="info-box">
+    <h3>Payment Details</h3>
+    <p><strong>Payment Number:</strong> {{paymentNumber}}</p>
+    <p><strong>Amount:</strong> {{formatCurrency amount currency}}</p>
+    <p><strong>Payment Method:</strong> {{capitalize paymentMethod}}</p>
+    <p><strong>Payment Date:</strong> {{formatDate paymentDate 'long'}}</p>
+    {{#if confirmationCode}}
+    <p><strong>Confirmation Code:</strong> {{confirmationCode}}</p>
+    {{/if}}
+    {{#if invoiceNumber}}
+    <p><strong>Invoice Number:</strong> {{invoiceNumber}}</p>
+    {{/if}}
+    {{#if referenceNumber}}
+    <p><strong>Reference Number:</strong> {{referenceNumber}}</p>
+    {{/if}}
+</div>
+
+{{#if invoiceNumber}}
+<h2>Invoice Status</h2>
+{{#if remainingBalance}}
+<p>Remaining balance on Invoice {{invoiceNumber}}: <strong>{{formatCurrency remainingBalance currency}}</strong></p>
+{{else}}
+<p style="color: #10b981; font-weight: 600;">Invoice {{invoiceNumber}} has been paid in full.</p>
+{{/if}}
+{{/if}}
+
+{{#if receiptUrl}}
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{receiptUrl}}" class="button">Download Receipt</a>
+</div>
+{{/if}}
+
+<div class="divider"></div>
+
+<h2>What Happens Next?</h2>
+
+{{#if remainingBalance}}
+<p>Your account has a remaining balance. You can view your account status and make additional payments at any time.</p>
+{{else}}
+<p>Your invoice has been paid in full. No further action is required from you.</p>
+{{/if}}
+
+{{#if accountUrl}}
+<p>View your account details: <a href="{{accountUrl}}">Account Dashboard</a></p>
+{{/if}}
+
+<div style="background-color: #f3f4f6; padding: 20px; margin: 20px 0; border-radius: 4px;">
+    <h3 style="margin: 0 0 10px 0;">Receipt Information</h3>
+    <p style="margin: 5px 0; font-size: 14px;">Please keep this email as your receipt for tax purposes. If you need an official receipt, you can download it using the button above or contact us.</p>
+</div>
+
+{{#if notes}}
+<div class="divider"></div>
+<h2>Additional Notes</h2>
+<p>{{notes}}</p>
+{{/if}}
+
+<p>If you have any questions about this payment or your account, please don't hesitate to contact us.</p>
+
+<p>Thank you for your business!</p>
+
+<p>Best regards,<br>
+{{organizationName}}</p>

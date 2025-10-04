@@ -1,0 +1,77 @@
+<h1>You've Been Invited to {{organizationName}}</h1>
+
+<p>Hello{{#if firstName}} {{firstName}}{{/if}},</p>
+
+<p>{{invitedByName}} has invited you to join <strong>{{organizationName}}</strong> on the Lifestream Dynamics Accounting Platform.</p>
+
+<div class="info-box">
+    <h3>Invitation Details</h3>
+    <p><strong>Email:</strong> {{email}}</p>
+    <p><strong>Role:</strong> {{capitalize role}}</p>
+    <p><strong>Invited By:</strong> {{invitedByName}}</p>
+    <p><strong>Organization:</strong> {{organizationName}}</p>
+</div>
+
+<h2>What's Next?</h2>
+
+<ol>
+    <li>Click the button below to accept the invitation</li>
+    <li>Create your password to secure your account</li>
+    <li>Start collaborating with your team</li>
+</ol>
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{acceptUrl}}" class="button">Accept Invitation</a>
+</div>
+
+<p>Or copy and paste this link into your browser:</p>
+<p style="word-break: break-all; background-color: #f3f4f6; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 14px;">
+    {{acceptUrl}}
+</p>
+
+<div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 4px;">
+    <h3 style="margin: 0 0 10px 0; color: #92400e;">Security Notice</h3>
+    <ul style="margin: 0; padding-left: 20px;">
+        <li>This invitation will expire in 7 days</li>
+        <li>This link can only be used once</li>
+        <li>If you didn't expect this invitation, you can safely ignore this email</li>
+        <li>Never share this link with anyone else</li>
+    </ul>
+</div>
+
+<h2>About Your Role</h2>
+
+{{#if_eq role 'ADMIN'}}
+<p>As an <strong>Administrator</strong>, you'll have full access to manage the organization, including:</p>
+<ul>
+    <li>Managing users and permissions</li>
+    <li>Configuring organization settings</li>
+    <li>Accessing all financial data</li>
+    <li>Managing invoices, quotes, and payments</li>
+</ul>
+{{else if_eq role 'ACCOUNTANT'}}
+<p>As an <strong>Accountant</strong>, you'll have access to:</p>
+<ul>
+    <li>View and manage all financial records</li>
+    <li>Create and edit invoices and quotes</li>
+    <li>Process payments and reconciliations</li>
+    <li>Generate financial reports</li>
+</ul>
+{{else if_eq role 'SALES'}}
+<p>As a <strong>Sales</strong> team member, you'll be able to:</p>
+<ul>
+    <li>Create and manage quotes</li>
+    <li>Track customer interactions</li>
+    <li>View sales reports</li>
+    <li>Manage customer appointments</li>
+</ul>
+{{else}}
+<p>As a team member, you'll have access to the features assigned to your role.</p>
+{{/if_eq}}
+
+<div class="divider"></div>
+
+<p>Welcome to the team!</p>
+
+<p>Best regards,<br>
+The {{organizationName}} Team</p>

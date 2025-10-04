@@ -294,7 +294,7 @@ export class ProjectController {
 
       const { id } = req.params;
       const project = await projectService.updateProject(
-        id!,
+        id,
         req.body,
         req.user!.organizationId,
         {
@@ -362,7 +362,7 @@ export class ProjectController {
 
       const { id } = req.params;
       const project = await projectService.startProject(
-        id!,
+        id,
         req.user!.organizationId,
         {
           userId: req.user!.id,
@@ -398,7 +398,7 @@ export class ProjectController {
       const { actualHours } = req.body;
 
       const project = await projectService.completeProject(
-        id!,
+        id,
         actualHours,
         req.user!.organizationId,
         {
@@ -435,7 +435,7 @@ export class ProjectController {
       const { hoursWorked } = req.body;
 
       const project = await projectService.updateTimeTracking(
-        id!,
+        id,
         hoursWorked,
         req.user!.organizationId,
         {
@@ -548,7 +548,7 @@ export class ProjectController {
       }
 
       const project = await projectService.assignProject(
-        id!,
+        id,
         assignedToId,
         req.user!.organizationId,
         {
@@ -584,7 +584,7 @@ export class ProjectController {
       const { id } = req.params;
 
       await projectService.deleteProject(
-        id!,
+        id,
         req.user!.organizationId,
         {
           userId: req.user!.id,

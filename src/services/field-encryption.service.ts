@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { encryptionKeyManager, EncryptionKey } from './encryption-key-manager.service';
+import { searchableEncryptionDbService } from './searchable-encryption-db.service';
 import { logger } from '../utils/logger';
 import NodeCache from 'node-cache';
 
@@ -9,6 +10,9 @@ export interface EncryptionOptions {
   deterministic?: boolean;
   searchable?: boolean;
   keyVersion?: number;
+  entityType?: string;
+  entityId?: string;
+  ttl?: number; // TTL in days for GDPR compliance
 }
 
 export interface EncryptedField {
@@ -103,6 +107,31 @@ export class FieldEncryptionService {
             blindIndex: searchResult.blindIndex
           }
         };
+
+        // Persist search index to database if entityType and entityId provided
+        if (options.entityType && options.entityId) {
+          const expiresAt = options.ttl
+            ? new Date(Date.now() + options.ttl * 24 * 60 * 60 * 1000)
+            : null;
+
+          await searchableEncryptionDbService.storeSearchIndex({
+            organizationId: options.organizationId,
+            entityType: options.entityType,
+            entityId: options.entityId,
+            fieldName: options.fieldName,
+            plaintext: value,
+            keyVersion: key.version,
+            algorithm: this.SEARCH_ALGORITHM,
+            expiresAt,
+          });
+
+          logger.debug('Search index persisted to database', {
+            organizationId: options.organizationId,
+            entityType: options.entityType,
+            entityId: options.entityId,
+            fieldName: options.fieldName,
+          });
+        }
       } else if (options.deterministic) {
         // Use deterministic encryption for exact match queries
         encryptedData = {
@@ -399,6 +428,103 @@ export class FieldEncryptionService {
     }
 
     return result;
+  }
+
+  /**
+   * Search encrypted fields using database indexes
+   */
+  public async searchEncryptedField(
+    organizationId: string,
+    fieldName: string,
+    searchValue: string,
+    options: {
+      entityType?: string;
+      exactMatch?: boolean;
+    } = {}
+  ): Promise<Array<{
+    entityId: string;
+    entityType: string;
+    fieldName: string;
+  }>> {
+    try {
+      const searchResults = options.exactMatch
+        ? await searchableEncryptionDbService.queryByExactMatch(
+            organizationId,
+            fieldName,
+            searchValue,
+            options.entityType
+          )
+        : await searchableEncryptionDbService.queryByPartialMatch(
+            organizationId,
+            fieldName,
+            searchValue,
+            options.entityType
+          );
+
+      logger.debug('Encrypted field search completed', {
+        organizationId,
+        fieldName,
+        searchValue: searchValue.substring(0, 3) + '***',
+        resultCount: searchResults.length,
+        exactMatch: options.exactMatch,
+      });
+
+      return searchResults.map(result => ({
+        entityId: result.entityId,
+        entityType: result.entityType,
+        fieldName: result.fieldName,
+      }));
+    } catch (error) {
+      logger.error('Encrypted field search failed', {
+        error,
+        organizationId,
+        fieldName,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Delete search index when entity is deleted
+   */
+  public async deleteSearchIndex(
+    organizationId: string,
+    entityType: string,
+    entityId: string,
+    fieldName?: string
+  ): Promise<void> {
+    try {
+      if (fieldName) {
+        await searchableEncryptionDbService.deleteSearchIndex(
+          organizationId,
+          entityType,
+          entityId,
+          fieldName
+        );
+      } else {
+        await searchableEncryptionDbService.deleteEntityIndexes(
+          organizationId,
+          entityType,
+          entityId
+        );
+      }
+
+      logger.info('Search index deleted', {
+        organizationId,
+        entityType,
+        entityId,
+        fieldName,
+      });
+    } catch (error) {
+      logger.error('Failed to delete search index', {
+        error,
+        organizationId,
+        entityType,
+        entityId,
+        fieldName,
+      });
+      throw error;
+    }
   }
 
   /**

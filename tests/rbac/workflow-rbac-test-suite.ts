@@ -93,10 +93,10 @@ export class WorkflowRBACTestSuite {
 
     const startTime = Date.now();
     const stages: WorkflowStageResult[] = [];
-    let currentCustomerId: string;
-    let currentQuoteId: string;
-    let currentInvoiceId: string;
-    let currentProjectId: string;
+    let currentCustomerId: string | undefined;
+    let currentQuoteId: string | undefined;
+    let currentInvoiceId: string | undefined;
+    let currentProjectId: string | undefined;
 
     // Stage 1: Quote Creation (EMPLOYEE)
     const employeeUser = this.getUserByRole(organizationId, 'EMPLOYEE');

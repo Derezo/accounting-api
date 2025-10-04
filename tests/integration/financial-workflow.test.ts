@@ -106,7 +106,7 @@ describe('Financial Workflow Integration Tests', () => {
       const quoteResponse = await authenticatedRequest(adminToken)
         .post('/api/quotes')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           description: 'Complete Financial Workflow Test Project',
           validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           items: [
@@ -167,7 +167,7 @@ describe('Financial Workflow Integration Tests', () => {
       const invoiceResponse = await authenticatedRequest(accountantToken)
         .post('/api/invoices')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           quoteId: quote.id,
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           terms: 'Net 30 days, 50% deposit required to start work',
@@ -202,7 +202,7 @@ describe('Financial Workflow Integration Tests', () => {
       const depositPaymentResponse = await authenticatedRequest(accountantToken)
         .post('/api/payments')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           invoiceId: invoice.id,
           amount: depositAmount,
           paymentMethod: PaymentMethod.STRIPE_CARD,
@@ -231,7 +231,7 @@ describe('Financial Workflow Integration Tests', () => {
         .send({
           name: 'Financial Workflow Test Project',
           description: 'Project for testing complete accounting cycle',
-          customerId: customer!.id,
+          customerId: customer.id,
           quoteId: quote.id,
           assignedToId: users.admin.id,
           estimatedHours: 70,
@@ -287,7 +287,7 @@ describe('Financial Workflow Integration Tests', () => {
       const finalPaymentResponse = await authenticatedRequest(accountantToken)
         .post('/api/payments')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           invoiceId: invoice.id,
           amount: remainingAmount,
           paymentMethod: PaymentMethod.INTERAC_ETRANSFER,
@@ -504,7 +504,7 @@ describe('Financial Workflow Integration Tests', () => {
       const usdQuoteResponse = await authenticatedRequest(adminToken)
         .post('/api/quotes')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           description: 'USD Quote for US Client',
           currency: 'USD',
           exchangeRate: 1.35, // CAD per USD
@@ -527,7 +527,7 @@ describe('Financial Workflow Integration Tests', () => {
       const usdInvoiceResponse = await authenticatedRequest(accountantToken)
         .post('/api/invoices')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           quoteId: usdQuote.id,
           currency: 'USD',
           exchangeRate: 1.35,
@@ -541,7 +541,7 @@ describe('Financial Workflow Integration Tests', () => {
       const usdPaymentResponse = await authenticatedRequest(accountantToken)
         .post('/api/payments')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           invoiceId: usdInvoice.id,
           amount: usdInvoice.total,
           currency: 'USD',
@@ -575,7 +575,7 @@ describe('Financial Workflow Integration Tests', () => {
       const invoice = await authenticatedRequest(accountantToken)
         .post('/api/invoices')
         .send({
-          customerId: customers[0]!.id,
+          customerId: customers[0].id,
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           items: [{ description: 'Test service', quantity: 1, unitPrice: 1000, taxRate: 0.13 }],
           terms: 'Net 30'
@@ -619,7 +619,7 @@ describe('Financial Workflow Integration Tests', () => {
       console.log('💼 Testing project profitability tracking...');
 
       // Create project
-      const project = await createTestProject(prisma, organization.id, customers[0]!.id, users.admin.id);
+      const project = await createTestProject(prisma, organization.id, customers[0].id, users.admin.id);
 
       // Test project profitability report (if available)
       try {

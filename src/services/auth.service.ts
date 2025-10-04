@@ -1,9 +1,11 @@
 import jwt from 'jsonwebtoken';
 import {  User, Session } from '@prisma/client';
 import { config } from '../config/config';
-import { hashPassword, verifyPassword, generateRandomToken, verifyOTP } from '../utils/crypto';
+import { hashPassword, verifyPassword, generateRandomToken, verifyOTP, validatePasswordStrength } from '../utils/crypto';
 import { UserRole } from '../types/enums';
-
+import crypto from 'crypto';
+import { Request } from 'express';
+import { auditService } from './audit.service';
 
 
 import { prisma } from '../config/database';
@@ -42,6 +44,242 @@ interface RegisterData {
 }
 
 export class AuthService {
+  // Session security constants
+  private readonly SESSION_DURATION_MS = 2 * 60 * 60 * 1000; // 2 hours (reduced from 7 days)
+  private readonly IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+  private readonly MAX_CONCURRENT_SESSIONS = 3;
+
+  /**
+   * Generate device fingerprint from request metadata
+   * Creates a unique identifier based on user-agent, IP, and language preferences
+   */
+  private generateDeviceFingerprint(req: Request): string {
+    const ua = req.headers['user-agent'] || 'unknown';
+    const ip = req.ip || 'unknown';
+    const acceptLanguage = req.headers['accept-language'] || 'unknown';
+
+    return crypto.createHash('sha256')
+      .update(`${ua}${ip}${acceptLanguage}`)
+      .digest('hex');
+  }
+
+  /**
+   * Extract and structure device information from request
+   */
+  private extractDeviceInfo(req: Request): string {
+    const ua = req.headers['user-agent'] || 'unknown';
+
+    // Parse user agent for browser and OS info
+    const deviceInfo = {
+      userAgent: ua,
+      browser: this.parseBrowser(ua),
+      os: this.parseOS(ua),
+      timestamp: new Date().toISOString()
+    };
+
+    return JSON.stringify(deviceInfo);
+  }
+
+  /**
+   * Parse browser information from user agent
+   */
+  private parseBrowser(ua: string): string {
+    if (ua.includes('Chrome')) return 'Chrome';
+    if (ua.includes('Firefox')) return 'Firefox';
+    if (ua.includes('Safari')) return 'Safari';
+    if (ua.includes('Edge')) return 'Edge';
+    return 'Unknown';
+  }
+
+  /**
+   * Parse OS information from user agent
+   */
+  private parseOS(ua: string): string {
+    if (ua.includes('Windows')) return 'Windows';
+    if (ua.includes('Mac OS')) return 'macOS';
+    if (ua.includes('Linux')) return 'Linux';
+    if (ua.includes('Android')) return 'Android';
+    if (ua.includes('iOS')) return 'iOS';
+    return 'Unknown';
+  }
+
+  /**
+   * Limit concurrent sessions per user to prevent session proliferation
+   * Deletes oldest sessions when limit is exceeded
+   */
+  private async limitConcurrentSessions(userId: string): Promise<void> {
+    const sessions = await prisma.session.findMany({
+      where: {
+        userId,
+        expiresAt: { gt: new Date() }
+      },
+      orderBy: { lastActivityAt: 'desc' }
+    });
+
+    if (sessions.length >= this.MAX_CONCURRENT_SESSIONS) {
+      // Delete oldest sessions (keep the most recent MAX_CONCURRENT_SESSIONS - 1)
+      const sessionsToDelete = sessions.slice(this.MAX_CONCURRENT_SESSIONS - 1);
+
+      await prisma.session.deleteMany({
+        where: {
+          id: { in: sessionsToDelete.map(s => s.id) }
+        }
+      });
+    }
+  }
+
+  /**
+   * Validate session security on each request
+   * Checks IP address, device fingerprint, and idle timeout
+   */
+  async validateSession(token: string, req: Request): Promise<Session | null> {
+    const session = await prisma.session.findUnique({
+      where: { token },
+      include: { user: true }
+    });
+
+    if (!session || session.expiresAt < new Date()) {
+      return null;
+    }
+
+    // Validate IP address (strict IP checking)
+    if (session.ipAddress !== req.ip) {
+      await auditService.logAction({
+        action: 'SESSION_IP_MISMATCH' as any,
+        entityType: 'Session',
+        entityId: session.id,
+        changes: {
+          expectedIp: session.ipAddress,
+          actualIp: req.ip
+        },
+        context: {
+          userId: session.userId,
+          organizationId: session.user.organizationId,
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'] as string
+        }
+      });
+
+      // Delete suspicious session
+      await prisma.session.delete({ where: { id: session.id } });
+      return null;
+    }
+
+    // Validate device fingerprint
+    const currentFingerprint = this.generateDeviceFingerprint(req);
+    if (session.deviceFingerprint !== currentFingerprint) {
+      await auditService.logAction({
+        action: 'SESSION_DEVICE_MISMATCH' as any,
+        entityType: 'Session',
+        entityId: session.id,
+        changes: {
+          expectedFingerprint: session.deviceFingerprint,
+          actualFingerprint: currentFingerprint
+        },
+        context: {
+          userId: session.userId,
+          organizationId: session.user.organizationId,
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'] as string
+        }
+      });
+
+      // Delete suspicious session
+      await prisma.session.delete({ where: { id: session.id } });
+      return null;
+    }
+
+    // Check idle timeout (15 minutes)
+    const idleMinutes = (Date.now() - session.lastActivityAt.getTime()) / (1000 * 60);
+    if (idleMinutes > (this.IDLE_TIMEOUT_MS / (1000 * 60))) {
+      await prisma.session.delete({ where: { id: session.id } });
+      return null;
+    }
+
+    // Update last activity timestamp
+    await prisma.session.update({
+      where: { id: session.id },
+      data: { lastActivityAt: new Date() }
+    });
+
+    return session;
+  }
+
+  /**
+   * Revoke all sessions for a user (used on password change or security events)
+   */
+  async revokeAllUserSessions(userId: string, reason: string): Promise<number> {
+    const result = await prisma.session.deleteMany({
+      where: { userId }
+    });
+
+    await auditService.logAction({
+      action: 'SESSION_REVOKE_ALL' as any,
+      entityType: 'User',
+      entityId: userId,
+      changes: {
+        reason,
+        sessionsRevoked: result.count
+      },
+      context: {
+        userId,
+        organizationId: 'system'
+      }
+    });
+
+    return result.count;
+  }
+
+  /**
+   * Check if password was used recently (password history)
+   * Prevents reuse of last 5 passwords
+   */
+  private async checkPasswordHistory(userId: string, newPasswordHash: string): Promise<boolean> {
+    const recentPasswords = await prisma.passwordHistory.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 5
+    });
+
+    for (const record of recentPasswords) {
+      const isSamePassword = await verifyPassword(newPasswordHash, record.passwordHash);
+      if (isSamePassword) {
+        return false; // Password was used recently
+      }
+    }
+
+    return true; // Password is not in history
+  }
+
+  /**
+   * Save password to history
+   */
+  private async savePasswordHistory(userId: string, passwordHash: string): Promise<void> {
+    await prisma.passwordHistory.create({
+      data: {
+        userId,
+        passwordHash
+      }
+    });
+
+    // Keep only the last 5 passwords
+    const allPasswords = await prisma.passwordHistory.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      skip: 5
+    });
+
+    if (allPasswords.length > 0) {
+      await prisma.passwordHistory.deleteMany({
+        where: {
+          id: {
+            in: allPasswords.map(p => p.id)
+          }
+        }
+      });
+    }
+  }
+
   async register(data: RegisterData): Promise<{ user: User; organization: any; tokens: any }> {
     const existingUser = await prisma.user.findUnique({
       where: { email: data.email }
@@ -49,6 +287,12 @@ export class AuthService {
 
     if (existingUser) {
       throw new Error('User with this email already exists');
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePasswordStrength(data.password);
+    if (!passwordValidation.valid) {
+      throw new Error(`Password does not meet security requirements: ${passwordValidation.errors.join(', ')}`);
     }
 
     const passwordHash = await hashPassword(data.password);
@@ -67,7 +311,10 @@ export class AuthService {
         }
       });
 
-      // Create user
+      // Create user with password expiration (90 days from now)
+      const passwordExpiresAt = new Date();
+      passwordExpiresAt.setDate(passwordExpiresAt.getDate() + 90);
+
       const user = await tx.user.create({
         data: {
           email: data.email,
@@ -77,12 +324,21 @@ export class AuthService {
           organizationId: organization.id,
           role: UserRole.ADMIN,
           isActive: true,
-          emailVerified: false
+          emailVerified: false,
+          passwordExpiresAt
         }
       });
 
-      // Create initial session within transaction
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      // Save initial password to history
+      await tx.passwordHistory.create({
+        data: {
+          userId: user.id,
+          passwordHash
+        }
+      });
+
+      // Create initial session with enhanced security
+      const expiresAt = new Date(Date.now() + this.SESSION_DURATION_MS);
       const session = await tx.session.create({
         data: {
           userId: user.id,
@@ -90,6 +346,9 @@ export class AuthService {
           refreshToken: '',
           ipAddress: '127.0.0.1',
           userAgent: 'registration',
+          deviceFingerprint: 'registration',
+          deviceInfo: JSON.stringify({ source: 'registration' }),
+          lastActivityAt: new Date(),
           expiresAt
         }
       });
@@ -117,12 +376,13 @@ export class AuthService {
   }
 
   async login(credentials: LoginCredentials): Promise<{ user: User; tokens: any }> {
+    // Email is now globally unique - use findUnique for optimal performance
     const user = await prisma.user.findUnique({
-      where: { email: credentials.email },
+      where: { email: credentials.email.toLowerCase() },
       include: { organization: true }
     });
 
-    if (!user || !user.isActive) {
+    if (!user || !user.isActive || user.deletedAt) {
       throw new Error('Invalid credentials');
     }
 
@@ -136,6 +396,11 @@ export class AuthService {
     // Check if account is locked
     if (user.lockedUntil && user.lockedUntil > new Date()) {
       throw new Error('Account is locked. Please try again later.');
+    }
+
+    // Check if password has expired
+    if (user.passwordExpiresAt && user.passwordExpiresAt < new Date()) {
+      throw new Error('Your password has expired. Please reset your password.');
     }
 
     // Verify 2FA if enabled
@@ -154,11 +419,15 @@ export class AuthService {
       }
     }
 
-    // Create session
-    const session = await this.createSession(
+    // Limit concurrent sessions before creating new one
+    await this.limitConcurrentSessions(user.id);
+
+    // Create session with enhanced security
+    const session = await this.createSessionWithRequest(
       user.id,
       credentials.ipAddress,
-      credentials.userAgent || ''
+      credentials.userAgent || '',
+      { ip: credentials.ipAddress, headers: { 'user-agent': credentials.userAgent } } as Request
     );
 
     const tokens = this.generateTokens({
@@ -292,29 +561,89 @@ export class AuthService {
       throw new Error('Invalid current password');
     }
 
+    // Validate new password strength
+    const passwordValidation = validatePasswordStrength(newPassword);
+    if (!passwordValidation.valid) {
+      throw new Error(`New password does not meet security requirements: ${passwordValidation.errors.join(', ')}`);
+    }
+
     const newPasswordHash = await hashPassword(newPassword);
 
+    // Check password history
+    const isPasswordUnique = await this.checkPasswordHistory(userId, newPassword);
+    if (!isPasswordUnique) {
+      throw new Error('Cannot reuse any of your last 5 passwords. Please choose a different password.');
+    }
+
     await prisma.$transaction(async (tx) => {
+      // Set password expiration to 90 days from now
+      const passwordExpiresAt = new Date();
+      passwordExpiresAt.setDate(passwordExpiresAt.getDate() + 90);
+
       // Update password
       await tx.user.update({
         where: { id: userId },
-        data: { passwordHash: newPasswordHash }
+        data: {
+          passwordHash: newPasswordHash,
+          passwordExpiresAt
+        }
       });
 
-      // Invalidate all sessions
+      // Save to password history
+      await tx.passwordHistory.create({
+        data: {
+          userId,
+          passwordHash: newPasswordHash
+        }
+      });
+
+      // Keep only last 5 passwords
+      const allPasswords = await tx.passwordHistory.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        skip: 5
+      });
+
+      if (allPasswords.length > 0) {
+        await tx.passwordHistory.deleteMany({
+          where: {
+            id: {
+              in: allPasswords.map(p => p.id)
+            }
+          }
+        });
+      }
+
+      // Invalidate all sessions (security event)
       await tx.session.deleteMany({
         where: { userId }
       });
     });
+
+    // Log security event
+    await auditService.logAction({
+      action: 'PASSWORD_CHANGED' as any,
+      entityType: 'User',
+      entityId: userId,
+      changes: {
+        sessionsRevoked: 'all',
+        passwordChanged: true
+      },
+      context: {
+        userId,
+        organizationId: user.organizationId
+      }
+    });
   }
 
   async resetPasswordRequest(email: string): Promise<string> {
+    // Email is globally unique - use findUnique for optimal performance
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email: email.toLowerCase() }
     });
 
-    if (!user) {
-      // Don't reveal if user exists
+    if (!user || !user.isActive || user.deletedAt) {
+      // Don't reveal if user exists or account status
       return 'If an account exists, a reset link has been sent';
     }
 
@@ -344,28 +673,88 @@ export class AuthService {
       throw new Error('Invalid or expired reset token');
     }
 
+    // Validate new password strength
+    const passwordValidation = validatePasswordStrength(newPassword);
+    if (!passwordValidation.valid) {
+      throw new Error(`Password does not meet security requirements: ${passwordValidation.errors.join(', ')}`);
+    }
+
+    // Check password history
+    const isPasswordUnique = await this.checkPasswordHistory(user.id, newPassword);
+    if (!isPasswordUnique) {
+      throw new Error('Cannot reuse any of your last 5 passwords. Please choose a different password.');
+    }
+
     const passwordHash = await hashPassword(newPassword);
 
     await prisma.$transaction(async (tx) => {
+      // Set password expiration to 90 days from now
+      const passwordExpiresAt = new Date();
+      passwordExpiresAt.setDate(passwordExpiresAt.getDate() + 90);
+
       // Update password and clear reset token
       await tx.user.update({
         where: { id: user.id },
         data: {
           passwordHash,
           passwordResetToken: null,
-          passwordResetExpires: null
+          passwordResetExpires: null,
+          passwordExpiresAt
         }
       });
 
-      // Invalidate all sessions
+      // Save to password history
+      await tx.passwordHistory.create({
+        data: {
+          userId: user.id,
+          passwordHash
+        }
+      });
+
+      // Keep only last 5 passwords
+      const allPasswords = await tx.passwordHistory.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+        skip: 5
+      });
+
+      if (allPasswords.length > 0) {
+        await tx.passwordHistory.deleteMany({
+          where: {
+            id: {
+              in: allPasswords.map(p => p.id)
+            }
+          }
+        });
+      }
+
+      // Invalidate all sessions (security event)
       await tx.session.deleteMany({
         where: { userId: user.id }
       });
     });
+
+    // Log security event
+    await auditService.logAction({
+      action: 'PASSWORD_RESET' as any,
+      entityType: 'User',
+      entityId: user.id,
+      changes: {
+        sessionsRevoked: 'all',
+        passwordReset: true
+      },
+      context: {
+        userId: user.id,
+        organizationId: user.organizationId
+      }
+    });
   }
 
+  /**
+   * Create session with enhanced security tracking
+   */
   private async createSession(userId: string, ipAddress: string, userAgent: string): Promise<Session> {
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const expiresAt = new Date(Date.now() + this.SESSION_DURATION_MS);
 
     return prisma.session.create({
       data: {
@@ -374,6 +763,37 @@ export class AuthService {
         refreshToken: generateRandomToken(32),
         ipAddress,
         userAgent,
+        deviceFingerprint: 'legacy', // For backwards compatibility
+        deviceInfo: JSON.stringify({ userAgent }),
+        lastActivityAt: new Date(),
+        expiresAt
+      }
+    });
+  }
+
+  /**
+   * Create session with full Request object for fingerprinting
+   */
+  private async createSessionWithRequest(
+    userId: string,
+    ipAddress: string,
+    userAgent: string,
+    req: Request
+  ): Promise<Session> {
+    const expiresAt = new Date(Date.now() + this.SESSION_DURATION_MS);
+    const deviceFingerprint = this.generateDeviceFingerprint(req);
+    const deviceInfo = this.extractDeviceInfo(req);
+
+    return prisma.session.create({
+      data: {
+        userId,
+        token: generateRandomToken(32),
+        refreshToken: generateRandomToken(32),
+        ipAddress,
+        userAgent,
+        deviceFingerprint,
+        deviceInfo,
+        lastActivityAt: new Date(),
         expiresAt
       }
     });
@@ -418,6 +838,21 @@ export class AuthService {
     // Lock account after 5 failed attempts
     if (failedAttempts >= 5) {
       updates.lockedUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+
+      // Log security event
+      await auditService.logAction({
+        action: 'ACCOUNT_LOCKED' as any,
+        entityType: 'User',
+        entityId: userId,
+        changes: {
+          failedAttempts,
+          lockedUntil: updates.lockedUntil
+        },
+        context: {
+          userId,
+          organizationId: user.organizationId
+        }
+      });
     }
 
     await prisma.user.update({

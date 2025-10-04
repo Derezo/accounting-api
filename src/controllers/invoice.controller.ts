@@ -218,7 +218,7 @@ export class InvoiceController {
       }
 
       const invoice = await invoiceService.getInvoice(
-        req.params.id!,
+        req.params.id,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -297,7 +297,7 @@ export class InvoiceController {
       }
 
       const invoice = await invoiceService.updateInvoice(
-        req.params.id!,
+        req.params.id,
         updateData,
         req.user.organizationId,
         {
@@ -402,7 +402,7 @@ export class InvoiceController {
       }
 
       const invoice = await invoiceService.sendInvoice(
-        req.params.id!,
+        req.params.id,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -438,7 +438,7 @@ export class InvoiceController {
       }
 
       const invoice = await invoiceService.markInvoiceAsViewed(
-        req.params.id!,
+        req.params.id,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -480,7 +480,7 @@ export class InvoiceController {
       const { cancellationReason } = req.body;
 
       const invoice = await invoiceService.cancelInvoice(
-        req.params.id!,
+        req.params.id,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -526,7 +526,7 @@ export class InvoiceController {
       const { paymentAmount } = req.body;
 
       const invoice = await invoiceService.recordPayment(
-        req.params.id!,
+        req.params.id,
         parseFloat(paymentAmount),
         req.user.organizationId,
         {

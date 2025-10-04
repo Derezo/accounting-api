@@ -239,7 +239,7 @@ export class QuoteController {
       }
 
       const quote = await quoteService.getQuote(
-        req.params.id!,
+        req.params.id,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -291,7 +291,7 @@ export class QuoteController {
       }
 
       const quote = await quoteService.updateQuote(
-        req.params.id!,
+        req.params.id,
         req.body,
         req.user.organizationId,
         {
@@ -387,7 +387,7 @@ export class QuoteController {
       }
 
       const quote = await quoteService.sendQuote(
-        req.params.id!,
+        req.params.id,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -423,7 +423,7 @@ export class QuoteController {
       }
 
       const quote = await quoteService.deleteQuote(
-        req.params.id!,
+        req.params.id,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -458,7 +458,7 @@ export class QuoteController {
       }
 
       const quote = await quoteService.duplicateQuote(
-        req.params.id!,
+        req.params.id,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -517,7 +517,7 @@ export class QuoteController {
       const { acceptanceNotes, autoGenerateInvoice } = req.body;
 
       const result = await quoteService.acceptQuote(
-        req.params.id!,
+        req.params.id,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -555,7 +555,7 @@ export class QuoteController {
 
       // Include suggested appointment times for consultation
       if ((result as any).suggestedAppointments && (result as any).suggestedAppointments.length > 0) {
-        (response as any).suggestedAppointments = (result as any).suggestedAppointments.map((slot: any) => ({
+        (response).suggestedAppointments = (result as any).suggestedAppointments.map((slot: any) => ({
           date: slot.date,
           startTime: slot.startTime,
           endTime: slot.endTime,
@@ -601,7 +601,7 @@ export class QuoteController {
       const { rejectionReason } = req.body;
 
       const quote = await quoteService.rejectQuote(
-        req.params.id!,
+        req.params.id,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -639,7 +639,7 @@ export class QuoteController {
       }
 
       const quote = await quoteService.markQuoteAsViewed(
-        req.params.id!,
+        req.params.id,
         req.user.organizationId,
         {
           userId: req.user.id,

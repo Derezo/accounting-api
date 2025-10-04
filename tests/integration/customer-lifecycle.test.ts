@@ -32,7 +32,7 @@ describe('Customer Lifecycle Integration Tests', () => {
       const quoteResponse = await authenticatedRequest(adminToken)
         .post('/api/quotes')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           items: [
             {
@@ -92,7 +92,7 @@ describe('Customer Lifecycle Integration Tests', () => {
         .send({
           name: 'Website Development Project',
           description: 'Complete website development based on accepted quote',
-          customerId: customer!.id,
+          customerId: customer.id,
           assignedToId: users.admin.id,
           estimatedHours: 50,
           hourlyRate: 145.00,
@@ -109,7 +109,7 @@ describe('Customer Lifecycle Integration Tests', () => {
       const appointmentResponse = await authenticatedRequest(adminToken)
         .post('/api/appointments')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           projectId: project.id,
           title: 'Project Kickoff Meeting',
           description: 'Initial meeting to discuss project requirements and timeline',
@@ -133,7 +133,7 @@ describe('Customer Lifecycle Integration Tests', () => {
       const invoiceResponse = await authenticatedRequest(adminToken)
         .post('/api/invoices')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           quoteId: quote.id,
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           terms: 'Net 30 days',
@@ -167,7 +167,7 @@ describe('Customer Lifecycle Integration Tests', () => {
       const depositPaymentResponse = await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           invoiceId: invoice.id,
           amount: depositAmount,
           paymentMethod: PaymentMethod.STRIPE_CARD,
@@ -237,7 +237,7 @@ describe('Customer Lifecycle Integration Tests', () => {
       const finalPaymentResponse = await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           invoiceId: invoice.id,
           amount: finalAmount,
           paymentMethod: PaymentMethod.INTERAC_ETRANSFER,
@@ -428,7 +428,7 @@ describe('Customer Lifecycle Integration Tests', () => {
       const quoteResponse = await authenticatedRequest(adminToken)
         .post('/api/quotes')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           items: [
             {
@@ -461,7 +461,7 @@ describe('Customer Lifecycle Integration Tests', () => {
       const revisedQuoteResponse = await authenticatedRequest(managerToken)
         .post('/api/quotes')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           items: [
             {
@@ -510,7 +510,7 @@ describe('Customer Lifecycle Integration Tests', () => {
         .send({
           name: 'Website Development',
           description: 'Company website redesign',
-          customerId: customer!.id,
+          customerId: customer.id,
           assignedToId: users.admin.id,
           estimatedHours: 40,
           hourlyRate: 150.00
@@ -522,7 +522,7 @@ describe('Customer Lifecycle Integration Tests', () => {
         .send({
           name: 'Mobile App Development',
           description: 'iOS and Android mobile application',
-          customerId: customer!.id,
+          customerId: customer.id,
           assignedToId: users.manager.id,
           estimatedHours: 80,
           hourlyRate: 175.00
@@ -534,7 +534,7 @@ describe('Customer Lifecycle Integration Tests', () => {
         .send({
           name: 'SEO Optimization',
           description: 'Search engine optimization services',
-          customerId: customer!.id,
+          customerId: customer.id,
           assignedToId: users.accountant.id,
           estimatedHours: 20,
           hourlyRate: 125.00
@@ -543,7 +543,7 @@ describe('Customer Lifecycle Integration Tests', () => {
 
       // Get customer projects summary
       const customerProjectsResponse = await authenticatedRequest(adminToken)
-        .get(`/api/customers/${customer!.id}/projects`)
+        .get(`/api/customers/${customer.id}/projects`)
         .expect(200);
 
       expect(customerProjectsResponse.body.data).toHaveLength(3);
@@ -571,12 +571,12 @@ describe('Customer Lifecycle Integration Tests', () => {
         await authenticatedRequest(adminToken)
           .post('/api/appointments')
           .send({
-            customerId: customer!.id,
+            customerId: customer.id,
             projectId,
             title: `Project ${i + 1} Check-in`,
             description: `Progress review for project ${i + 1}`,
-            startTime: appointmentDates[i]!.toISOString(),
-            endTime: new Date(appointmentDates[i]!.getTime() + 60 * 60 * 1000).toISOString(),
+            startTime: appointmentDates[i].toISOString(),
+            endTime: new Date(appointmentDates[i].getTime() + 60 * 60 * 1000).toISOString(),
             duration: 60
           })
           .expect(201);
@@ -584,7 +584,7 @@ describe('Customer Lifecycle Integration Tests', () => {
 
       // Get customer's upcoming appointments
       const appointmentsResponse = await authenticatedRequest(adminToken)
-        .get(`/api/customers/${customer!.id}/appointments?upcoming=true`)
+        .get(`/api/customers/${customer.id}/appointments?upcoming=true`)
         .expect(200);
 
       expect(appointmentsResponse.body.data).toHaveLength(3);
@@ -600,7 +600,7 @@ describe('Customer Lifecycle Integration Tests', () => {
 
       // Verify customer dashboard shows correct project statuses
       const customerDashboardResponse = await authenticatedRequest(adminToken)
-        .get(`/api/customers/${customer!.id}/dashboard`)
+        .get(`/api/customers/${customer.id}/dashboard`)
         .expect(200);
 
       const dashboard = customerDashboardResponse.body;

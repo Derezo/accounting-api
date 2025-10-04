@@ -98,6 +98,7 @@ export const PaymentStatus = {
   COMPLETED: 'COMPLETED',
   FAILED: 'FAILED',
   CANCELLED: 'CANCELLED',
+  PENDING_REVIEW: 'PENDING_REVIEW',
   REFUNDED: 'REFUNDED'
 } as const;
 
@@ -159,7 +160,18 @@ export const AuditAction = {
   ENCRYPT: 'ENCRYPT',
   DECRYPT: 'DECRYPT',
   DOMAIN_VERIFICATION_REQUESTED: 'DOMAIN_VERIFICATION_REQUESTED',
-  DOMAIN_VERIFIED: 'DOMAIN_VERIFIED'
+  DOMAIN_VERIFIED: 'DOMAIN_VERIFIED',
+  EMAIL_SENT: 'EMAIL_SENT',
+  SMS_SENT: 'SMS_SENT',
+  GOOGLE_OAUTH_CONNECTED: 'GOOGLE_OAUTH_CONNECTED',
+  GOOGLE_OAUTH_DISCONNECTED: 'GOOGLE_OAUTH_DISCONNECTED',
+  USER_IMPERSONATION: 'USER_IMPERSONATION',
+  USER_DEACTIVATED: 'USER_DEACTIVATED',
+  USER_REACTIVATED: 'USER_REACTIVATED',
+  BACKUP_CREATED: 'BACKUP_CREATED',
+  BACKUP_COMPLETED: 'BACKUP_COMPLETED',
+  BACKUP_FAILED: 'BACKUP_FAILED',
+  BACKUP_DELETED: 'BACKUP_DELETED',
 } as const;
 
 export type AuditAction = typeof AuditAction[keyof typeof AuditAction];
@@ -197,3 +209,32 @@ export const AccessLevel = {
 } as const;
 
 export type AccessLevel = typeof AccessLevel[keyof typeof AccessLevel];
+
+export const IntegrationType = {
+  STRIPE: 'STRIPE',
+  QUICKBOOKS: 'QUICKBOOKS',
+  SENDGRID: 'SENDGRID',
+  TWILIO: 'TWILIO',
+  SLACK: 'SLACK',
+  CUSTOM: 'CUSTOM'
+} as const;
+
+export type IntegrationType = typeof IntegrationType[keyof typeof IntegrationType];
+
+export const IntegrationStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  ERROR: 'ERROR',
+  TESTING: 'TESTING'
+} as const;
+
+export type IntegrationStatus = typeof IntegrationStatus[keyof typeof IntegrationStatus];
+
+export const SyncFrequency = {
+  HOURLY: 'HOURLY',
+  DAILY: 'DAILY',
+  WEEKLY: 'WEEKLY',
+  MANUAL: 'MANUAL'
+} as const;
+
+export type SyncFrequency = typeof SyncFrequency[keyof typeof SyncFrequency];

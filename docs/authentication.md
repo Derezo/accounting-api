@@ -125,9 +125,35 @@ The API implements role-based access control with the following roles:
 
 Authentication endpoints have additional rate limiting:
 
-- **Login**: 5 attempts per minute per IP
-- **Registration**: 3 attempts per minute per IP
+- **Login**: 5 attempts per 15 minutes per IP
+- **Registration**: 3 attempts per hour per IP
 - **Other endpoints**: 100 requests per minute per IP
+
+### E2E Testing Configuration
+
+For automated end-to-end testing, the API supports a special testing mode that relaxes rate limits:
+
+**Environment Variable**:
+```bash
+E2E_TESTING=true
+```
+
+**Behavior When Enabled**:
+- Login rate limit: 5 → 1000 attempts per 15 minutes
+- Rate limiting skipped for localhost (127.0.0.1, ::1, ::ffff:127.0.0.1)
+- All other security features remain active
+- Audit logging continues to function normally
+
+**Usage**:
+```bash
+# Development
+E2E_TESTING=true npm run dev
+
+# Or add to .env
+echo "E2E_TESTING=true" >> .env
+```
+
+**⚠️ Production Safety**: The API automatically prevents E2E_TESTING from being enabled in production. If `NODE_ENV=production` and `E2E_TESTING=true`, the server will refuse to start with a security error.
 
 ## Multi-Tenant Architecture
 

@@ -49,7 +49,7 @@ describe('Payment Processing Integration Tests', () => {
       const quoteResponse = await authenticatedRequest(adminToken)
         .post('/api/quotes')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           description: 'Stripe Payment Integration Test',
           validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           items: [
@@ -88,7 +88,7 @@ describe('Payment Processing Integration Tests', () => {
       const invoiceResponse = await authenticatedRequest(accountantToken)
         .post('/api/invoices')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           quoteId: quote.id,
           dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
           terms: 'Payment due upon receipt via credit card',
@@ -116,7 +116,7 @@ describe('Payment Processing Integration Tests', () => {
         .post('/api/payments/stripe/create-intent')
         .send({
           invoiceId: invoice.id,
-          customerId: customer!.id,
+          customerId: customer.id,
           amount: invoice.total,
           currency: 'CAD',
           paymentMethodTypes: ['card'],
@@ -126,7 +126,7 @@ describe('Payment Processing Integration Tests', () => {
           description: `Payment for invoice ${invoice.invoiceNumber}`,
           metadata: {
             invoiceId: invoice.id,
-            customerId: customer!.id,
+            customerId: customer.id,
             organizationId: organization.id,
             invoiceNumber: invoice.invoiceNumber
           }
@@ -218,7 +218,7 @@ describe('Payment Processing Integration Tests', () => {
         livemode: false,
         metadata: {
           invoiceId: invoice.id,
-          customerId: customer!.id,
+          customerId: customer.id,
           organizationId: organization.id,
           invoiceNumber: invoice.invoiceNumber
         },
@@ -316,7 +316,7 @@ describe('Payment Processing Integration Tests', () => {
       const payment = payments[0];
 
       // Validate payment record
-      expect(payment.customerId).toBe(customer!.id);
+      expect(payment.customerId).toBe(customer.id);
       expect(payment.invoiceId).toBe(invoice.id);
       expect(payment.amount).toBeCloseTo(invoice.total, 2);
       expect(payment.paymentMethod).toBe(PaymentMethod.STRIPE_CARD);
@@ -433,7 +433,7 @@ describe('Payment Processing Integration Tests', () => {
       const subscriptionInvoiceResponse = await authenticatedRequest(accountantToken)
         .post('/api/invoices')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           terms: 'Monthly subscription - auto-pay',
           notes: 'Monthly software subscription',
@@ -457,14 +457,14 @@ describe('Payment Processing Integration Tests', () => {
       const subscriptionResponse = await authenticatedRequest(accountantToken)
         .post('/api/payments/stripe/create-subscription')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           invoiceId: subscriptionInvoice.id,
           priceId: 'price_monthly_license',
           paymentMethodId: 'pm_card_visa',
           defaultPaymentMethod: 'pm_card_visa',
           metadata: {
             organizationId: organization.id,
-            customerId: customer!.id,
+            customerId: customer.id,
             subscription_type: 'monthly_license'
           }
         })
@@ -483,7 +483,7 @@ describe('Payment Processing Integration Tests', () => {
         customer: 'cus_test_customer',
         metadata: {
           organizationId: organization.id,
-          customerId: customer!.id
+          customerId: customer.id
         }
       });
 
@@ -540,7 +540,7 @@ describe('Payment Processing Integration Tests', () => {
       console.log('❌ Testing Stripe payment failure scenarios...');
 
       // Create invoice for failed payment test
-      const invoice = await createTestInvoice(prisma, organization.id, customer!.id);
+      const invoice = await createTestInvoice(prisma, organization.id, customer.id);
 
       // Simulate failed payment intent
       const failedPaymentIntent = {
@@ -597,7 +597,7 @@ describe('Payment Processing Integration Tests', () => {
       console.log('⚖️ Testing Stripe dispute and chargeback processing...');
 
       // Create successful payment first
-      const payment = await createTestPayment(prisma, organization.id, customer!.id);
+      const payment = await createTestPayment(prisma, organization.id, customer.id);
 
       // Simulate dispute webhook
       const disputeWebhook = createStripeWebhookEvent('charge.dispute.created', {
@@ -650,7 +650,7 @@ describe('Payment Processing Integration Tests', () => {
       // ==========================================================================
       console.log('📄 PHASE 1: Creating invoice for e-Transfer payment');
 
-      const invoice = await createTestInvoice(prisma, organization.id, customer!.id);
+      const invoice = await createTestInvoice(prisma, organization.id, customer.id);
 
       // Send e-Transfer payment instructions
       const etransferInstructionsResponse = await authenticatedRequest(accountantToken)
@@ -680,7 +680,7 @@ describe('Payment Processing Integration Tests', () => {
       const etransferPaymentResponse = await authenticatedRequest(accountantToken)
         .post('/api/payments')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           invoiceId: invoice.id,
           amount: invoice.total,
           paymentMethod: PaymentMethod.INTERAC_ETRANSFER,
@@ -782,7 +782,7 @@ describe('Payment Processing Integration Tests', () => {
       // Create multiple invoices for bulk testing
       const bulkInvoices = [];
       for (let i = 0; i < 3; i++) {
-        const bulkInvoice = await createTestInvoice(prisma, organization.id, customer!.id);
+        const bulkInvoice = await createTestInvoice(prisma, organization.id, customer.id);
         bulkInvoices.push(bulkInvoice);
       }
 
@@ -934,13 +934,13 @@ describe('Payment Processing Integration Tests', () => {
 
       console.log('🔒 Testing e-Transfer security and fraud detection...');
 
-      const invoice = await createTestInvoice(prisma, organization.id, customer!.id);
+      const invoice = await createTestInvoice(prisma, organization.id, customer.id);
 
       // Test suspicious e-Transfer detection
       const suspiciousEtransferResponse = await authenticatedRequest(accountantToken)
         .post('/api/payments')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           invoiceId: invoice.id,
           amount: invoice.total,
           paymentMethod: PaymentMethod.INTERAC_ETRANSFER,
@@ -993,7 +993,7 @@ describe('Payment Processing Integration Tests', () => {
       const pciViolationTest = await authenticatedRequest(accountantToken)
         .post('/api/payments')
         .send({
-          customerId: customers[0]!.id,
+          customerId: customers[0].id,
           amount: 100.00,
           paymentMethod: PaymentMethod.STRIPE_CARD,
           cardNumber: '4242424242424242', // This should be rejected
@@ -1009,7 +1009,7 @@ describe('Payment Processing Integration Tests', () => {
       const validTokenizedPayment = await authenticatedRequest(accountantToken)
         .post('/api/payments')
         .send({
-          customerId: customers[0]!.id,
+          customerId: customers[0].id,
           amount: 100.00,
           paymentMethod: PaymentMethod.STRIPE_CARD,
           stripePaymentMethodId: 'pm_card_visa', // Tokenized reference
@@ -1032,7 +1032,7 @@ describe('Payment Processing Integration Tests', () => {
       await authenticatedRequest(authTokens.viewer)
         .post('/api/payments')
         .send({
-          customerId: customers[0]!.id,
+          customerId: customers[0].id,
           amount: 1000.00,
           paymentMethod: PaymentMethod.STRIPE_CARD
         })
@@ -1043,7 +1043,7 @@ describe('Payment Processing Integration Tests', () => {
       await authenticatedRequest(authTokens.employee)
         .post('/api/payments')
         .send({
-          customerId: customers[0]!.id,
+          customerId: customers[0].id,
           amount: largePaymentAmount,
           paymentMethod: PaymentMethod.STRIPE_CARD
         })
@@ -1053,7 +1053,7 @@ describe('Payment Processing Integration Tests', () => {
       const largePayment = await authenticatedRequest(authTokens.accountant)
         .post('/api/payments')
         .send({
-          customerId: customers[0]!.id,
+          customerId: customers[0].id,
           amount: largePaymentAmount,
           paymentMethod: PaymentMethod.INTERAC_ETRANSFER,
           referenceNumber: 'LARGE_PAYMENT_123',
@@ -1081,7 +1081,7 @@ describe('Payment Processing Integration Tests', () => {
 
       console.log('📊 Testing payment audit trail completeness...');
 
-      const payment = await createTestPayment(prisma, organization.id, customers[0]!.id);
+      const payment = await createTestPayment(prisma, organization.id, customers[0].id);
 
       // Perform various payment operations
       await authenticatedRequest(accountantToken)
@@ -1134,12 +1134,12 @@ describe('Payment Processing Integration Tests', () => {
 
       // Create batch of payments
       for (let i = 0; i < batchSize; i++) {
-        const invoice = await createTestInvoice(prisma, organization.id, customers[0]!.id);
+        const invoice = await createTestInvoice(prisma, organization.id, customers[0].id);
 
         const paymentPromise = authenticatedRequest(accountantToken)
           .post('/api/payments')
           .send({
-            customerId: customers[0]!.id,
+            customerId: customers[0].id,
             invoiceId: invoice.id,
             amount: invoice.total,
             paymentMethod: PaymentMethod.INTERAC_ETRANSFER,
@@ -1179,7 +1179,7 @@ describe('Payment Processing Integration Tests', () => {
       const failedPaymentResponse = await authenticatedRequest(accountantToken)
         .post('/api/payments')
         .send({
-          customerId: customers[0]!.id,
+          customerId: customers[0].id,
           amount: 100.00,
           paymentMethod: PaymentMethod.STRIPE_CARD,
           referenceNumber: 'WILL_FAIL_123',

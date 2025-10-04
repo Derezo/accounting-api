@@ -1,4 +1,4 @@
-import { InvoiceTemplate, InvoiceStyle, OrganizationBranding } from '@prisma/client';
+import { InvoiceTemplate, InvoiceStyle } from '@prisma/client';
 import { auditService } from './audit.service';
 import { prisma } from '../config/database';
 import fs from 'fs/promises';
@@ -735,6 +735,157 @@ export class InvoiceTemplateService {
         userAgent: auditContext.userAgent
       }
     );
+  }
+
+  /**
+   * Generate template preview with sample data
+   */
+  async generatePreview(
+    templateId: string,
+    styleId: string | undefined,
+    organizationId: string
+  ): Promise<string> {
+    // Get template
+    const template = await prisma.invoiceTemplate.findFirst({
+      where: { id: templateId, organizationId, deletedAt: null }
+    });
+
+    if (!template) {
+      throw new Error('Template not found');
+    }
+
+    // Get style if specified
+    let style: InvoiceStyle | null = null;
+    if (styleId) {
+      style = await prisma.invoiceStyle.findFirst({
+        where: { id: styleId, organizationId, deletedAt: null }
+      });
+    }
+
+    // Get organization and branding
+    const organization = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      include: { branding: true }
+    });
+
+    // Generate sample invoice data
+    const sampleInvoice = this.generateSampleInvoiceData(organization);
+
+    // Render template with Handlebars
+    const Handlebars = require('handlebars');
+    const compiledTemplate = Handlebars.compile(template.htmlTemplate);
+    const htmlContent = compiledTemplate(sampleInvoice);
+
+    // Combine with CSS
+    const cssContent = style?.cssContent || await this.loadDefaultCSS();
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice Preview</title>
+  <style>${cssContent}</style>
+</head>
+<body>
+  ${htmlContent}
+</body>
+</html>`;
+  }
+
+  /**
+   * Generate sample invoice data for preview
+   */
+  private generateSampleInvoiceData(organization: any): any {
+    return {
+      invoiceNumber: 'INV-000123',
+      invoiceDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      status: 'DRAFT',
+      organization: {
+        name: organization?.name || 'Sample Company Inc.',
+        address: '123 Business Street',
+        city: 'Toronto',
+        province: 'ON',
+        postalCode: 'M5V 1A1',
+        country: 'Canada',
+        phone: organization?.phone || '(416) 555-0100',
+        email: organization?.email || 'info@sample-company.com',
+        website: organization?.website || 'www.sample-company.com',
+        logo: organization?.branding?.logoUrl || null
+      },
+      customer: {
+        name: 'John Smith',
+        company: 'ABC Corporation',
+        email: 'john.smith@example.com',
+        phone: '(416) 555-0200',
+        billingAddress: {
+          street: '456 Client Avenue',
+          city: 'Toronto',
+          province: 'ON',
+          postalCode: 'M4B 1B3',
+          country: 'Canada'
+        }
+      },
+      items: [
+        {
+          description: 'Professional Services - Consulting',
+          quantity: 10,
+          unitPrice: 150.00,
+          amount: 1500.00,
+          taxable: true
+        },
+        {
+          description: 'Software License (Annual)',
+          quantity: 1,
+          unitPrice: 500.00,
+          amount: 500.00,
+          taxable: true
+        },
+        {
+          description: 'Setup Fee',
+          quantity: 1,
+          unitPrice: 250.00,
+          amount: 250.00,
+          taxable: false
+        }
+      ],
+      subtotal: 2250.00,
+      taxSummary: [
+        {
+          taxType: 'HST',
+          taxRate: 13.0,
+          taxAmount: 260.00
+        }
+      ],
+      totalTax: 260.00,
+      total: 2510.00,
+      amountPaid: 0.00,
+      balance: 2510.00,
+      notes: 'Thank you for your business! Payment is due within 15 days.',
+      terms: 'Net 15 days. Interest may be charged on overdue balances.',
+      paymentInstructions: 'Please make payment via e-Transfer to payments@sample-company.com or by credit card using the link provided.'
+    };
+  }
+
+  /**
+   * Load default CSS for preview
+   */
+  private async loadDefaultCSS(): Promise<string> {
+    try {
+      const cssPath = path.join(process.cwd(), 'src', 'templates', 'invoice', 'classic.css');
+      return await fs.readFile(cssPath, 'utf-8');
+    } catch (error) {
+      // Return minimal fallback CSS
+      return `
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .invoice-header { display: flex; justify-content: space-between; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        .totals { text-align: right; }
+      `;
+    }
   }
 
   /**

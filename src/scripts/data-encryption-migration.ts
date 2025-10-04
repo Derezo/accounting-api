@@ -235,7 +235,7 @@ export class DataEncryptionMigrationService {
 
       // Process each migration plan
       for (const plan of migrationPlan) {
-        if ((job as MigrationJob).status === 'cancelled') {
+        if ((job).status === 'cancelled') {
           break;
         }
 
@@ -255,7 +255,7 @@ export class DataEncryptionMigrationService {
         totalRecords: job.progress.totalRecords,
         encryptedRecords: job.progress.encryptedRecords,
         failedRecords: job.progress.failedRecords,
-        duration: job.completedAt.getTime() - job.startedAt!.getTime()
+        duration: job.completedAt.getTime() - job.startedAt.getTime()
       });
 
     } catch (error) {

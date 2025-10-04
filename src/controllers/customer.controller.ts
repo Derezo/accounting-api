@@ -378,7 +378,7 @@ export class CustomerController {
       const organizationId = req.params.organizationId || req.user.organizationId;
 
       const customer = await customerService.getCustomer(
-        req.params.id!,
+        req.params.id,
         organizationId,
         {
           userId: req.user.id,
@@ -565,7 +565,7 @@ export class CustomerController {
       const organizationId = req.params.organizationId || req.user.organizationId;
 
       const customer = await customerService.updateCustomer(
-        req.params.id!,
+        req.params.id,
         req.body,
         organizationId,
         {
@@ -853,7 +853,7 @@ export class CustomerController {
       const organizationId = req.params.organizationId || req.user.organizationId;
 
       const customer = await customerService.deleteCustomer(
-        req.params.id!,
+        req.params.id,
         organizationId,
         {
           userId: req.user.id,
@@ -892,7 +892,7 @@ export class CustomerController {
       const organizationId = req.params.organizationId || req.user.organizationId;
 
       const stats = await customerService.getCustomerStats(
-        req.params.id!,
+        req.params.id,
         organizationId
       );
 

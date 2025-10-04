@@ -169,7 +169,7 @@ describe('Customer Lifecycle Workflow Permissions Tests', () => {
       ];
 
       const quoteData = {
-        customerId: customers[0]!.id,
+        customerId: customers[0].id,
         description: 'Professional services quote',
         validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         currency: 'CAD',
@@ -240,7 +240,7 @@ describe('Customer Lifecycle Workflow Permissions Tests', () => {
       const quote = await createTestQuote(
         prisma,
         testContext.organization.id,
-        customers[0]!.id,
+        customers[0].id,
         testContext.users.admin.id
       );
 
@@ -283,7 +283,7 @@ describe('Customer Lifecycle Workflow Permissions Tests', () => {
       const quote = await createTestQuote(
         prisma,
         testContext.organization.id,
-        customers[0]!.id,
+        customers[0].id,
         testContext.users.admin.id
       );
 
@@ -320,7 +320,7 @@ describe('Customer Lifecycle Workflow Permissions Tests', () => {
         // Test appointment scheduling permissions
         if (permission.canScheduleAppointment) {
           const appointmentData = {
-            customerId: customers[0]!.id,
+            customerId: customers[0].id,
             quoteId: quote.id,
             title: 'Project kickoff meeting',
             description: 'Initial project discussion and planning',
@@ -356,7 +356,7 @@ describe('Customer Lifecycle Workflow Permissions Tests', () => {
       ];
 
       const appointmentData = {
-        customerId: customers[0]!.id,
+        customerId: customers[0].id,
         title: 'Project planning session',
         description: 'Detailed project planning and resource allocation',
         startTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
@@ -414,7 +414,7 @@ describe('Customer Lifecycle Workflow Permissions Tests', () => {
       const quote = await createTestQuote(
         prisma,
         testContext.organization.id,
-        customers[0]!.id,
+        customers[0].id,
         testContext.users.admin.id
       );
 
@@ -434,7 +434,7 @@ describe('Customer Lifecycle Workflow Permissions Tests', () => {
       ];
 
       const invoiceData = {
-        customerId: customers[0]!.id,
+        customerId: customers[0].id,
         quoteId: quote.id,
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         terms: 'Net 30 days',
@@ -521,7 +521,7 @@ describe('Customer Lifecycle Workflow Permissions Tests', () => {
       const invoice = await createTestInvoice(
         prisma,
         testContext.organization.id,
-        customers[0]!.id
+        customers[0].id
       );
 
       // Stage 6 Permission Matrix: payment.create, etransfer.initiate
@@ -543,7 +543,7 @@ describe('Customer Lifecycle Workflow Permissions Tests', () => {
         for (const permission of stage6Permissions) {
           const paymentData = {
             invoiceId: invoice.id,
-            customerId: customers[0]!.id,
+            customerId: customers[0].id,
             amount: depositAmount,
             paymentMethod: 'STRIPE_CARD',
             currency: 'CAD',
@@ -569,7 +569,7 @@ describe('Customer Lifecycle Workflow Permissions Tests', () => {
           // Test e-Transfer initiation for Canadian payments
           if (permission.canInitiateETransfer) {
             const etransferData = {
-              customerId: customers[0]!.id,
+              customerId: customers[0].id,
               amount: depositAmount,
               currency: 'CAD',
               recipientEmail: 'customer@test.ca',
@@ -609,7 +609,7 @@ describe('Customer Lifecycle Workflow Permissions Tests', () => {
       const project = await createTestProject(
         prisma,
         testContext.organization.id,
-        customers[0]!.id,
+        customers[0].id,
         testContext.users.admin.id
       );
 
@@ -676,7 +676,7 @@ describe('Customer Lifecycle Workflow Permissions Tests', () => {
       const project = await createTestProject(
         prisma,
         testContext.organization.id,
-        customers[0]!.id,
+        customers[0].id,
         testContext.users.admin.id
       );
 
@@ -699,7 +699,7 @@ describe('Customer Lifecycle Workflow Permissions Tests', () => {
       const finalInvoice = await createTestInvoice(
         prisma,
         testContext.organization.id,
-        customers[0]!.id
+        customers[0].id
       );
 
       for (const permission of stage8Permissions) {
@@ -825,7 +825,7 @@ describe('Customer Lifecycle Workflow Permissions Tests', () => {
         }
       ];
 
-      let workflowData: any = {};
+      const workflowData: any = {};
 
       for (const stage of workflowStages) {
         console.log(`\nExecuting Stage ${stage.stage}: ${stage.name} (${stage.actor})`);

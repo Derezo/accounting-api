@@ -1,52 +1,64 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="16" failures="16" errors="0" time="1.499">
-  <testsuite name="Payment Integration Tests" errors="0" failures="16" skipped="0" timestamp="2025-10-02T00:28:31" time="1.469" tests="16">
-    <testcase classname="Payment Integration Tests › Stripe Payment Processing" name="should process complete Stripe payment flow" time="0.001">
+<testsuites name="jest tests" tests="20" failures="20" errors="0" time="1.61">
+  <testsuite name="Enhanced Audit Logging Integration Tests" errors="0" failures="20" skipped="0" timestamp="2025-10-02T23:01:38" time="1.577" tests="20">
+    <testcase classname="Enhanced Audit Logging Integration Tests › User Activity Tracking" name="should get user activity logs" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Payment Integration Tests › Stripe Payment Processing" name="should handle Stripe payment failures" time="0">
+    <testcase classname="Enhanced Audit Logging Integration Tests › User Activity Tracking" name="should filter user activities by date range" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Payment Integration Tests › Stripe Payment Processing" name="should handle partial payments via Stripe" time="0">
+    <testcase classname="Enhanced Audit Logging Integration Tests › User Activity Tracking" name="should filter user activities by action type" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Payment Integration Tests › Stripe Payment Processing" name="should handle Stripe refunds" time="0">
+    <testcase classname="Enhanced Audit Logging Integration Tests › User Activity Tracking" name="should get user activity summary" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Payment Integration Tests › E-Transfer Payment Processing" name="should process e-transfer payment workflow" time="0">
+    <testcase classname="Enhanced Audit Logging Integration Tests › Session Management" name="should get active sessions" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Payment Integration Tests › E-Transfer Payment Processing" name="should handle e-transfer timeout and cancellation" time="0">
+    <testcase classname="Enhanced Audit Logging Integration Tests › Session Management" name="should revoke a specific session" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Payment Integration Tests › Manual Payment Processing" name="should record manual cash payment" time="0">
+    <testcase classname="Enhanced Audit Logging Integration Tests › Session Management" name="should revoke all sessions for a user" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Payment Integration Tests › Manual Payment Processing" name="should record manual cheque payment" time="0">
+    <testcase classname="Enhanced Audit Logging Integration Tests › Suspicious Activity Detection" name="should detect suspicious activities" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Payment Integration Tests › Manual Payment Processing" name="should handle bounced cheque" time="0">
+    <testcase classname="Enhanced Audit Logging Integration Tests › Suspicious Activity Detection" name="should filter suspicious activities by severity" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Payment Integration Tests › Payment Reconciliation" name="should reconcile multiple payments for single invoice" time="0.001">
+    <testcase classname="Enhanced Audit Logging Integration Tests › Suspicious Activity Detection" name="should get suspicious activity patterns" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Payment Integration Tests › Payment Reconciliation" name="should handle overpayment scenarios" time="0">
+    <testcase classname="Enhanced Audit Logging Integration Tests › Security Metrics" name="should get security metrics overview" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Payment Integration Tests › Payment Reconciliation" name="should generate payment reconciliation report" time="0">
+    <testcase classname="Enhanced Audit Logging Integration Tests › Security Metrics" name="should get login security metrics" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Payment Integration Tests › Payment Security and Validation" name="should validate payment amounts and prevent fraud" time="0">
+    <testcase classname="Enhanced Audit Logging Integration Tests › Security Metrics" name="should get access control metrics" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Payment Integration Tests › Payment Security and Validation" name="should handle payment processor webhooks securely" time="0">
+    <testcase classname="Enhanced Audit Logging Integration Tests › Security Metrics" name="should get compliance metrics" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Payment Integration Tests › Payment Security and Validation" name="should prevent duplicate payment processing" time="0">
+    <testcase classname="Enhanced Audit Logging Integration Tests › Audit Log Export" name="should export audit logs in CSV format" time="0.001">
       <failure></failure>
     </testcase>
-    <testcase classname="Payment Integration Tests › Payment Analytics and Reporting" name="should generate comprehensive payment analytics" time="0">
+    <testcase classname="Enhanced Audit Logging Integration Tests › Audit Log Export" name="should export audit logs in JSON format" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Enhanced Audit Logging Integration Tests › Real-time Audit Streaming" name="should get real-time audit stream configuration" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Enhanced Audit Logging Integration Tests › Real-time Audit Streaming" name="should update audit stream configuration" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Enhanced Audit Logging Integration Tests › Access Control and Authorization" name="should reject unauthorized access to audit endpoints" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Enhanced Audit Logging Integration Tests › Access Control and Authorization" name="should enforce role-based access to sensitive audit data" time="0">
       <failure></failure>
     </testcase>
   </testsuite>

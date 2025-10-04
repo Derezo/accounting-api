@@ -6,7 +6,8 @@ import {
   createTestCustomer,
   PerformanceTimer,
   delay,
-  TestContext
+  TestContext,
+  routes
 } from './test-utils';
 import { UserRole } from '../../src/types/enums';
 
@@ -30,7 +31,7 @@ describe('Performance and Security Integration Tests', () => {
       for (let i = 0; i < 10; i++) {
         loginAttempts.push(
           baseRequest()
-            .post('/api/auth/login')
+            .post(routes.auth.login())
             .send({
               email: user.email,
               password: 'wrongpassword'
@@ -43,7 +44,7 @@ describe('Performance and Security Integration Tests', () => {
       // Some requests should be rate limited
       const rateLimitedRequests = results.filter(
         result => result.status === 'fulfilled' &&
-        (result.value as any).status === 429 // Too Many Requests
+        (result.value).status === 429 // Too Many Requests
       );
 
       expect(rateLimitedRequests.length).toBeGreaterThan(0);
@@ -52,6 +53,7 @@ describe('Performance and Security Integration Tests', () => {
     });
 
     test('should enforce API rate limits per user', async () => {
+      const { organization } = testContext;
       const adminToken = testContext.authTokens.admin;
 
       console.log('Testing API rate limiting...');
@@ -61,7 +63,7 @@ describe('Performance and Security Integration Tests', () => {
       for (let i = 0; i < 50; i++) {
         apiRequests.push(
           authenticatedRequest(adminToken)
-            .get('/api/customers')
+            .get(routes.org(organization.id).customers())
         );
       }
 
@@ -70,7 +72,7 @@ describe('Performance and Security Integration Tests', () => {
       // Check for rate limiting responses
       const rateLimitedResponses = results.filter(
         result => result.status === 'fulfilled' &&
-        (result.value as any).status === 429
+        (result.value).status === 429
       );
 
       // Should have some rate limited responses for excessive requests
@@ -83,7 +85,7 @@ describe('Performance and Security Integration Tests', () => {
       // At least some requests should succeed
       const successfulResponses = results.filter(
         result => result.status === 'fulfilled' &&
-        (result.value as any).status === 200
+        (result.value).status === 200
       );
 
       expect(successfulResponses.length).toBeGreaterThan(0);
@@ -116,7 +118,7 @@ describe('Performance and Security Integration Tests', () => {
       const concurrentOperations = concurrentUsers.map(async (user) => {
         // Login
         const loginResponse = await baseRequest()
-          .post('/api/auth/login')
+          .post(routes.auth.login())
           .send({
             email: user.email,
             password: 'password123'
@@ -133,7 +135,7 @@ describe('Performance and Security Integration Tests', () => {
         for (let j = 0; j < 5; j++) {
           apiCalls.push(
             authenticatedRequest(token)
-              .get('/api/customers')
+              .get(routes.org(organization.id).customers())
           );
         }
 
@@ -155,6 +157,7 @@ describe('Performance and Security Integration Tests', () => {
 
   describe('Input Validation and SQL Injection Prevention', () => {
     test('should prevent SQL injection in search parameters', async () => {
+      const { organization } = testContext;
       const adminToken = testContext.authTokens.admin;
 
       console.log('Testing SQL injection prevention...');
@@ -169,7 +172,7 @@ describe('Performance and Security Integration Tests', () => {
 
       for (const maliciousInput of maliciousInputs) {
         const response = await authenticatedRequest(adminToken)
-          .get(`/api/customers?search=${encodeURIComponent(maliciousInput)}`)
+          .get(`${routes.org(organization.id).customers()}?search=${encodeURIComponent(maliciousInput)}`)
           .expect(200); // Should handle gracefully, not fail
 
         // Should return empty results or properly escaped search
@@ -178,11 +181,11 @@ describe('Performance and Security Integration Tests', () => {
 
       // Verify database integrity after SQL injection attempts
       const customerCount = await prisma.customer.count({
-        where: { organizationId: testContext.organization.id }
+        where: { organizationId: organization.id }
       });
 
       const userCount = await prisma.user.count({
-        where: { organizationId: testContext.organization.id }
+        where: { organizationId: organization.id }
       });
 
       const orgCount = await prisma.organization.count();
@@ -195,6 +198,7 @@ describe('Performance and Security Integration Tests', () => {
     });
 
     test('should sanitize and validate input data', async () => {
+      const { organization } = testContext;
       const adminToken = testContext.authTokens.admin;
 
       console.log('Testing input validation...');
@@ -210,7 +214,7 @@ describe('Performance and Security Integration Tests', () => {
 
       for (const xssPayload of xssPayloads) {
         const response = await authenticatedRequest(adminToken)
-          .post('/api/customers')
+          .post(routes.org(organization.id).customers())
           .send({
             type: 'PERSON',
             person: {
@@ -237,6 +241,7 @@ describe('Performance and Security Integration Tests', () => {
     });
 
     test('should validate email formats and prevent injection', async () => {
+      const { organization } = testContext;
       const adminToken = testContext.authTokens.admin;
 
       const invalidEmails = [
@@ -251,7 +256,7 @@ describe('Performance and Security Integration Tests', () => {
 
       for (const invalidEmail of invalidEmails) {
         await authenticatedRequest(adminToken)
-          .post('/api/customers')
+          .post(routes.org(organization.id).customers())
           .send({
             type: 'PERSON',
             person: {
@@ -267,6 +272,7 @@ describe('Performance and Security Integration Tests', () => {
     });
 
     test('should prevent path traversal attacks', async () => {
+      const { organization } = testContext;
       const adminToken = testContext.authTokens.admin;
 
       const pathTraversalPayloads = [
@@ -280,11 +286,11 @@ describe('Performance and Security Integration Tests', () => {
       for (const payload of pathTraversalPayloads) {
         // Test in various endpoints that might handle file paths
         await authenticatedRequest(adminToken)
-          .get(`/api/customers/${payload}`)
+          .get(routes.org(organization.id).customer(payload))
           .expect(404); // Should not find anything with path traversal
 
         await authenticatedRequest(adminToken)
-          .get(`/api/files/${payload}`)
+          .get(`/api/v1/organizations/${organization.id}/files/${payload}`)
           .expect(404);
       }
 
@@ -303,7 +309,7 @@ describe('Performance and Security Integration Tests', () => {
       for (let i = 0; i < 10; i++) {
         failedAttempts.push(
           baseRequest()
-            .post('/api/auth/login')
+            .post(routes.auth.login())
             .send({
               email: user.email,
               password: `wrongpassword${i}`
@@ -316,7 +322,7 @@ describe('Performance and Security Integration Tests', () => {
       // Later attempts should be blocked due to account lockout
       const blockedAttempts = results.filter(
         result => result.status === 'fulfilled' &&
-        (result.value as any).status === 423 // Account locked
+        (result.value).status === 423 // Account locked
       );
 
       expect(blockedAttempts.length).toBeGreaterThan(0);
@@ -348,7 +354,7 @@ describe('Performance and Security Integration Tests', () => {
 
       for (const weakPassword of weakPasswords) {
         await authenticatedRequest(adminToken)
-          .post('/api/users')
+          .post(routes.users())
           .send({
             email: `weak${Date.now()}@test.com`,
             password: weakPassword,
@@ -361,7 +367,7 @@ describe('Performance and Security Integration Tests', () => {
 
       // Strong password should work
       await authenticatedRequest(adminToken)
-        .post('/api/users')
+        .post(routes.users())
         .send({
           email: 'strong@test.com',
           password: 'StrongP@ssw0rd!',
@@ -375,6 +381,8 @@ describe('Performance and Security Integration Tests', () => {
     });
 
     test('should validate JWT tokens properly', async () => {
+      const { organization } = testContext;
+
       const maliciousTokens = [
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c', // Standard example token
         'fake.token.here',
@@ -385,7 +393,7 @@ describe('Performance and Security Integration Tests', () => {
 
       for (const maliciousToken of maliciousTokens) {
         await authenticatedRequest(maliciousToken)
-          .get('/api/customers')
+          .get(routes.org(organization.id).customers())
           .expect(401); // Should reject invalid tokens
       }
 
@@ -420,7 +428,7 @@ describe('Performance and Security Integration Tests', () => {
       // Verify sensitive data is not stored in plain text
       const rawPersonData = await prisma.$queryRaw`
         SELECT socialInsNumber FROM persons WHERE id = ${customer.person!.id}
-      ` as any[];
+      `;
 
       if (rawPersonData.length > 0) {
         const storedSIN = rawPersonData[0].socialInsNumber;
@@ -432,11 +440,12 @@ describe('Performance and Security Integration Tests', () => {
     });
 
     test('should mask sensitive data in logs and responses', async () => {
+      const { organization } = testContext;
       const adminToken = testContext.authTokens.admin;
 
       // Create customer with sensitive payment information
       const customerResponse = await authenticatedRequest(adminToken)
-        .post('/api/customers')
+        .post(routes.org(organization.id).customers())
         .send({
           type: 'PERSON',
           person: {
@@ -496,7 +505,7 @@ describe('Performance and Security Integration Tests', () => {
           const customerIndex = batch * batchSize + i;
           batchPromises.push(
             authenticatedRequest(adminToken)
-              .post('/api/customers')
+              .post(routes.org(organization.id).customers())
               .send({
                 type: customerIndex % 2 === 0 ? 'PERSON' : 'BUSINESS',
                 [customerIndex % 2 === 0 ? 'person' : 'business']: {
@@ -528,6 +537,7 @@ describe('Performance and Security Integration Tests', () => {
     });
 
     test('should maintain query performance with pagination', async () => {
+      const { organization } = testContext;
       const adminToken = testContext.authTokens.admin;
 
       console.log('Testing pagination performance...');
@@ -539,7 +549,7 @@ describe('Performance and Security Integration Tests', () => {
         performanceTimer.start();
 
         const response = await authenticatedRequest(adminToken)
-          .get(`/api/customers?page=1&limit=${pageSize}&sort=createdAt&order=desc`)
+          .get(`${routes.org(organization.id).customers()}?page=1&limit=${pageSize}&sort=createdAt&order=desc`)
           .expect(200);
 
         const duration = performanceTimer.stop();
@@ -564,6 +574,7 @@ describe('Performance and Security Integration Tests', () => {
     });
 
     test('should handle complex search queries efficiently', async () => {
+      const { organization } = testContext;
       const adminToken = testContext.authTokens.admin;
 
       console.log('Testing search performance...');
@@ -580,7 +591,7 @@ describe('Performance and Security Integration Tests', () => {
         performanceTimer.start();
 
         const response = await authenticatedRequest(adminToken)
-          .get(`/api/customers?search=${encodeURIComponent(query)}&limit=50`)
+          .get(`${routes.org(organization.id).customers()}?search=${encodeURIComponent(query)}&limit=50`)
           .expect(200);
 
         const duration = performanceTimer.stop();
@@ -607,7 +618,7 @@ describe('Performance and Security Integration Tests', () => {
       for (let i = 0; i < 100; i++) {
         operations.push(
           authenticatedRequest(adminToken)
-            .get('/api/customers?include=quotes,invoices,payments&limit=10')
+            .get(`${routes.org(organization.id).customers()}?include=quotes,invoices,payments&limit=10`)
         );
       }
 
@@ -647,8 +658,10 @@ describe('Performance and Security Integration Tests', () => {
     });
 
     test('should handle CORS properly', async () => {
+      const { organization } = testContext;
+
       const corsResponse = await baseRequest()
-        .options('/api/customers')
+        .options(routes.org(organization.id).customers())
         .set('Origin', 'https://example.com')
         .set('Access-Control-Request-Method', 'GET');
 
@@ -661,13 +674,14 @@ describe('Performance and Security Integration Tests', () => {
 
   describe('Resource Usage and Limits', () => {
     test('should enforce request size limits', async () => {
+      const { organization } = testContext;
       const adminToken = testContext.authTokens.admin;
 
       // Create extremely large request payload
       const largeDescription = 'x'.repeat(1000000); // 1MB string
 
       const response = await authenticatedRequest(adminToken)
-        .post('/api/customers')
+        .post(routes.org(organization.id).customers())
         .send({
           type: 'PERSON',
           person: {
@@ -685,13 +699,14 @@ describe('Performance and Security Integration Tests', () => {
     });
 
     test('should handle file upload size limits', async () => {
+      const { organization } = testContext;
       const adminToken = testContext.authTokens.admin;
 
       // Simulate large file upload (if file upload endpoints exist)
       const largeBuffer = Buffer.alloc(10 * 1024 * 1024, 'x'); // 10MB buffer
 
       const response = await authenticatedRequest(adminToken)
-        .post('/api/files/upload')
+        .post(`/api/v1/organizations/${organization.id}/files/upload`)
         .attach('file', largeBuffer, 'large-file.txt');
 
       // Should reject large files

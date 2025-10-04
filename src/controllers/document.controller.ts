@@ -263,7 +263,7 @@ export class DocumentController {
       }
 
       const document = await documentService.getDocument(
-        req.params.documentId!,
+        req.params.documentId,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -400,7 +400,7 @@ export class DocumentController {
       }
 
       const document = await documentService.updateDocument(
-        req.params.documentId!,
+        req.params.documentId,
         req.body,
         req.user.organizationId,
         {
@@ -457,7 +457,7 @@ export class DocumentController {
       const permanent = req.query.permanent === 'true';
 
       await documentService.deleteDocument(
-        req.params.documentId!,
+        req.params.documentId,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -492,7 +492,7 @@ export class DocumentController {
       }
 
       const result = await documentService.downloadDocument(
-        req.params.documentId!,
+        req.params.documentId,
         req.user.organizationId,
         {
           userId: req.user.id,
@@ -542,7 +542,7 @@ export class DocumentController {
       };
 
       const document = await documentService.createDocumentVersion(
-        req.params.documentId!,
+        req.params.documentId,
         req.file,
         documentData,
         req.user.organizationId,
@@ -581,7 +581,7 @@ export class DocumentController {
       }
 
       const versions = await documentService.getDocumentVersions(
-        req.params.documentId!,
+        req.params.documentId,
         req.user.organizationId
       );
 
@@ -627,7 +627,7 @@ export class DocumentController {
       }
 
       const document = await documentService.attachDocumentToEntity(
-        req.params.documentId!,
+        req.params.documentId,
         req.body.entityType,
         req.body.entityId,
         req.user.organizationId,

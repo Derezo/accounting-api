@@ -3,7 +3,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
-import { TestDataGenerator, TestData } from './test-data-generator';
+import { RBACTestDataGenerator, TestData } from './test-data-generator';
 import { RBACTestSuite, TestSummary } from './rbac-test-suite';
 import { WorkflowRBACTestSuite, WorkflowTestResult, BusinessProcessTestResult } from './workflow-rbac-test-suite';
 import { AdvancedBoundaryTestSuite, BoundaryTestResult, AdvancedTestSummary } from './advanced-boundary-testing';
@@ -19,7 +19,7 @@ interface TestRunnerOptions {
 
 class EnhancedRBACTestRunner {
   private testData: TestData | null = null;
-  private generator = new TestDataGenerator();
+  private generator = new RBACTestDataGenerator();
 
   async run(options: TestRunnerOptions): Promise<void> {
     console.log(chalk.bold.blue('\n🚀 Enhanced RBAC Test Runner'));
@@ -72,9 +72,14 @@ class EnhancedRBACTestRunner {
     const spinner = ora('Generating comprehensive test data...').start();
 
     try {
-      this.testData = await this.generator.generateComprehensiveTestData(organizationCount);
+      this.testData = await this.generator.generateTestData();
 
       spinner.succeed(chalk.green(`✅ Generated test data:`));
+
+      if (!this.testData) {
+        throw new Error('Failed to generate test data');
+      }
+
       console.log(`   📊 Organizations: ${this.testData.organizations.length}`);
       console.log(`   👥 Users: ${this.testData.users.length} (${this.testData.users.length / organizationCount} per org)`);
       console.log(`   👤 Customers: ${this.testData.customers.length}`);

@@ -51,7 +51,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       const quoteRequestResponse = await authenticatedRequest(adminToken)
         .post('/api/quotes')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           description: 'E-commerce website development with payment integration',
           notes: 'Customer requesting modern e-commerce platform with Stripe integration, inventory management, and admin dashboard',
           validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -109,7 +109,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       // Stage 1 Validations
       expect(quote.status).toBe(QuoteStatus.DRAFT);
       expect(quote.organizationId).toBe(organization.id);
-      expect(quote.customerId).toBe(customer!.id);
+      expect(quote.customerId).toBe(customer.id);
       expect(quote.total).toBeGreaterThan(0);
       expect(quote.subtotal).toBeGreaterThan(0);
       expect(quote.taxAmount).toBeGreaterThan(0);
@@ -175,7 +175,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
         .send({
           emailSubject: 'Your E-commerce Development Quote #' + quote.quoteNumber,
           emailMessage: 'Thank you for your interest in our services. Please review the attached quote.',
-          sendToEmails: [customer!.personId ? 'customer@example.com' : 'business@example.com']
+          sendToEmails: [customer.personId ? 'customer@example.com' : 'business@example.com']
         })
         .expect(200);
 
@@ -188,7 +188,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       await authenticatedRequest(adminToken)
         .patch(`/api/quotes/${quote.id}/view`)
         .send({
-          viewedByEmail: customer!.personId ? 'customer@example.com' : 'business@example.com',
+          viewedByEmail: customer.personId ? 'customer@example.com' : 'business@example.com',
           viewedAt: new Date().toISOString()
         })
         .expect(200);
@@ -197,7 +197,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       const acceptedQuoteResponse = await authenticatedRequest(adminToken)
         .patch(`/api/quotes/${quote.id}/accept`)
         .send({
-          acceptedByEmail: customer!.personId ? 'customer@example.com' : 'business@example.com',
+          acceptedByEmail: customer.personId ? 'customer@example.com' : 'business@example.com',
           acceptanceNotes: 'Looks great! Ready to proceed with the project.',
           signatureHash: 'digital_signature_hash_abc123',
           acceptanceMethod: 'DIGITAL_SIGNATURE'
@@ -228,7 +228,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
         .send({
           name: 'E-commerce Website Development',
           description: 'Complete e-commerce platform with payment integration based on accepted quote',
-          customerId: customer!.id,
+          customerId: customer.id,
           quoteId: quote.id,
           assignedToId: users.admin.id,
           estimatedHours: 115,
@@ -253,7 +253,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
 
       // Stage 4a Validations - Project Created
       expect(project.status).toBe(ProjectStatus.QUOTED);
-      expect(project.customerId).toBe(customer!.id);
+      expect(project.customerId).toBe(customer.id);
       expect(project.quoteId).toBe(quote.id);
       expect(project.fixedPrice).toBe(quote.total);
       expect(project.projectNumber).toMatch(/^PROJ-\d{6}$/);
@@ -262,7 +262,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       const appointmentResponse = await authenticatedRequest(adminToken)
         .post('/api/appointments')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           projectId: project.id,
           title: 'Project Kickoff & Requirements Review',
           description: 'Initial meeting to review project requirements, timeline, and deliverables. Technical architecture discussion.',
@@ -274,7 +274,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
           attendees: [
             { email: users.admin.email, role: 'Lead Developer' },
             { email: users.manager.email, role: 'Project Manager' },
-            { email: customer!.personId ? 'customer@example.com' : 'business@example.com', role: 'Client' }
+            { email: customer.personId ? 'customer@example.com' : 'business@example.com', role: 'Client' }
           ],
           preparationNotes: 'Review quote details, prepare technical questions, bring brand assets'
         })
@@ -283,7 +283,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       const appointment = appointmentResponse.body;
 
       // Stage 4 Validations - Appointment Scheduled
-      expect(appointment.customerId).toBe(customer!.id);
+      expect(appointment.customerId).toBe(customer.id);
       expect(appointment.projectId).toBe(project.id);
       expect(appointment.confirmed).toBe(false);
       expect(appointment.duration).toBe(90);
@@ -314,7 +314,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       const invoiceResponse = await authenticatedRequest(accountantToken)
         .post('/api/invoices')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           quoteId: quote.id,
           projectId: project.id,
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
@@ -325,8 +325,8 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
           currency: 'CAD',
           exchangeRate: 1.0,
           billToContact: {
-            name: customer!.personId ? 'John Doe' : 'Tech Solutions Inc.',
-            email: customer!.personId ? 'customer@example.com' : 'business@example.com',
+            name: customer.personId ? 'John Doe' : 'Tech Solutions Inc.',
+            email: customer.personId ? 'customer@example.com' : 'business@example.com',
             phone: '+1-555-123-4567'
           }
         })
@@ -336,7 +336,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
 
       // Stage 5 Validations - Invoice Generated
       expect(invoice.status).toBe(InvoiceStatus.DRAFT);
-      expect(invoice.customerId).toBe(customer!.id);
+      expect(invoice.customerId).toBe(customer.id);
       expect(invoice.quoteId).toBe(quote.id);
       expect(invoice.projectId).toBe(project.id);
       expect(invoice.total).toBe(quote.total);
@@ -360,7 +360,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
         .send({
           emailSubject: 'Invoice #' + invoice.invoiceNumber + ' - E-commerce Development Project',
           emailMessage: 'Please find your invoice attached. 50% deposit is required to begin work.',
-          sendToEmails: [customer!.personId ? 'customer@example.com' : 'business@example.com'],
+          sendToEmails: [customer.personId ? 'customer@example.com' : 'business@example.com'],
           ccEmails: [users.manager.email],
           attachments: ['invoice_pdf', 'payment_instructions']
         })
@@ -385,7 +385,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       await authenticatedRequest(accountantToken)
         .patch(`/api/invoices/${invoice.id}/view`)
         .send({
-          viewedByEmail: customer!.personId ? 'customer@example.com' : 'business@example.com',
+          viewedByEmail: customer.personId ? 'customer@example.com' : 'business@example.com',
           viewedAt: new Date().toISOString()
         })
         .expect(200);
@@ -398,7 +398,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       const depositPaymentResponse = await authenticatedRequest(accountantToken)
         .post('/api/payments')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           invoiceId: invoice.id,
           projectId: project.id,
           amount: depositAmount,
@@ -575,7 +575,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       const finalPaymentResponse = await authenticatedRequest(accountantToken)
         .post('/api/payments')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           invoiceId: invoice.id,
           projectId: project.id,
           amount: remainingAmount,
@@ -655,7 +655,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
 
       // Update customer status to reflect successful project completion
       const updatedCustomerResponse = await authenticatedRequest(adminToken)
-        .patch(`/api/customers/${customer!.id}`)
+        .patch(`/api/customers/${customer.id}`)
         .send({
           status: CustomerStatus.ACTIVE,
           notes: 'Successfully completed e-commerce website project. Excellent client relationship.',
@@ -752,7 +752,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       const quoteResponse = await authenticatedRequest(adminToken)
         .post('/api/quotes')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           description: 'Mobile app development',
           items: [{
             description: 'Mobile app development',
@@ -786,7 +786,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       const revisedQuoteResponse = await authenticatedRequest(adminToken)
         .post('/api/quotes')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           description: 'Mobile app development (Revised)',
           items: [{
             description: 'Mobile app development - reduced scope',
@@ -803,13 +803,13 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       expect(revisedQuoteResponse.body.total).toBeLessThan(quote.total);
 
       // Test payment failure scenario
-      const invoice = await createTestInvoice(prisma, organization.id, customer!.id);
+      const invoice = await createTestInvoice(prisma, organization.id, customer.id);
 
       // Simulate failed payment
       const failedPaymentResponse = await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           invoiceId: invoice.id,
           amount: 100.00,
           paymentMethod: PaymentMethod.STRIPE_CARD,
@@ -854,7 +854,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       await authenticatedRequest(authTokens.viewer)
         .post('/api/quotes')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           description: 'Test quote',
           items: [{ description: 'Test', quantity: 1, unitPrice: 100, taxRate: 0.13 }]
         })
@@ -864,13 +864,13 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       const employeeQuoteResponse = await authenticatedRequest(authTokens.employee)
         .post('/api/quotes')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           description: 'Employee created quote',
           items: [{ description: 'Test', quantity: 1, unitPrice: 100, taxRate: 0.13 }]
         })
         .expect(201);
 
-      const project = await createTestProject(prisma, organization.id, customer!.id, users.employee.id);
+      const project = await createTestProject(prisma, organization.id, customer.id, users.employee.id);
 
       // Employee cannot approve project
       await authenticatedRequest(authTokens.employee)
@@ -885,7 +885,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
         .expect(200);
 
       // Test that only ACCOUNTANT can process refunds
-      const payment = await createTestPayment(prisma, organization.id, customer!.id);
+      const payment = await createTestPayment(prisma, organization.id, customer.id);
 
       await authenticatedRequest(authTokens.employee)
         .post(`/api/payments/${payment.id}/refund`)
@@ -911,7 +911,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       const quoteResponse = await authenticatedRequest(adminToken)
         .post('/api/quotes')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           description: 'Data integrity test',
           items: [
             { description: 'Item 1', quantity: 2, unitPrice: 100.00, taxRate: 0.13 },
@@ -933,7 +933,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       const invoiceResponse = await authenticatedRequest(adminToken)
         .post('/api/invoices')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           quoteId: quote.id,
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
         })
@@ -950,7 +950,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       const payment1Response = await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           invoiceId: invoice.id,
           amount: 300.00,
           paymentMethod: PaymentMethod.STRIPE_CARD,
@@ -961,7 +961,7 @@ describe('Complete Customer Lifecycle Workflow Integration Tests', () => {
       const payment2Response = await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           invoiceId: invoice.id,
           amount: 434.50,
           paymentMethod: PaymentMethod.INTERAC_ETRANSFER,

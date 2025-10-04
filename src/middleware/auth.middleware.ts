@@ -4,6 +4,7 @@ import { UserRole } from '../types/enums';
 import { ErrorResponseUtil } from '../utils/error-response';
 import { hashApiKey } from '../utils/crypto';
 import { prisma } from '../config/database';
+
 declare global {
   namespace Express {
     interface Request {
@@ -20,6 +21,20 @@ declare global {
 }
 
 export interface AuthenticatedRequest extends Request {}
+
+/**
+ * Role hierarchy with numeric levels for proper authorization checking
+ * Higher number = higher privileges
+ */
+const roleHierarchy: Record<UserRole, number> = {
+  [UserRole.SUPER_ADMIN]: 100,
+  [UserRole.ADMIN]: 80,
+  [UserRole.MANAGER]: 60,
+  [UserRole.ACCOUNTANT]: 50,
+  [UserRole.EMPLOYEE]: 40,
+  [UserRole.VIEWER]: 20,
+  [UserRole.CLIENT]: 10
+};
 
 export async function authenticate(
   req: AuthenticatedRequest,
@@ -38,6 +53,7 @@ export async function authenticate(
     const payload = await authService.verifyToken(token);
 
     // Test mode bypass: if token has isTestToken flag and we're in test environment
+    // IMPORTANT: This ONLY works in test environment
     if (process.env.NODE_ENV === 'test' && payload.isTestToken === true) {
       // Use token payload directly without database lookup
       req.user = {
@@ -92,6 +108,14 @@ export async function authenticate(
   }
 }
 
+/**
+ * Authorization middleware with proper role hierarchy support
+ * SUPER_ADMIN has access to everything
+ * Higher roles can access endpoints for lower roles
+ *
+ * @param roles - Required roles for this endpoint
+ * @returns Express middleware function
+ */
 export function authorize(...allowedRoles: UserRole[] | [UserRole[]]) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
@@ -102,12 +126,30 @@ export function authorize(...allowedRoles: UserRole[] | [UserRole[]]) {
     // Handle both array and spread parameter formats
     const roles = Array.isArray(allowedRoles[0]) ? allowedRoles[0] : allowedRoles as UserRole[];
 
-    if (!roles.includes(req.user.role as UserRole) && req.user.role !== UserRole.SUPER_ADMIN) {
-      res.status(403).json({ error: 'Insufficient permissions' });
+    // SUPER_ADMIN has access to everything - bypass hierarchy check
+    if (req.user.role === UserRole.SUPER_ADMIN) {
+      next();
       return;
     }
 
-    next();
+    // Get the user's role level
+    const userRoleLevel = roleHierarchy[req.user.role as UserRole] || 0;
+
+    // Get the minimum required role level from the allowed roles
+    const minimumRequiredLevel = Math.min(...roles.map(r => roleHierarchy[r] || 0));
+
+    // Check if user's role level meets or exceeds the minimum required level
+    if (userRoleLevel >= minimumRequiredLevel) {
+      next();
+      return;
+    }
+
+    // User doesn't have sufficient permissions
+    res.status(403).json({
+      error: 'Insufficient permissions',
+      required: roles,
+      current: req.user.role
+    });
   };
 }
 

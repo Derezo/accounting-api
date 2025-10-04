@@ -293,6 +293,50 @@ router.get(
 
 /**
  * @swagger
+ * /audit/export/csv:
+ *   get:
+ *     tags: [Audit]
+ *     summary: Export audit logs as CSV
+ *     description: Export audit logs in CSV format. Requires Admin+ role.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: CSV export successful
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.get(
+  '/export/csv',
+  authorize([UserRole.SUPER_ADMIN, UserRole.ADMIN]),
+  auditExport('AUDIT'),
+  auditController.exportAuditLogsCSV
+);
+
+/**
+ * @swagger
+ * /audit/export/json:
+ *   get:
+ *     tags: [Audit]
+ *     summary: Export audit logs as JSON
+ *     description: Export audit logs in JSON format. Requires Admin+ role.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: JSON export successful
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.get(
+  '/export/json',
+  authorize([UserRole.SUPER_ADMIN, UserRole.ADMIN]),
+  auditExport('AUDIT'),
+  auditController.exportAuditLogsJSON
+);
+
+/**
+ * @swagger
  * /audit/entity/{entityType}/{entityId}/history:
  *   get:
  *     tags: [Audit]
@@ -355,6 +399,56 @@ router.get(
 
 /**
  * @swagger
+ * /audit/users/current/activity/summary:
+ *   get:
+ *     tags: [Audit]
+ *     summary: Get current user's activity summary
+ *     description: Get comprehensive activity summary for the current authenticated user. Requires Admin+ role.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: period
+ *         schema:
+ *           type: string
+ *           enum: [1h, 24h, 7d, 30d]
+ *           default: 24h
+ *         description: Time period for activity summary
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Start date for activity summary
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: End date for activity summary
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 1000
+ *           default: 100
+ *         description: Maximum number of activities to return
+ *     responses:
+ *       200:
+ *         description: User activity summary retrieved successfully
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.get(
+  '/users/current/activity/summary',
+  authorize([UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER]),
+  auditView('AUDIT'),
+  auditController.getCurrentUserActivitySummary
+);
+
+/**
+ * @swagger
  * /audit/users/{userId}/activity:
  *   get:
  *     tags: [Audit]
@@ -401,6 +495,102 @@ router.get(
   validateUserParam,
   auditView('AUDIT'),
   auditController.getUserActivity
+);
+
+/**
+ * @swagger
+ * /audit/users/{userId}/activity/summary:
+ *   get:
+ *     tags: [Audit]
+ *     summary: Get user activity summary
+ *     description: Get summary statistics for user activity. Requires Admin+ role.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *     responses:
+ *       200:
+ *         description: User activity summary retrieved successfully
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.get(
+  '/users/:userId/activity/summary',
+  authorize([UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER]),
+  validateUserParam,
+  auditView('AUDIT'),
+  auditController.getUserActivitySummary
+);
+
+/**
+ * @swagger
+ * /audit/sessions/{sessionId}/revoke:
+ *   post:
+ *     tags: [Audit]
+ *     summary: Revoke a specific session
+ *     description: Revoke a user session by ID. Requires Admin+ role.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Session revoked successfully
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.post(
+  '/sessions/:sessionId/revoke',
+  authorize([UserRole.SUPER_ADMIN, UserRole.ADMIN]),
+  auditView('AUDIT'),
+  auditController.revokeSession
+);
+
+/**
+ * @swagger
+ * /audit/users/{userId}/sessions/revoke-all:
+ *   post:
+ *     tags: [Audit]
+ *     summary: Revoke all sessions for a user
+ *     description: Revoke all active sessions for a specific user. Requires Admin+ role.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: All user sessions revoked successfully
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.post(
+  '/sessions/revoke-all/:userId',
+  authorize([UserRole.SUPER_ADMIN, UserRole.ADMIN]),
+  validateUserParam,
+  auditView('AUDIT'),
+  auditController.revokeAllUserSessions
 );
 
 /**
@@ -464,6 +654,28 @@ router.get(
 
 /**
  * @swagger
+ * /audit/suspicious-activity/patterns:
+ *   get:
+ *     tags: [Audit]
+ *     summary: Get suspicious activity patterns
+ *     description: Analyze patterns in suspicious activities. Requires Admin+ role.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Suspicious activity patterns retrieved successfully
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.get(
+  '/suspicious-activity/patterns',
+  authorize([UserRole.SUPER_ADMIN, UserRole.ADMIN]),
+  auditView('AUDIT'),
+  auditController.getSuspiciousActivityPatterns
+);
+
+/**
+ * @swagger
  * /audit/security-metrics:
  *   get:
  *     tags: [Audit]
@@ -482,6 +694,116 @@ router.get(
   authorize([UserRole.SUPER_ADMIN, UserRole.ADMIN]),
   auditView('AUDIT'),
   auditController.getSecurityMetrics
+);
+
+/**
+ * @swagger
+ * /audit/security-metrics/login:
+ *   get:
+ *     tags: [Audit]
+ *     summary: Get login security metrics
+ *     description: Get detailed login metrics and statistics. Requires Admin+ role.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Login metrics retrieved successfully
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.get(
+  '/security-metrics/logins',
+  authorize([UserRole.SUPER_ADMIN, UserRole.ADMIN]),
+  auditView('AUDIT'),
+  auditController.getLoginSecurityMetrics
+);
+
+/**
+ * @swagger
+ * /audit/security-metrics/access-control:
+ *   get:
+ *     tags: [Audit]
+ *     summary: Get access control metrics
+ *     description: Get access control and permission metrics. Requires Admin+ role.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Access control metrics retrieved successfully
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.get(
+  '/security-metrics/access-control',
+  authorize([UserRole.SUPER_ADMIN, UserRole.ADMIN]),
+  auditView('AUDIT'),
+  auditController.getAccessControlMetrics
+);
+
+/**
+ * @swagger
+ * /audit/security-metrics/compliance:
+ *   get:
+ *     tags: [Audit]
+ *     summary: Get compliance metrics
+ *     description: Get compliance and data protection metrics. Requires Admin+ role.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Compliance metrics retrieved successfully
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.get(
+  '/security-metrics/compliance',
+  authorize([UserRole.SUPER_ADMIN, UserRole.ADMIN]),
+  auditView('AUDIT'),
+  auditController.getComplianceMetrics
+);
+
+/**
+ * @swagger
+ * /audit/audit-stream:
+ *   get:
+ *     tags: [Audit]
+ *     summary: Get audit stream configuration
+ *     description: Get real-time audit stream configuration. Requires Admin+ role.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Audit stream configuration retrieved successfully
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.get(
+  '/stream/config',
+  authorize([UserRole.SUPER_ADMIN, UserRole.ADMIN]),
+  auditView('AUDIT'),
+  auditController.getAuditStreamConfig
+);
+
+/**
+ * @swagger
+ * /audit/stream/config:
+ *   put:
+ *     tags: [Audit]
+ *     summary: Update audit stream configuration
+ *     description: Update real-time audit stream configuration. Requires Admin+ role.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Audit stream configuration updated successfully
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.put(
+  '/stream/config',
+  authorize([UserRole.SUPER_ADMIN, UserRole.ADMIN]),
+  auditView('AUDIT'),
+  auditController.updateAuditStreamConfig
 );
 
 export default router;

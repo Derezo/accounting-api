@@ -285,11 +285,37 @@ export class EncryptionAuditService {
   }
 
   /**
-   * Store audit event in database (placeholder)
+   * Store audit event in database
    */
   private async storeAuditEvent(event: EncryptionAuditEvent & { integrityHash: string }): Promise<void> {
-    // In production, insert into encryption_audit_log table
-    logger.debug('Audit event stored', { eventId: event.id });
+    try {
+      await this.prisma.encryptionAuditLog.create({
+        data: {
+          organizationId: event.organizationId,
+          operation: event.operation,
+          entityType: event.modelName || null,
+          entityId: event.recordId || null,
+          fieldName: event.fieldName || null,
+          duration: event.duration || 0,
+          dataSize: event.dataSize || null,
+          keyVersion: event.keyVersion || 0,
+          algorithm: 'AES-256-GCM', // Default algorithm
+          userId: event.userId || null,
+          ipAddress: event.ipAddress || null,
+          userAgent: event.userAgent || null,
+          success: event.status === 'success',
+          errorMessage: event.error || null,
+        },
+      });
+
+      logger.debug('Audit event stored', { eventId: event.id });
+    } catch (error) {
+      logger.error('Failed to store audit event', {
+        eventId: event.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
   }
 
   /**
@@ -430,9 +456,124 @@ export class EncryptionAuditService {
    * Query audit events
    */
   public async getAuditEvents(query: AuditQuery): Promise<EncryptionAuditEvent[]> {
-    // In production, query the encryption_audit_log table
-    // Apply filters, sorting, pagination
-    return []; // Placeholder
+    try {
+      const where: any = {};
+
+      if (query.organizationId) {
+        where.organizationId = query.organizationId;
+      }
+
+      if (query.userId) {
+        where.userId = query.userId;
+      }
+
+      if (query.operation) {
+        where.operation = query.operation;
+      }
+
+      if (query.status) {
+        where.success = query.status === 'success';
+      }
+
+      if (query.startDate || query.endDate) {
+        where.timestamp = {};
+        if (query.startDate) {
+          where.timestamp.gte = query.startDate;
+        }
+        if (query.endDate) {
+          where.timestamp.lte = query.endDate;
+        }
+      }
+
+      const logs = await this.prisma.encryptionAuditLog.findMany({
+        where,
+        orderBy: { timestamp: 'desc' },
+        take: query.limit || 100,
+        skip: query.offset || 0,
+      });
+
+      // Convert database logs to EncryptionAuditEvent format
+      return logs.map(log => ({
+        id: log.id,
+        organizationId: log.organizationId,
+        userId: log.userId || undefined,
+        sessionId: undefined,
+
+        eventType: this.operationToEventType(log.operation),
+        operation: log.operation as EncryptionOperation,
+        status: log.success ? 'success' as const : 'failure' as const,
+
+        modelName: log.entityType || undefined,
+        fieldName: log.fieldName || undefined,
+        recordId: log.entityId || undefined,
+        keyVersion: log.keyVersion,
+        keyId: undefined,
+
+        ipAddress: log.ipAddress || undefined,
+        userAgent: log.userAgent || undefined,
+        requestId: undefined,
+
+        duration: log.duration,
+        dataSize: log.dataSize || undefined,
+
+        metadata: undefined,
+        error: log.errorMessage || undefined,
+
+        complianceFlags: [],
+        riskLevel: this.calculateRiskLevelFromLog(log),
+
+        timestamp: log.timestamp,
+      }));
+    } catch (error) {
+      logger.error('Failed to query audit events', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        query,
+      });
+      return [];
+    }
+  }
+
+  /**
+   * Map operation to event type
+   */
+  private operationToEventType(operation: string): EncryptionEventType {
+    const operationMap: Record<string, EncryptionEventType> = {
+      encrypt_field: EncryptionEventType.DATA_ENCRYPTION,
+      decrypt_field: EncryptionEventType.DATA_DECRYPTION,
+      batch_encrypt: EncryptionEventType.DATA_ENCRYPTION,
+      batch_decrypt: EncryptionEventType.DATA_DECRYPTION,
+      generate_key: EncryptionEventType.KEY_GENERATION,
+      derive_key: EncryptionEventType.KEY_GENERATION,
+      rotate_key: EncryptionEventType.KEY_ROTATION,
+      delete_key: EncryptionEventType.KEY_DELETION,
+      export_key: EncryptionEventType.KEY_EXPORT,
+      import_key: EncryptionEventType.KEY_IMPORT,
+      search_encrypted: EncryptionEventType.SEARCH_OPERATION,
+      index_field: EncryptionEventType.SEARCH_OPERATION,
+      cache_hit: EncryptionEventType.CACHE_ACCESS,
+      cache_miss: EncryptionEventType.CACHE_ACCESS,
+      validate_key: EncryptionEventType.KEY_ACCESS,
+      update_policy: EncryptionEventType.POLICY_CHANGE,
+    };
+
+    return operationMap[operation] || EncryptionEventType.SYSTEM_EVENT;
+  }
+
+  /**
+   * Calculate risk level from database log
+   */
+  private calculateRiskLevelFromLog(log: any): 'low' | 'medium' | 'high' | 'critical' {
+    let score = 0;
+
+    if (!log.success) score += 3;
+    if (log.operation.includes('key')) score += 2;
+    if (log.duration > 5000) score += 1;
+    if (log.dataSize && log.dataSize > 1000000) score += 1;
+
+    if (score >= 5) return 'critical';
+    if (score >= 3) return 'high';
+    if (score >= 1) return 'medium';
+    return 'low';
   }
 
   /**
@@ -736,17 +877,32 @@ export class EncryptionAuditService {
   public async cleanupOldLogs(retentionDays: number): Promise<number> {
     const cutoffDate = new Date(Date.now() - (retentionDays * 24 * 60 * 60 * 1000));
 
-    // In production, delete from encryption_audit_log table
-    // DELETE FROM encryption_audit_log WHERE timestamp < ?
-    const deletedCount = 0; // Placeholder
+    try {
+      const result = await this.prisma.encryptionAuditLog.deleteMany({
+        where: {
+          timestamp: {
+            lt: cutoffDate,
+          },
+        },
+      });
 
-    logger.info('Old audit logs cleaned up', {
-      retentionDays,
-      cutoffDate,
-      deletedCount
-    });
+      const deletedCount = result.count;
 
-    return deletedCount;
+      logger.info('Old audit logs cleaned up', {
+        retentionDays,
+        cutoffDate,
+        deletedCount,
+      });
+
+      return deletedCount;
+    } catch (error) {
+      logger.error('Failed to cleanup old audit logs', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        retentionDays,
+        cutoffDate,
+      });
+      return 0;
+    }
   }
 
   /**
@@ -789,6 +945,75 @@ export class EncryptionAuditService {
       validEvents,
       invalidEvents
     };
+  }
+
+  /**
+   * Get encryption performance metrics
+   */
+  public async getEncryptionMetrics(
+    organizationId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<{
+    totalOperations: number;
+    successfulOperations: number;
+    failedOperations: number;
+    averageDuration: number;
+    totalDataProcessed: number;
+    operationsByType: Record<string, number>;
+    slowestOperations: Array<{ id: string; operation: string; duration: number }>;
+  }> {
+    try {
+      const logs = await this.prisma.encryptionAuditLog.findMany({
+        where: {
+          organizationId,
+          timestamp: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        orderBy: { timestamp: 'desc' },
+      });
+
+      const totalOperations = logs.length;
+      const successfulOperations = logs.filter(log => log.success).length;
+      const failedOperations = logs.filter(log => !log.success).length;
+
+      const totalDuration = logs.reduce((sum, log) => sum + log.duration, 0);
+      const averageDuration = totalOperations > 0 ? totalDuration / totalOperations : 0;
+
+      const totalDataProcessed = logs.reduce((sum, log) => sum + (log.dataSize || 0), 0);
+
+      const operationsByType: Record<string, number> = {};
+      for (const log of logs) {
+        operationsByType[log.operation] = (operationsByType[log.operation] || 0) + 1;
+      }
+
+      const slowestOperations = logs
+        .sort((a, b) => b.duration - a.duration)
+        .slice(0, 10)
+        .map(log => ({
+          id: log.id,
+          operation: log.operation,
+          duration: log.duration,
+        }));
+
+      return {
+        totalOperations,
+        successfulOperations,
+        failedOperations,
+        averageDuration,
+        totalDataProcessed,
+        operationsByType,
+        slowestOperations,
+      };
+    } catch (error) {
+      logger.error('Failed to get encryption metrics', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        organizationId,
+      });
+      throw error;
+    }
   }
 
   /**

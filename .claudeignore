@@ -1,5 +1,21 @@
 # In your project root
-echo "node_modules/" > .claudeignore
-echo "dist/" >> .claudeignore
-echo "build/" >> .claudeignore
-echo ".next/" >> .claudeignore
+cat > .claudeignore << 'EOF'
+node_modules/
+.next/
+dist/
+build/
+.git/
+*.log
+*.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+coverage/
+.cache/
+.vscode/
+.idea/
+*.map
+*.min.js
+*.min.css
+public/static/
+EOF

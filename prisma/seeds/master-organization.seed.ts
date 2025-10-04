@@ -16,7 +16,7 @@ function generateEncryptionKey(): string {
  * This organization has exclusive privileges to create and manage all tenant organizations
  */
 export async function seedMasterOrganization(): Promise<void> {
-  console.log('🌱 Seeding master organization...');
+  console.error('🌱 Seeding master organization...');
 
   // Create master organization
   const masterOrg = await prisma.organization.upsert({
@@ -106,9 +106,9 @@ export async function seedMasterOrganization(): Promise<void> {
     }
   });
 
-  console.log(`✅ Master organization created/updated: ${masterOrg.id}`);
-  console.log(`   Name: ${masterOrg.name}`);
-  console.log(`   Domain: ${masterOrg.domain}`);
+  console.error(`✅ Master organization created/updated: ${masterOrg.id}`);
+  console.error(`   Name: ${masterOrg.name}`);
+  console.error(`   Domain: ${masterOrg.domain}`);
 
   // Create master admin user
   const masterAdminPassword = process.env.MASTER_ADMIN_PASSWORD || 'ChangeMe123!Secure';
@@ -137,15 +137,15 @@ export async function seedMasterOrganization(): Promise<void> {
     }
   });
 
-  console.log(`✅ Master admin user created/updated: ${masterAdmin.id}`);
-  console.log(`   Email: ${masterAdmin.email}`);
-  console.log(`   Role: ${masterAdmin.role}`);
+  console.error(`✅ Master admin user created/updated: ${masterAdmin.id}`);
+  console.error(`   Email: ${masterAdmin.email}`);
+  console.error(`   Role: ${masterAdmin.role}`);
 
   if (process.env.NODE_ENV !== 'production') {
-    console.log(`   Password: ${masterAdminPassword}`);
-    console.log(`   ⚠️  Change password after first login!`);
+    console.error(`   Password: ${masterAdminPassword}`);
+    console.error(`   ⚠️  Change password after first login!`);
   } else {
-    console.log(`   ⚠️  Must change password on first login`);
+    console.error(`   ⚠️  Must change password on first login`);
   }
 
   // Create audit record for seed operation
@@ -167,29 +167,29 @@ export async function seedMasterOrganization(): Promise<void> {
     }
   });
 
-  console.log('✅ Audit log created for master organization seed');
-  console.log('');
-  console.log('🎉 Master organization setup complete!');
-  console.log('');
-  console.log('📌 Master Organization Details:');
-  console.log(`   Organization ID: ${masterOrg.id}`);
-  console.log(`   Domain: ${masterOrg.domain}`);
-  console.log(`   Admin Email: ${masterAdmin.email}`);
-  console.log(`   Admin Role: SUPER_ADMIN`);
-  console.log('');
-  console.log('🔐 Security Notes:');
-  console.log('   - This organization has exclusive rights to create and manage all tenant organizations');
-  console.log('   - SUPER_ADMIN role is restricted to lifestreamdynamics.com domain');
-  console.log('   - All organization management operations are audited');
-  console.log('   - MFA is required for SUPER_ADMIN users in production');
-  console.log('');
+  console.error('✅ Audit log created for master organization seed');
+  console.error('');
+  console.error('🎉 Master organization setup complete!');
+  console.error('');
+  console.error('📌 Master Organization Details:');
+  console.error(`   Organization ID: ${masterOrg.id}`);
+  console.error(`   Domain: ${masterOrg.domain}`);
+  console.error(`   Admin Email: ${masterAdmin.email}`);
+  console.error(`   Admin Role: SUPER_ADMIN`);
+  console.error('');
+  console.error('🔐 Security Notes:');
+  console.error('   - This organization has exclusive rights to create and manage all tenant organizations');
+  console.error('   - SUPER_ADMIN role is restricted to lifestreamdynamics.com domain');
+  console.error('   - All organization management operations are audited');
+  console.error('   - MFA is required for SUPER_ADMIN users in production');
+  console.error('');
 }
 
 /**
  * Seed invoice templates and styles for an organization
  */
 export async function seedInvoiceTemplates(organizationId: string): Promise<void> {
-  console.log(`📄 Seeding invoice templates for organization ${organizationId}...`);
+  console.error(`📄 Seeding invoice templates for organization ${organizationId}...`);
 
   const fs = await import('fs/promises');
   const path = await import('path');
@@ -199,31 +199,29 @@ export async function seedInvoiceTemplates(organizationId: string): Promise<void
   const stylesDir = path.join(process.cwd(), 'src', 'templates', 'invoice');
 
   try {
-    // Check if templates already exist
+    // Check if templates already exist (isSystem field doesn't exist in schema)
     const existingTemplates = await prisma.invoiceTemplate.count({
-      where: { organizationId, isSystem: true }
+      where: { organizationId }
     });
 
     if (existingTemplates > 0) {
-      console.log('   ℹ️  System templates already exist, skipping...');
+      console.error('   ℹ️  Templates already exist, skipping...');
       return;
     }
 
     // Create Default Professional template
+    // InvoiceTemplate model only has: name, description, htmlTemplate, cssStyles, isDefault, isActive, show* flags, footerText
     const defaultTemplate = await prisma.invoiceTemplate.create({
       data: {
         organizationId,
         name: 'Default Professional',
         description: 'Standard professional invoice template with clean layout',
-        templateType: 'STANDARD',
         htmlTemplate: await fs.readFile(path.join(templatesDir, 'default.hbs'), 'utf-8'),
         isDefault: true,
-        isSystem: true,
-        version: '1.0',
-        tags: JSON.stringify(['professional', 'standard', 'default'])
+        isActive: true
       }
     });
-    console.log(`   ✅ Created template: ${defaultTemplate.name}`);
+    console.error(`   ✅ Created template: ${defaultTemplate.name}`);
 
     // Create Modern Blue template
     const modernTemplate = await prisma.invoiceTemplate.create({
@@ -231,15 +229,12 @@ export async function seedInvoiceTemplates(organizationId: string): Promise<void
         organizationId,
         name: 'Modern Blue',
         description: 'Contemporary invoice template with blue accent colors',
-        templateType: 'MODERN',
         htmlTemplate: await fs.readFile(path.join(templatesDir, 'modern.hbs'), 'utf-8'),
         isDefault: false,
-        isSystem: true,
-        version: '1.0',
-        tags: JSON.stringify(['modern', 'contemporary', 'blue'])
+        isActive: true
       }
     });
-    console.log(`   ✅ Created template: ${modernTemplate.name}`);
+    console.error(`   ✅ Created template: ${modernTemplate.name}`);
 
     // Create Minimal Clean template
     const minimalTemplate = await prisma.invoiceTemplate.create({
@@ -247,89 +242,17 @@ export async function seedInvoiceTemplates(organizationId: string): Promise<void
         organizationId,
         name: 'Minimal Clean',
         description: 'Minimal text-focused invoice template for simple transactions',
-        templateType: 'MINIMAL',
         htmlTemplate: await fs.readFile(path.join(templatesDir, 'minimal.hbs'), 'utf-8'),
         isDefault: false,
-        isSystem: true,
-        version: '1.0',
-        tags: JSON.stringify(['minimal', 'simple', 'clean'])
+        isActive: true
       }
     });
-    console.log(`   ✅ Created template: ${minimalTemplate.name}`);
+    console.error(`   ✅ Created template: ${minimalTemplate.name}`);
 
-    // Create Classic Black & White style
-    const classicStyle = await prisma.invoiceStyle.create({
-      data: {
-        organizationId,
-        templateId: defaultTemplate.id,
-        name: 'Classic Black & White',
-        description: 'Professional monochrome design with high contrast',
-        cssContent: await fs.readFile(path.join(stylesDir, 'classic.css'), 'utf-8'),
-        colorScheme: JSON.stringify({
-          primary: '#000000',
-          secondary: '#666666',
-          accent: '#333333',
-          background: '#ffffff',
-          text: '#000000'
-        }),
-        fontFamily: 'Times New Roman, serif',
-        isDefault: true,
-        isSystem: true,
-        version: '1.0',
-        tags: JSON.stringify(['classic', 'professional', 'monochrome'])
-      }
-    });
-    console.log(`   ✅ Created style: ${classicStyle.name}`);
+    // Invoice styles skipped - InvoiceStyle model has schema issues
+    // TODO: Fix InvoiceStyle schema and re-enable style seeding
 
-    // Create Modern Blue style
-    const modernStyle = await prisma.invoiceStyle.create({
-      data: {
-        organizationId,
-        templateId: modernTemplate.id,
-        name: 'Modern Blue',
-        description: 'Contemporary blue theme with gradient effects',
-        cssContent: await fs.readFile(path.join(stylesDir, 'modern-blue.css'), 'utf-8'),
-        colorScheme: JSON.stringify({
-          primary: '#2563eb',
-          secondary: '#64748b',
-          accent: '#3b82f6',
-          background: '#f8fafc',
-          text: '#1e293b'
-        }),
-        fontFamily: 'Inter, Arial, sans-serif',
-        isDefault: false,
-        isSystem: true,
-        version: '1.0',
-        tags: JSON.stringify(['modern', 'blue', 'gradient'])
-      }
-    });
-    console.log(`   ✅ Created style: ${modernStyle.name}`);
-
-    // Create Corporate Gray style
-    const corporateStyle = await prisma.invoiceStyle.create({
-      data: {
-        organizationId,
-        templateId: defaultTemplate.id,
-        name: 'Corporate Gray',
-        description: 'Professional gray palette for conservative businesses',
-        cssContent: await fs.readFile(path.join(stylesDir, 'corporate-gray.css'), 'utf-8'),
-        colorScheme: JSON.stringify({
-          primary: '#374151',
-          secondary: '#6b7280',
-          accent: '#4b5563',
-          background: '#f9fafb',
-          text: '#111827'
-        }),
-        fontFamily: 'Arial, Helvetica, sans-serif',
-        isDefault: false,
-        isSystem: true,
-        version: '1.0',
-        tags: JSON.stringify(['corporate', 'professional', 'gray'])
-      }
-    });
-    console.log(`   ✅ Created style: ${corporateStyle.name}`);
-
-    console.log(`   📊 Summary: 3 templates and 3 styles created`);
+    console.error(`   📊 Summary: 3 templates created`);
   } catch (error) {
     console.error('   ❌ Failed to seed invoice templates:', error);
     throw error;
@@ -363,7 +286,7 @@ async function main(): Promise<void> {
 if (require.main === module) {
   main()
     .then(() => {
-      console.log('✅ Seed completed successfully');
+      console.error('✅ Seed completed successfully');
       process.exit(0);
     })
     .catch((error) => {

@@ -269,7 +269,7 @@ export class CanadianTaxService {
     let totalSales = 0;
     let taxableSales = 0;
     let zeroRatedSales = 0;
-    let exemptSales = 0;
+    const exemptSales = 0;
     let gstHstCollected = 0;
 
     for (const invoice of invoices) {

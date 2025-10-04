@@ -46,7 +46,7 @@ describe('IntakeFormTemplateService', () => {
       },
     };
 
-    service = new IntakeFormTemplateService(mockPrisma as any);
+    service = new IntakeFormTemplateService(mockPrisma);
   });
 
   afterEach(() => {

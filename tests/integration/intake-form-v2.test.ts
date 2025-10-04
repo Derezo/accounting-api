@@ -20,7 +20,7 @@ describe('Intake Form V2 Integration Tests', () => {
   describe('Template Management', () => {
     test('should create a new intake form template with steps', async () => {
       const response = await baseRequest()
-        .post(`/api/v2/organizations/${organizationId}/intake-templates`)
+        .post(`/api/v2/organizations/${organizationId}/intake-forms/templates`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'HVAC Service Request',
@@ -68,7 +68,7 @@ describe('Intake Form V2 Integration Tests', () => {
     test('should add fields to a template step', async () => {
       // First create template
       const templateResponse = await baseRequest()
-        .post(`/api/v2/organizations/${organizationId}/intake-templates`)
+        .post(`/api/v2/organizations/${organizationId}/intake-forms/templates`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Test Template',
@@ -91,7 +91,7 @@ describe('Intake Form V2 Integration Tests', () => {
 
       // Add fields to the step
       const fieldResponse = await baseRequest()
-        .post(`/api/v2/organizations/${organizationId}/intake-templates/${createdTemplateId}/fields`)
+        .post(`/api/v2/organizations/${organizationId}/intake-forms/templates/${createdTemplateId}/fields`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           stepId,
@@ -118,7 +118,7 @@ describe('Intake Form V2 Integration Tests', () => {
     test('should list all templates for organization', async () => {
       // Create a template first
       await baseRequest()
-        .post(`/api/v2/organizations/${organizationId}/intake-templates`)
+        .post(`/api/v2/organizations/${organizationId}/intake-forms/templates`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'List Test Template',
@@ -131,7 +131,7 @@ describe('Intake Form V2 Integration Tests', () => {
 
       // List templates
       const response = await baseRequest()
-        .get(`/api/v2/organizations/${organizationId}/intake-templates`)
+        .get(`/api/v2/organizations/${organizationId}/intake-forms/templates`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -151,14 +151,14 @@ describe('Intake Form V2 Integration Tests', () => {
 
       // Create first template
       await baseRequest()
-        .post(`/api/v2/organizations/${organizationId}/intake-templates`)
+        .post(`/api/v2/organizations/${organizationId}/intake-forms/templates`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send(templateData)
         .expect(201);
 
       // Try to create duplicate
       const response = await baseRequest()
-        .post(`/api/v2/organizations/${organizationId}/intake-templates`)
+        .post(`/api/v2/organizations/${organizationId}/intake-forms/templates`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send(templateData)
         .expect(400);
@@ -172,7 +172,7 @@ describe('Intake Form V2 Integration Tests', () => {
     beforeEach(async () => {
       // Create a template for session tests
       const response = await baseRequest()
-        .post(`/api/v2/organizations/${organizationId}/intake-templates`)
+        .post(`/api/v2/organizations/${organizationId}/intake-forms/templates`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Session Test Template',
@@ -195,7 +195,7 @@ describe('Intake Form V2 Integration Tests', () => {
       // Add a field
       const stepId = response.body.steps[0].id;
       await baseRequest()
-        .post(`/api/v2/organizations/${organizationId}/intake-templates/${templateId}/fields`)
+        .post(`/api/v2/organizations/${organizationId}/intake-forms/templates/${templateId}/fields`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           stepId,
@@ -278,7 +278,7 @@ describe('Intake Form V2 Integration Tests', () => {
     test('should advance to next step', async () => {
       // Create template with multiple steps
       const multiStepTemplate = await baseRequest()
-        .post(`/api/v2/organizations/${organizationId}/intake-templates`)
+        .post(`/api/v2/organizations/${organizationId}/intake-forms/templates`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Multi-Step Template',
@@ -410,7 +410,7 @@ describe('Intake Form V2 Integration Tests', () => {
     test('should rate limit session creation requests', async () => {
       // Create template
       const templateResponse = await baseRequest()
-        .post(`/api/v2/organizations/${organizationId}/intake-templates`)
+        .post(`/api/v2/organizations/${organizationId}/intake-forms/templates`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Rate Limit Test',
@@ -444,7 +444,7 @@ describe('Intake Form V2 Integration Tests', () => {
 
       // Create template in org1
       const org1Template = await baseRequest()
-        .post(`/api/v2/organizations/${organizationId}/intake-templates`)
+        .post(`/api/v2/organizations/${organizationId}/intake-forms/templates`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Org1 Template',
@@ -459,7 +459,7 @@ describe('Intake Form V2 Integration Tests', () => {
 
       // Try to access org1's template from org2
       const response = await baseRequest()
-        .get(`/api/v2/organizations/${org2Id}/intake-templates/${org1TemplateId}`)
+        .get(`/api/v2/organizations/${org2Id}/intake-forms/templates/${org1TemplateId}`)
         .set('Authorization', `Bearer ${org2Token}`)
         .expect(404);
 

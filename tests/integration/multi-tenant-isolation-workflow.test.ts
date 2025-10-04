@@ -57,7 +57,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
       const tenant1QuoteResponse = await authenticatedRequest(tenant1AdminToken)
         .post('/api/quotes')
         .send({
-          customerId: tenant1Customer!.id,
+          customerId: tenant1Customer.id,
           description: 'Tenant 1 - Web Development Project',
           items: [
             {
@@ -87,7 +87,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
         .send({
           name: 'Tenant 1 Web Development',
           description: 'Complete web application for Tenant 1',
-          customerId: tenant1Customer!.id,
+          customerId: tenant1Customer.id,
           assignedToId: tenant1.users.admin.id,
           estimatedHours: 70,
           hourlyRate: 160.00,
@@ -101,7 +101,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
       const tenant1InvoiceResponse = await authenticatedRequest(tenant1AccountantToken)
         .post('/api/invoices')
         .send({
-          customerId: tenant1Customer!.id,
+          customerId: tenant1Customer.id,
           quoteId: tenant1Quote.id,
           projectId: tenant1Project.id,
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -116,7 +116,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
       const tenant1PaymentResponse = await authenticatedRequest(tenant1AccountantToken)
         .post('/api/payments')
         .send({
-          customerId: tenant1Customer!.id,
+          customerId: tenant1Customer.id,
           invoiceId: tenant1Invoice.id,
           amount: tenant1Invoice.total,
           paymentMethod: PaymentMethod.STRIPE_CARD,
@@ -132,7 +132,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
       const tenant1AppointmentResponse = await authenticatedRequest(tenant1AdminToken)
         .post('/api/appointments')
         .send({
-          customerId: tenant1Customer!.id,
+          customerId: tenant1Customer.id,
           projectId: tenant1Project.id,
           title: 'Tenant 1 Project Kickoff',
           description: 'Initial meeting for Tenant 1 web development project',
@@ -160,7 +160,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
       const tenant2QuoteResponse = await authenticatedRequest(tenant2AdminToken)
         .post('/api/quotes')
         .send({
-          customerId: tenant2Customer!.id,
+          customerId: tenant2Customer.id,
           description: 'Tenant 2 - Mobile App Development',
           items: [
             {
@@ -190,7 +190,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
         .send({
           name: 'Tenant 2 Mobile App',
           description: 'Cross-platform mobile application for Tenant 2',
-          customerId: tenant2Customer!.id,
+          customerId: tenant2Customer.id,
           assignedToId: tenant2.users.admin.id,
           estimatedHours: 95,
           hourlyRate: 195.00,
@@ -204,7 +204,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
       const tenant2InvoiceResponse = await authenticatedRequest(tenant2AccountantToken)
         .post('/api/invoices')
         .send({
-          customerId: tenant2Customer!.id,
+          customerId: tenant2Customer.id,
           quoteId: tenant2Quote.id,
           projectId: tenant2Project.id,
           dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
@@ -219,7 +219,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
       const tenant2PaymentResponse = await authenticatedRequest(tenant2AccountantToken)
         .post('/api/payments')
         .send({
-          customerId: tenant2Customer!.id,
+          customerId: tenant2Customer.id,
           invoiceId: tenant2Invoice.id,
           amount: tenant2Invoice.total * 0.5, // Partial payment
           paymentMethod: PaymentMethod.INTERAC_ETRANSFER,
@@ -235,7 +235,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
       const tenant2AppointmentResponse = await authenticatedRequest(tenant2AdminToken)
         .post('/api/appointments')
         .send({
-          customerId: tenant2Customer!.id,
+          customerId: tenant2Customer.id,
           projectId: tenant2Project.id,
           title: 'Tenant 2 Requirements Review',
           description: 'Mobile app requirements and design review for Tenant 2',
@@ -266,12 +266,12 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
 
       // Test 3: Tenant 1 cannot access Tenant 2's customers
       await authenticatedRequest(tenant1AdminToken)
-        .get(`/api/customers/${tenant2Customer!.id}`)
+        .get(`/api/customers/${tenant2Customer.id}`)
         .expect(404);
 
       // Test 4: Tenant 2 cannot access Tenant 1's customers
       await authenticatedRequest(tenant2AdminToken)
-        .get(`/api/customers/${tenant1Customer!.id}`)
+        .get(`/api/customers/${tenant1Customer.id}`)
         .expect(404);
 
       // Test 5: Tenant 1 cannot update Tenant 2's projects
@@ -464,11 +464,11 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
 
       // Test that sensitive customer data is encrypted with org-specific keys
       const tenant1CustomerResponse = await authenticatedRequest(tenant1AdminToken)
-        .get(`/api/customers/${tenant1Customer!.id}`)
+        .get(`/api/customers/${tenant1Customer.id}`)
         .expect(200);
 
       const tenant2CustomerResponse = await authenticatedRequest(tenant2AdminToken)
-        .get(`/api/customers/${tenant2Customer!.id}`)
+        .get(`/api/customers/${tenant2Customer.id}`)
         .expect(200);
 
       // Both customers should have decrypted data visible to their respective tenants
@@ -503,7 +503,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
         const quoteResponse = await authenticatedRequest(tenant1AdminToken)
           .post('/api/quotes')
           .send({
-            customerId: tenant1Customer!.id,
+            customerId: tenant1Customer.id,
             description: `Tenant 1 Additional Quote ${i + 1}`,
             items: [{ description: `Service ${i + 1}`, quantity: 10, unitPrice: 100, taxRate: 0.13 }]
           })
@@ -516,7 +516,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
           .send({
             name: `Tenant 2 Additional Project ${i + 1}`,
             description: `Additional project for performance testing`,
-            customerId: tenant2Customer!.id,
+            customerId: tenant2Customer.id,
             assignedToId: tenant2.users.admin.id,
             estimatedHours: 20
           })
@@ -557,7 +557,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
 
       // Test that Tenant 1 tokens cannot access Tenant 2 data even with direct API calls
       const maliciousQuoteRequest = {
-        customerId: tenant2Customer!.id, // Trying to use Tenant 2's customer
+        customerId: tenant2Customer.id, // Trying to use Tenant 2's customer
         description: 'Malicious quote attempt',
         items: [{ description: 'Hack attempt', quantity: 1, unitPrice: 1000, taxRate: 0.13 }]
       };
@@ -657,7 +657,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
 
       // Test 2: Tenant 2 VIEWER cannot access admin functions in their own tenant
       await authenticatedRequest(tenant2ViewerToken)
-        .delete(`/api/quotes/${tenant2.customers[0]!.id}`) // Assuming this is an admin-only operation
+        .delete(`/api/quotes/${tenant2.customers[0].id}`) // Assuming this is an admin-only operation
         .expect(403); // Should be forbidden due to role
 
       // Test 3: Tenant 1 ADMIN cannot create users in Tenant 2
@@ -699,7 +699,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
         authenticatedRequest(tenant1AdminToken)
           .post('/api/quotes')
           .send({
-            customerId: tenant1Customer!.id,
+            customerId: tenant1Customer.id,
             description: 'Concurrent Tenant 1 Quote A',
             items: [{ description: 'Service A', quantity: 1, unitPrice: 100, taxRate: 0.13 }]
           }),
@@ -707,7 +707,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
         authenticatedRequest(tenant1AdminToken)
           .post('/api/quotes')
           .send({
-            customerId: tenant1Customer!.id,
+            customerId: tenant1Customer.id,
             description: 'Concurrent Tenant 1 Quote B',
             items: [{ description: 'Service B', quantity: 2, unitPrice: 150, taxRate: 0.13 }]
           }),
@@ -716,7 +716,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
         authenticatedRequest(tenant2AdminToken)
           .post('/api/quotes')
           .send({
-            customerId: tenant2Customer!.id,
+            customerId: tenant2Customer.id,
             description: 'Concurrent Tenant 2 Quote A',
             items: [{ description: 'Service A', quantity: 3, unitPrice: 200, taxRate: 0.13 }]
           }),
@@ -724,7 +724,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
         authenticatedRequest(tenant2AdminToken)
           .post('/api/quotes')
           .send({
-            customerId: tenant2Customer!.id,
+            customerId: tenant2Customer.id,
             description: 'Concurrent Tenant 2 Quote B',
             items: [{ description: 'Service B', quantity: 4, unitPrice: 250, taxRate: 0.13 }]
           })
@@ -770,7 +770,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
       const tenant1QuoteResponse = await authenticatedRequest(tenant1AdminToken)
         .post('/api/quotes')
         .send({
-          customerId: tenant1.customers[0]!.id,
+          customerId: tenant1.customers[0].id,
           description: 'Quote before org deactivation',
           items: [{ description: 'Service', quantity: 1, unitPrice: 100, taxRate: 0.13 }]
         })
@@ -779,7 +779,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
       const tenant2QuoteResponse = await authenticatedRequest(tenant2AdminToken)
         .post('/api/quotes')
         .send({
-          customerId: tenant2.customers[0]!.id,
+          customerId: tenant2.customers[0].id,
           description: 'Quote for active org',
           items: [{ description: 'Service', quantity: 1, unitPrice: 100, taxRate: 0.13 }]
         })
@@ -885,7 +885,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
         authenticatedRequest(tenant1AdminToken)
           .post('/api/quotes')
           .send({
-            customerId: tenant1.customers[0]!.id,
+            customerId: tenant1.customers[0].id,
             description: 'Export test quote 1',
             items: [{ description: 'Service', quantity: 1, unitPrice: 100, taxRate: 0.13 }]
           }),
@@ -894,7 +894,7 @@ describe('Multi-Tenant Data Isolation Integration Tests', () => {
         authenticatedRequest(tenant2AdminToken)
           .post('/api/quotes')
           .send({
-            customerId: tenant2.customers[0]!.id,
+            customerId: tenant2.customers[0].id,
             description: 'Export test quote 2',
             items: [{ description: 'Service', quantity: 1, unitPrice: 200, taxRate: 0.13 }]
           })

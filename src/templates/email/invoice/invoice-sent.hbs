@@ -1,0 +1,67 @@
+<h1>Invoice {{invoiceNumber}}</h1>
+
+<p>Dear {{customerName}},</p>
+
+<p>Thank you for your business. Please find your invoice details below:</p>
+
+<div class="info-box">
+    <h3>Invoice Details</h3>
+    <p><strong>Invoice Number:</strong> {{invoiceNumber}}</p>
+    <p><strong>Issue Date:</strong> {{formatDate issueDate 'short'}}</p>
+    <p><strong>Due Date:</strong> {{formatDate dueDate 'short'}}</p>
+    <p><strong>Total Amount:</strong> {{formatCurrency totalAmount currency}}</p>
+    {{#if depositRequired}}
+    <p><strong>Deposit Required:</strong> {{formatCurrency depositRequired currency}}</p>
+    {{/if}}
+</div>
+
+{{#if items}}
+<h2>Invoice Items</h2>
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+    <thead>
+        <tr style="background-color: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+            <th style="padding: 12px; text-align: left;">Description</th>
+            <th style="padding: 12px; text-align: right;">Qty</th>
+            <th style="padding: 12px; text-align: right;">Unit Price</th>
+            <th style="padding: 12px; text-align: right;">Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each items}}
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 12px;">{{description}}</td>
+            <td style="padding: 12px; text-align: right;">{{quantity}}</td>
+            <td style="padding: 12px; text-align: right;">{{formatCurrency unitPrice ../currency}}</td>
+            <td style="padding: 12px; text-align: right;">{{formatCurrency total ../currency}}</td>
+        </tr>
+        {{/each}}
+    </tbody>
+</table>
+{{/if}}
+
+{{#if paymentUrl}}
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{paymentUrl}}" class="button">Pay Invoice Online</a>
+</div>
+{{/if}}
+
+{{#if viewUrl}}
+<p>You can view the full invoice details at: <a href="{{viewUrl}}">View Invoice</a></p>
+{{/if}}
+
+{{#if terms}}
+<div class="divider"></div>
+<h2>Payment Terms</h2>
+<p>{{terms}}</p>
+{{/if}}
+
+{{#if notes}}
+<div class="divider"></div>
+<h2>Additional Notes</h2>
+<p>{{notes}}</p>
+{{/if}}
+
+<p>If you have any questions about this invoice, please don't hesitate to contact us.</p>
+
+<p>Best regards,<br>
+{{organizationName}}</p>

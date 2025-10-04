@@ -6,6 +6,7 @@ import { UserRole } from '../types/enums';
 
 
 import { prisma } from '../config/database';
+import { sendUserInviteEmail } from '../utils/email-helpers';
 interface CreateUserData {
   email: string;
   firstName: string;
@@ -359,7 +360,7 @@ export class UserService {
         .substring(0, 16);
       const passwordHash = await hashPassword(tempPassword);
 
-      await prisma.user.create({
+      const newUser = await prisma.user.create({
         data: {
           email,
           firstName: 'Pending',
@@ -374,7 +375,13 @@ export class UserService {
         }
       });
 
-      // TODO: Send invite email with token
+      // Send invite email with token
+      const invitedByUser = await prisma.user.findUnique({ where: { id: invitedBy }, select: { firstName: true, lastName: true } });
+      const invitedByName = invitedByUser ? `${invitedByUser.firstName} ${invitedByUser.lastName}` : 'Admin';
+      const organization = await prisma.organization.findUnique({ where: { id: organizationId }, select: { name: true, email: true, phone: true } });
+      if (organization) {
+        await sendUserInviteEmail(newUser, organization, invitedByName, inviteToken, organizationId, invitedBy);
+      }
 
       // Log audit event
       await auditService.logAction({
@@ -436,7 +443,13 @@ export class UserService {
         }
       });
 
-      // TODO: Send invite email with new token
+      // Send invite email with new token
+      const resentByUser = await prisma.user.findUnique({ where: { id: resentBy }, select: { firstName: true, lastName: true } });
+      const resentByName = resentByUser ? `${resentByUser.firstName} ${resentByUser.lastName}` : 'Admin';
+      const organization = await prisma.organization.findUnique({ where: { id: organizationId }, select: { name: true, email: true, phone: true } });
+      if (organization) {
+        await sendUserInviteEmail(user, organization, resentByName, inviteToken, organizationId, resentBy);
+      }
 
       // Log audit event
       await auditService.logAction({

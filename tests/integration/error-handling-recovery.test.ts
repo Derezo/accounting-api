@@ -82,21 +82,21 @@ describe('Error Handling and Recovery Integration Tests', () => {
 
       // Ensure customer exists before proceeding
       expect(customer).toBeDefined();
-      expect(customer!.id).toBeDefined();
+      expect(customer.id).toBeDefined();
 
       console.log('Testing external service failure handling...');
 
       const invoice = await createTestInvoice(
         prisma,
         organization.id,
-        customer!.id
+        customer.id
       );
 
       // Simulate Stripe service unavailability
       const paymentResponse = await authenticatedRequest(adminToken)
         .post('/api/payments/stripe/create-payment-intent')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           invoiceId: invoice.id,
           amount: invoice.total,
           currency: 'cad',
@@ -129,7 +129,7 @@ describe('Error Handling and Recovery Integration Tests', () => {
 
       // Create customer and invoice
       const customer = await createTestCustomer(prisma, organization.id, 'PERSON');
-      const invoice = await createTestInvoice(prisma, organization.id, customer!.id);
+      const invoice = await createTestInvoice(prisma, organization.id, customer.id);
 
       // Simulate data corruption by manually updating database to invalid state
       try {
@@ -171,19 +171,19 @@ describe('Error Handling and Recovery Integration Tests', () => {
 
       // Create customer and related records
       const customer = await createTestCustomer(prisma, organization.id, 'PERSON');
-      const invoice = await createTestInvoice(prisma, organization.id, customer!.id);
+      const invoice = await createTestInvoice(prisma, organization.id, customer.id);
 
       // Create payment for the invoice
       const payment = await createTestPayment(
         prisma,
         organization.id,
-        customer!.id,
+        customer.id,
         invoice.id
       );
 
       // Simulate orphaning by deleting parent record directly
       await prisma.customer.delete({
-        where: { id: customer!.id }
+        where: { id: customer.id }
       });
 
       // API should handle orphaned records gracefully
@@ -213,7 +213,7 @@ describe('Error Handling and Recovery Integration Tests', () => {
         await authenticatedRequest(adminToken)
           .post('/api/quotes')
           .send({
-            customerId: customer!.id,
+            customerId: customer.id,
             validUntil: new Date().toISOString(),
             items: [
               {
@@ -236,7 +236,7 @@ describe('Error Handling and Recovery Integration Tests', () => {
         const quoteItems = await prisma.quoteItem.findMany({
           where: {
             quote: {
-              customerId: customer!.id,
+              customerId: customer.id,
               description: 'Valid item'
             }
           }
@@ -269,7 +269,7 @@ describe('Error Handling and Recovery Integration Tests', () => {
       const paymentResponse = await authenticatedRequest(adminToken)
         .post('/api/payments')
         .send({
-          customerId: customer!.id,
+          customerId: customer.id,
           amount: 100.00,
           paymentMethod: 'STRIPE_CARD',
           simulateStripeDown: true // Test flag
@@ -385,7 +385,7 @@ describe('Error Handling and Recovery Integration Tests', () => {
 
       // Create test data
       const customer = await createTestCustomer(prisma, organization.id, 'PERSON');
-      const invoice = await createTestInvoice(prisma, organization.id, customer!.id);
+      const invoice = await createTestInvoice(prisma, organization.id, customer.id);
 
       // Simulate data corruption
       await prisma.invoice.update({
@@ -497,14 +497,14 @@ describe('Error Handling and Recovery Integration Tests', () => {
       console.log('Testing cascading failure handling...');
 
       // Create scenario where one failure could cascade
-      const invoice = await createTestInvoice(prisma, organization.id, customer!.id);
+      const invoice = await createTestInvoice(prisma, organization.id, customer.id);
 
       // Simulate payment processing failure that shouldn't affect other operations
       try {
         await authenticatedRequest(adminToken)
           .post('/api/payments')
           .send({
-            customerId: customer!.id,
+            customerId: customer.id,
             invoiceId: invoice.id,
             amount: invoice.total,
             paymentMethod: 'INVALID_METHOD' as any
@@ -540,7 +540,7 @@ describe('Error Handling and Recovery Integration Tests', () => {
       // Attempt operations that will fail
       try {
         await authenticatedRequest(adminToken)
-          .patch(`/api/customers/${customer!.id}`)
+          .patch(`/api/customers/${customer.id}`)
           .send({
             paymentTerms: -30, // Invalid value
             creditLimit: 'invalid' // Invalid type
@@ -576,7 +576,7 @@ describe('Error Handling and Recovery Integration Tests', () => {
 
       // Create some data
       const customer = await createTestCustomer(prisma, organization.id, 'PERSON');
-      const invoice = await createTestInvoice(prisma, organization.id, customer!.id);
+      const invoice = await createTestInvoice(prisma, organization.id, customer.id);
 
       // Verify data was created
       const midpointCustomerCount = await prisma.customer.count({
