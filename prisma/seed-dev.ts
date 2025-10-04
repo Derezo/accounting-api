@@ -163,7 +163,6 @@ async function main(): Promise<void> {
           organizationId: userData.org.id,
           email: userData.email,
           passwordHash: await hashPassword(userData.password),
-          passwordExpiresAt: getPasswordExpirationDate(),
           role: userData.role,
           isActive: true,
           emailVerified: true,

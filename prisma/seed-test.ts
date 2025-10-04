@@ -27,11 +27,10 @@ async function main(): Promise<void> {
   // Clear all data
   console.log('🧹 Clearing existing test data...');
   await prisma.auditLog.deleteMany().catch(() => {});
-  await prisma.session.deleteMany().catch(() => {});
   await prisma.payment.deleteMany().catch(() => {});
-  await prisma.invoiceItem.deleteMany().catch(() => {});
+  await prisma.invoiceLineItem.deleteMany().catch(() => {});
   await prisma.invoice.deleteMany().catch(() => {});
-  await prisma.quoteItem.deleteMany().catch(() => {});
+  await prisma.quoteLineItem.deleteMany().catch(() => {});
   await prisma.quote.deleteMany().catch(() => {});
   await prisma.appointment.deleteMany().catch(() => {});
   await prisma.project.deleteMany().catch(() => {});
@@ -73,7 +72,7 @@ async function main(): Promise<void> {
   // Create users for org1
   console.log('👥 Creating users...');
 
-  const superAdmin = await prisma.user.create({
+  const _superAdmin = await prisma.user.create({
     data: {
       email: 'superadmin@test.com',
       firstName: 'Super',
@@ -81,7 +80,6 @@ async function main(): Promise<void> {
       passwordHash: await hashPassword('SuperAdmin123!'),
       role: 'SUPER_ADMIN',
       organizationId: org1.id,
-      emailVerified: true,
       isActive: true
     }
   });
@@ -94,7 +92,6 @@ async function main(): Promise<void> {
       passwordHash: await hashPassword('Admin123!'),
       role: 'ADMIN',
       organizationId: org1.id,
-      emailVerified: true,
       isActive: true
     }
   });
@@ -107,12 +104,11 @@ async function main(): Promise<void> {
       passwordHash: await hashPassword('Manager123!'),
       role: 'MANAGER',
       organizationId: org1.id,
-      emailVerified: true,
       isActive: true
     }
   });
 
-  const accountant = await prisma.user.create({
+  const _accountant = await prisma.user.create({
     data: {
       email: 'accountant@test.com',
       firstName: 'Accountant',
@@ -120,12 +116,11 @@ async function main(): Promise<void> {
       passwordHash: await hashPassword('Accountant123!'),
       role: 'ACCOUNTANT',
       organizationId: org1.id,
-      emailVerified: true,
       isActive: true
     }
   });
 
-  const employee = await prisma.user.create({
+  const _employee = await prisma.user.create({
     data: {
       email: 'employee@test.com',
       firstName: 'Employee',
@@ -133,12 +128,11 @@ async function main(): Promise<void> {
       passwordHash: await hashPassword('Employee123!'),
       role: 'EMPLOYEE',
       organizationId: org1.id,
-      emailVerified: true,
       isActive: true
     }
   });
 
-  const viewer = await prisma.user.create({
+  const _viewer = await prisma.user.create({
     data: {
       email: 'viewer@test.com',
       firstName: 'Viewer',
@@ -146,7 +140,6 @@ async function main(): Promise<void> {
       passwordHash: await hashPassword('Viewer123!'),
       role: 'VIEWER',
       organizationId: org1.id,
-      emailVerified: true,
       isActive: true
     }
   });
@@ -160,7 +153,6 @@ async function main(): Promise<void> {
       passwordHash: await hashPassword('Org2Admin123!'),
       role: 'ADMIN',
       organizationId: org2.id,
-      emailVerified: true,
       isActive: true
     }
   });
@@ -168,50 +160,52 @@ async function main(): Promise<void> {
   // Create accounts (chart of accounts)
   console.log('💰 Creating accounts...');
 
-  const cashAccount = await prisma.account.create({
+  const _cashAccount = await prisma.account.create({
     data: {
-      accountNumber: '1000',
+      accountCode: '1000',
       name: 'Cash',
       description: 'Cash on hand',
       type: 'ASSET',
+      normalBalance: 'DEBIT',
       organizationId: org1.id,
-      balance: 50000,
+      amountDue: 50000,
       isActive: true
     }
   });
 
-  const arAccount = await prisma.account.create({
+  const _arAccount = await prisma.account.create({
     data: {
-      accountNumber: '1200',
+      accountCode: '1200',
       name: 'Accounts Receivable',
       description: 'Money owed by customers',
       type: 'ASSET',
+      normalBalance: 'DEBIT',
       organizationId: org1.id,
-      balance: 25000,
+      amountDue: 25000,
       isActive: true
     }
   });
 
-  const revenueAccount = await prisma.account.create({
+  const _revenueAccount = await prisma.account.create({
     data: {
-      accountNumber: '4000',
+      accountCode: '4000',
       name: 'Service Revenue',
       description: 'Revenue from services',
       type: 'REVENUE',
+      normalBalance: 'CREDIT',
       organizationId: org1.id,
-      balance: 0,
       isActive: true
     }
   });
 
-  const expenseAccount = await prisma.account.create({
+  const _expenseAccount = await prisma.account.create({
     data: {
-      accountNumber: '5000',
+      accountCode: '5000',
       name: 'Operating Expenses',
       description: 'General operating expenses',
       type: 'EXPENSE',
+      normalBalance: 'DEBIT',
       organizationId: org1.id,
-      balance: 0,
       isActive: true
     }
   });
@@ -233,8 +227,8 @@ async function main(): Promise<void> {
     data: {
       organizationId: org1.id,
       legalName: 'Customer Corp',
-      tradeName: 'Customer Corp',
-      businessType: 'CORPORATION',
+      tradingName: 'Customer Corp',
+      type: 'CORPORATION',
       email: 'info@customercorp.com',
       phone: '555-1001'
     }
@@ -250,7 +244,7 @@ async function main(): Promise<void> {
     }
   });
 
-  const person3 = await prisma.person.create({
+  const _person3 = await prisma.person.create({
     data: {
       organizationId: org1.id,
       firstName: 'Bob',
@@ -264,8 +258,8 @@ async function main(): Promise<void> {
     data: {
       organizationId: org1.id,
       legalName: 'Build It Inc',
-      tradeName: 'Build It Inc',
-      businessType: 'CORPORATION',
+      tradingName: 'Build It Inc',
+      type: 'CORPORATION',
       email: 'info@buildit.com',
       phone: '555-1003'
     }
@@ -288,11 +282,13 @@ async function main(): Promise<void> {
     data: {
       organizationId: org1.id,
       customerNumber: 'CUST-0001',
+      type: 'BUSINESS',
       businessId: business1.id,
+      name: 'Customer Corp',
+      email: 'info@customercorp.com',
+      phone: '555-1001',
       tier: 'BUSINESS',
-      status: 'ACTIVE',
-      creditLimit: 50000,
-      createdBy: admin.id
+      status: 'ACTIVE'
     }
   });
 
@@ -300,11 +296,13 @@ async function main(): Promise<void> {
     data: {
       organizationId: org1.id,
       customerNumber: 'CUST-0002',
+      type: 'PERSON',
       personId: person2.id,
+      name: 'Jane Smith',
+      email: 'customer2@test.com',
+      phone: '555-1002',
       tier: 'PERSONAL',
-      status: 'ACTIVE',
-      creditLimit: 10000,
-      createdBy: admin.id
+      status: 'ACTIVE'
     }
   });
 
@@ -312,75 +310,73 @@ async function main(): Promise<void> {
     data: {
       organizationId: org1.id,
       customerNumber: 'CUST-0003',
+      type: 'BUSINESS',
       businessId: business3.id,
+      name: 'Build It Inc',
+      email: 'info@buildit.com',
+      phone: '555-1003',
       tier: 'BUSINESS',
-      status: 'PROSPECT',
-      creditLimit: 25000,
-      createdBy: manager.id
+      status: 'PROSPECT'
     }
   });
 
   // Create customers for org2 (for multi-tenant testing)
-  const org2Customer = await prisma.customer.create({
+  const _org2Customer = await prisma.customer.create({
     data: {
       organizationId: org2.id,
       customerNumber: 'CUST-0001',
+      type: 'PERSON',
       personId: person4.id,
+      name: 'Org2 Customer',
+      email: 'customer@org2.com',
+      phone: '555-2001',
       tier: 'PERSONAL',
-      status: 'ACTIVE',
-      creditLimit: 5000,
-      createdBy: org2Admin.id
+      status: 'ACTIVE'
     }
   });
 
   // Create quotes
   console.log('📋 Creating quotes...');
 
-  const quote1 = await prisma.quote.create({
+  const _quote1 = await prisma.quote.create({
     data: {
       quoteNumber: 'Q-2025-0001',
       customerId: customer1.id,
       organizationId: org1.id,
-      createdById: admin.id,
       status: 'SENT',
       validUntil: new Date('2025-02-15'),
       subtotal: 10000,
-      taxAmount: 1300,
+      taxTotal: 1300,
       total: 11300,
-      currency: 'CAD',
-      notes: 'Website development project'
+      currency: 'CAD'
     }
   });
 
-  const quote2 = await prisma.quote.create({
+  const _quote2 = await prisma.quote.create({
     data: {
       quoteNumber: 'Q-2025-0002',
       customerId: customer2.id,
       organizationId: org1.id,
-      createdById: manager.id,
       status: 'ACCEPTED',
       validUntil: new Date('2025-02-20'),
       subtotal: 5000,
-      taxAmount: 650,
+      taxTotal: 650,
       total: 5650,
-      currency: 'CAD',
-      notes: 'Consulting services'
+      currency: 'CAD'
     }
   });
 
-  const quote3 = await prisma.quote.create({
+  const _quote3 = await prisma.quote.create({
     data: {
       quoteNumber: 'Q-2025-0003',
       customerId: customer3.id,
       organizationId: org1.id,
-      createdById: manager.id,
       status: 'DRAFT',
       validUntil: new Date('2025-02-25'),
       subtotal: 15000,
-      taxAmount: 1950,
+      taxTotal: 1950,
       total: 16950,
-      currency: 'CAD',
-      notes: 'Construction management software'
+      currency: 'CAD'
     }
   });
 
@@ -398,10 +394,7 @@ async function main(): Promise<void> {
       startDate: new Date('2025-02-01'),
       endDate: new Date('2025-04-30'),
       estimatedHours: 100,
-      hourlyRate: 100,
-      depositPaid: true,
-      depositPaidAt: new Date('2025-01-20'),
-      createdBy: admin.id
+      budget: 10000
     }
   });
 
@@ -416,9 +409,7 @@ async function main(): Promise<void> {
       startDate: new Date('2025-02-15'),
       endDate: new Date('2025-03-15'),
       estimatedHours: 50,
-      hourlyRate: 100,
-      depositPaid: false,
-      createdBy: manager.id
+      budget: 5000
     }
   });
 
@@ -434,21 +425,16 @@ async function main(): Promise<void> {
       issueDate: new Date('2025-01-20'),
       dueDate: new Date('2025-02-20'),
       subtotal: 10000,
-      taxAmount: 1300,
+      taxTotal: 1300,
       total: 11300,
-      depositRequired: 3000,
       amountPaid: 3000,
-      balance: 8300,
+      amountDue: 8300,
       currency: 'CAD',
-      notes: 'Website development - Deposit invoice',
-      createdBy: admin.id
+      depositAmount: 3000,
+      depositPaid: true,
+      depositPaidAt: new Date('2025-01-20'),
+      notes: 'Website development - Deposit invoice'
     }
-  });
-
-  // Link project1 to invoice1
-  await prisma.project.update({
-    where: { id: project1.id },
-    data: { invoiceId: invoice1.id }
   });
 
   const invoice2 = await prisma.invoice.create({
@@ -460,21 +446,14 @@ async function main(): Promise<void> {
       issueDate: new Date('2025-02-01'),
       dueDate: new Date('2025-03-01'),
       subtotal: 5000,
-      taxAmount: 650,
+      taxTotal: 650,
       total: 5650,
-      depositRequired: 1500,
+      depositAmount: 1500,
       amountPaid: 0,
-      balance: 5650,
+      amountDue: 5650,
       currency: 'CAD',
-      notes: 'Consulting services',
-      createdBy: manager.id
+      notes: 'Consulting services'
     }
-  });
-
-  // Link project2 to invoice2
-  await prisma.project.update({
-    where: { id: project2.id },
-    data: { invoiceId: invoice2.id }
   });
 
   const invoice3 = await prisma.invoice.create({
@@ -486,14 +465,14 @@ async function main(): Promise<void> {
       issueDate: new Date('2025-01-10'),
       dueDate: new Date('2025-02-10'),
       subtotal: 2000,
-      taxAmount: 260,
+      taxTotal: 260,
       total: 2260,
-      depositRequired: 500,
+      depositAmount: 500,
+      depositPaid: true,
       amountPaid: 2260,
-      balance: 0,
+      amountDue: 0,
       currency: 'CAD',
-      notes: 'Previous project - PAID',
-      createdBy: admin.id
+      notes: 'Previous project - PAID'
     }
   });
 
@@ -508,12 +487,12 @@ async function main(): Promise<void> {
       organizationId: org1.id,
       amount: 3000,
       currency: 'CAD',
-      paymentMethod: 'CREDIT_CARD',
+      method: 'CREDIT_CARD',
       status: 'COMPLETED',
-      paymentDate: new Date('2025-01-20'),
-      referenceNumber: 'Stripe-ch_123abc',
-      adminNotes: 'Deposit payment',
-      createdBy: admin.id
+      processedAt: new Date('2025-01-20'),
+      reference: 'Stripe-ch_123abc',
+      // notes: 'Deposit payment',
+      // createdBy: admin.id
     }
   });
 
@@ -525,12 +504,12 @@ async function main(): Promise<void> {
       organizationId: org1.id,
       amount: 2260,
       currency: 'CAD',
-      paymentMethod: 'BANK_TRANSFER',
+      method: 'BANK_TRANSFER',
       status: 'COMPLETED',
-      paymentDate: new Date('2025-01-15'),
-      referenceNumber: 'TRF-98765',
-      adminNotes: 'Full payment',
-      createdBy: admin.id
+      processedAt: new Date('2025-01-15'),
+      reference: 'TRF-98765',
+      // notes: 'Full payment',
+      // createdBy: admin.id
     }
   });
 
@@ -542,44 +521,40 @@ async function main(): Promise<void> {
       organizationId: org1.id,
       amount: 1000,
       currency: 'CAD',
-      paymentMethod: 'CASH',
+      method: 'CASH',
       status: 'PENDING',
-      paymentDate: new Date('2025-02-01'),
-      adminNotes: 'Partial payment - pending confirmation',
-      createdBy: manager.id
+      processedAt: new Date('2025-02-01'),
+      // notes: 'Partial payment - pending confirmation',
+      // createdBy: manager.id
     }
   });
 
   // Create appointments
   console.log('📅 Creating appointments...');
 
-  const appointment1 = await prisma.appointment.create({
+  const _appointment1 = await prisma.appointment.create({
     data: {
+      appointmentNumber: 'APT-2025-0001',
       title: 'Project Kickoff Meeting',
       description: 'Initial project planning session',
       customerId: customer1.id,
       organizationId: org1.id,
-      projectId: project1.id,
-      startTime: new Date('2025-02-01T10:00:00Z'),
-      endTime: new Date('2025-02-01T11:00:00Z'),
-      duration: 60,
-      confirmed: true,
-      createdBy: admin.id
+      scheduledStart: new Date('2025-02-01T10:00:00Z'),
+      scheduledEnd: new Date('2025-02-01T11:00:00Z'),
+      status: 'CONFIRMED'
     }
   });
 
-  const appointment2 = await prisma.appointment.create({
+  const _appointment2 = await prisma.appointment.create({
     data: {
+      appointmentNumber: 'APT-2025-0002',
       title: 'Requirements Review',
       description: 'Review business requirements',
       customerId: customer2.id,
       organizationId: org1.id,
-      projectId: project2.id,
-      startTime: new Date('2025-02-15T14:00:00Z'),
-      endTime: new Date('2025-02-15T15:30:00Z'),
-      duration: 90,
-      confirmed: true,
-      createdBy: manager.id
+      scheduledStart: new Date('2025-02-15T14:00:00Z'),
+      scheduledEnd: new Date('2025-02-15T15:30:00Z'),
+      status: 'SCHEDULED'
     }
   });
 

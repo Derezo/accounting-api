@@ -14,9 +14,9 @@ async function seedReferenceData() {
   try {
     // Seed countries
     const countries = [
-      { code: 'CA', code3: 'CAN', name: 'Canada', phoneCode: '+1', currency: 'CAD' },
-      { code: 'US', code3: 'USA', name: 'United States', phoneCode: '+1', currency: 'USD' },
-      { code: 'GB', code3: 'GBR', name: 'United Kingdom', phoneCode: '+44', currency: 'GBP' }
+      { code: 'CA', name: 'Canada', phonePrefix: '+1' },
+      { code: 'US', name: 'United States', phonePrefix: '+1' },
+      { code: 'GB', name: 'United Kingdom', phonePrefix: '+44' }
     ];
 
     for (const country of countries) {
@@ -29,9 +29,9 @@ async function seedReferenceData() {
 
     // Seed currencies
     const currencies = [
-      { code: 'CAD', name: 'Canadian Dollar', symbol: '$', decimalPlaces: 2 },
-      { code: 'USD', name: 'US Dollar', symbol: '$', decimalPlaces: 2 },
-      { code: 'GBP', name: 'British Pound', symbol: '£', decimalPlaces: 2 }
+      { code: 'CAD', name: 'Canadian Dollar', symbol: '$' },
+      { code: 'USD', name: 'US Dollar', symbol: '$' },
+      { code: 'GBP', name: 'British Pound', symbol: '£' }
     ];
 
     for (const currency of currencies) {

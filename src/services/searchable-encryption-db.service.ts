@@ -500,7 +500,7 @@ class SearchableEncryptionDbService {
         newKeyVersion,
       });
 
-      let rotatedCount = 0;
+      const rotatedCount = 0;
 
       // Group by entity to minimize database queries
       const entities = new Map<string, Set<string>>();

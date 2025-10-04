@@ -113,7 +113,7 @@ export const loginRateLimiter = rateLimit({
       details: {
         reason: 'RATE_LIMIT_EXCEEDED',
         endpoint: '/auth/login',
-        email: (req.body as any)?.email || 'unknown'
+        email: (req.body)?.email || 'unknown'
       },
       context: {
         organizationId: 'system', // System-level audit
@@ -158,7 +158,7 @@ export const registerRateLimiter = rateLimit({
       details: {
         reason: 'RATE_LIMIT_EXCEEDED',
         endpoint: '/auth/register',
-        email: (req.body as any)?.email || 'unknown'
+        email: (req.body)?.email || 'unknown'
       },
       context: {
         organizationId: 'system',
@@ -203,7 +203,7 @@ export const passwordResetRateLimiter = rateLimit({
       details: {
         reason: 'RATE_LIMIT_EXCEEDED',
         endpoint: '/auth/reset-password-request',
-        email: (req.body as any)?.email || 'unknown'
+        email: (req.body)?.email || 'unknown'
       },
       context: {
         organizationId: 'system',

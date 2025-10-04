@@ -342,7 +342,7 @@ export class AppointmentAvailabilityService {
     }
 
     // Validate token
-    const validation = await this.validateBookingToken(appointment.quoteId!, token);
+    const validation = await this.validateBookingToken(appointment.quoteId, token);
     if (!validation.valid) {
       throw new Error('Invalid or expired token');
     }

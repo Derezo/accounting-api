@@ -405,7 +405,7 @@ class GoogleCalendarSyncService {
       });
 
       const events = response.data.items || [];
-      let createdCount = 0;
+      const createdCount = 0;
 
       for (const event of events) {
         if (!event.id || !event.start?.dateTime) {
