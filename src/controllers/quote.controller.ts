@@ -214,12 +214,12 @@ export class QuoteController {
           description: quote.description,
           status: quote.status,
           subtotal: quote.subtotal,
-          taxAmount: quote.taxAmount,
+          taxAmount: quote.taxTotal,
           total: quote.total,
           validUntil: quote.validUntil,
           createdAt: quote.createdAt,
           customer: quote.customer,
-          items: quote.items
+          items: quote.lineItems
         }
       });
     } catch (error: any) {
@@ -260,7 +260,7 @@ export class QuoteController {
           description: quote.description,
           status: quote.status,
           subtotal: quote.subtotal,
-          taxAmount: quote.taxAmount,
+          taxAmount: quote.taxTotal,
           total: quote.total,
           validUntil: quote.validUntil,
           notes: quote.notes,
@@ -269,7 +269,7 @@ export class QuoteController {
           createdAt: quote.createdAt,
           updatedAt: quote.updatedAt,
           customer: quote.customer,
-          items: quote.items
+          items: quote.lineItems
         }
       });
     } catch (error: any) {
@@ -309,13 +309,13 @@ export class QuoteController {
           description: quote.description,
           status: quote.status,
           subtotal: quote.subtotal,
-          taxAmount: quote.taxAmount,
+          taxAmount: quote.taxTotal,
           total: quote.total,
           validUntil: quote.validUntil,
           notes: quote.notes,
           terms: quote.terms,
           updatedAt: quote.updatedAt,
-          items: quote.items
+          items: quote.lineItems
         }
       });
     } catch (error: any) {
@@ -361,12 +361,12 @@ export class QuoteController {
           description: quote.description,
           status: quote.status,
           subtotal: quote.subtotal,
-          taxAmount: quote.taxAmount,
+          taxAmount: quote.taxTotal,
           total: quote.total,
           validUntil: quote.validUntil,
           createdAt: quote.createdAt,
           customer: quote.customer,
-          itemCount: quote.items?.length || 0
+          itemCount: quote.lineItems?.length || 0
         })),
         pagination: {
           total: result.total,
@@ -476,7 +476,7 @@ export class QuoteController {
           status: quote.status,
           total: quote.total,
           createdAt: quote.createdAt,
-          items: quote.items
+          items: quote.lineItems
         }
       });
     } catch (error: any) {

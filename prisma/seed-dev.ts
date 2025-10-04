@@ -165,7 +165,6 @@ async function main(): Promise<void> {
           passwordHash: await hashPassword(userData.password),
           role: userData.role,
           isActive: true,
-          emailVerified: true,
           firstName: userData.firstName,
           lastName: userData.lastName,
           phone: '+1-416-555-010' + Math.floor(Math.random() * 10)

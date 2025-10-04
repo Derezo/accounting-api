@@ -139,7 +139,7 @@ export interface ComplianceFinding {
 export class EncryptionAuditService {
   private readonly prisma: PrismaClient;
   private readonly auditBuffer: EncryptionAuditEvent[] = [];
-  private readonly flushInterval: NodeJS.Timeout;
+  private flushInterval: NodeJS.Timeout | null = null;
 
   // Configuration
   private readonly BUFFER_SIZE = 100;
@@ -1020,7 +1020,10 @@ export class EncryptionAuditService {
    * Cleanup on service shutdown
    */
   public async shutdown(): Promise<void> {
-    clearInterval(this.flushInterval);
+    if (this.flushInterval) {
+      clearInterval(this.flushInterval);
+      this.flushInterval = null;
+    }
     await this.flushAuditBuffer();
     logger.info('Encryption audit service shut down');
   }

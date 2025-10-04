@@ -41,7 +41,6 @@ describe('Enhanced Customer Lifecycle Automation Integration Tests', () => {
         role: 'ADMIN',
         organizationId,
         isActive: true,
-        emailVerified: true
       }
     });
     userId = user.id;

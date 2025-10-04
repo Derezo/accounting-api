@@ -314,6 +314,7 @@ describe('WorkflowStateMachineService', () => {
         data: {
           organizationId,
           invoiceNumber: 'INV-001',
+          issueDate: new Date(),
           customerId,
             status: 'SENT',
           dueDate: new Date(Date.now() + 86400000 * 30),
@@ -321,8 +322,8 @@ describe('WorkflowStateMachineService', () => {
           taxTotal: 130,
           total: 1130,
           amountPaid: 0,
-          depositRequired: 0,
-          balance: 1130,
+          depositAmount: 0,
+          amountDue: 1130,
         },
       });
 
@@ -334,7 +335,7 @@ describe('WorkflowStateMachineService', () => {
             customerId,
           amount: 500,
           method: 'CREDIT_CARD',
-          paymentDate: new Date(),
+          processedAt: new Date(),
           status: 'PROCESSING',
         },
       });
@@ -361,6 +362,7 @@ describe('WorkflowStateMachineService', () => {
         data: {
           organizationId,
           invoiceNumber: 'INV-002',
+          issueDate: new Date(),
           customerId,
             status: 'SENT',
           dueDate: new Date(Date.now() + 86400000 * 30),
@@ -368,8 +370,8 @@ describe('WorkflowStateMachineService', () => {
           taxTotal: 130,
           total: 1130,
           amountPaid: 0,
-          depositRequired: 0,
-          balance: 1130,
+          depositAmount: 0,
+          amountDue: 1130,
         },
       });
 
@@ -380,7 +382,7 @@ describe('WorkflowStateMachineService', () => {
             customerId,
           amount: 1130,
           method: 'CREDIT_CARD',
-          paymentDate: new Date(),
+          processedAt: new Date(),
           status: 'PROCESSING',
         },
       });
@@ -407,6 +409,7 @@ describe('WorkflowStateMachineService', () => {
         data: {
           organizationId,
           invoiceNumber: 'INV-003',
+          issueDate: new Date(),
           customerId,
             status: 'SENT',
           dueDate: new Date(Date.now() + 86400000 * 30),
@@ -414,8 +417,8 @@ describe('WorkflowStateMachineService', () => {
           taxTotal: 130,
           total: 1130,
           amountPaid: 0,
-          depositRequired: 0,
-          balance: 1130,
+          depositAmount: 0,
+          amountDue: 1130,
         },
       });
 
@@ -439,7 +442,7 @@ describe('WorkflowStateMachineService', () => {
             customerId,
           amount: 340,
           method: 'CREDIT_CARD',
-          paymentDate: new Date(),
+          processedAt: new Date(),
           status: 'PROCESSING',
         },
       });
@@ -534,11 +537,12 @@ describe('WorkflowStateMachineService', () => {
       await prisma.appointment.create({
         data: {
           organizationId,
+          appointmentNumber: 'APT-001',
           customerId,
           title: 'HVAC Consultation',
           scheduledStart: appointmentStart,
           scheduledEnd: appointmentEnd,
-            confirmed: true,
+            status: "CONFIRMED",
         },
       });
 
@@ -553,6 +557,7 @@ describe('WorkflowStateMachineService', () => {
         data: {
           organizationId,
           invoiceNumber: 'INV-004',
+          issueDate: new Date(),
           customerId,
             status: 'SENT',
           dueDate: new Date(Date.now() + 86400000 * 30),
@@ -560,8 +565,8 @@ describe('WorkflowStateMachineService', () => {
           taxTotal: 130,
           total: 1130,
           amountPaid: 0,
-          depositRequired: 0,
-          balance: 1130,
+          depositAmount: 0,
+          amountDue: 1130,
         },
       });
 
@@ -578,6 +583,7 @@ describe('WorkflowStateMachineService', () => {
         data: {
           organizationId,
           invoiceNumber: 'INV-005',
+          issueDate: new Date(),
           customerId,
             status: 'PAID',
           dueDate: new Date(Date.now() + 86400000 * 30),
@@ -585,8 +591,8 @@ describe('WorkflowStateMachineService', () => {
           taxTotal: 130,
           total: 1130,
           amountPaid: 1130,
-          depositRequired: 0,
-          balance: 0,
+          depositAmount: 0,
+          amountDue: 0,
         },
       });
 

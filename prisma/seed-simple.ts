@@ -85,7 +85,6 @@ async function main(): Promise<void> {
       passwordHash: await hashPassword('SimpleAdmin123!'),
       role: 'SUPER_ADMIN',
       isActive: true,
-      emailVerified: true,
       firstName: 'Sarah',
       lastName: 'Administrator',
       phone: '+1-416-555-0101'
@@ -101,7 +100,6 @@ async function main(): Promise<void> {
       passwordHash: await hashPassword('SimpleManager123!'),
       role: 'ADMIN',
       isActive: true,
-      emailVerified: true,
       firstName: 'Michael',
       lastName: 'Manager',
       phone: '+1-416-555-0102'
@@ -117,7 +115,6 @@ async function main(): Promise<void> {
       passwordHash: await hashPassword('SimpleSales123!'),
       role: 'MANAGER',
       isActive: true,
-      emailVerified: true,
       firstName: 'Jennifer',
       lastName: 'Sales',
       phone: '+1-416-555-0103'
@@ -133,7 +130,6 @@ async function main(): Promise<void> {
       passwordHash: await hashPassword('SimpleAcct123!@#'),
       role: 'ACCOUNTANT',
       isActive: true,
-      emailVerified: true,
       firstName: 'David',
       lastName: 'Numbers',
       phone: '+1-416-555-0104'
@@ -149,7 +145,6 @@ async function main(): Promise<void> {
       passwordHash: await hashPassword('SimpleEmployee123!'),
       role: 'EMPLOYEE',
       isActive: true,
-      emailVerified: true,
       firstName: 'Lisa',
       lastName: 'Worker',
       phone: '+1-416-555-0105'
@@ -165,7 +160,6 @@ async function main(): Promise<void> {
       passwordHash: await hashPassword('SimpleViewer123!'),
       role: 'VIEWER',
       isActive: true,
-      emailVerified: true,
       firstName: 'Robert',
       lastName: 'Observer',
       phone: '+1-416-555-0106'
@@ -181,7 +175,6 @@ async function main(): Promise<void> {
       passwordHash: await hashPassword('SimpleTechAdmin123!'),
       role: 'ADMIN',
       isActive: true,
-      emailVerified: true,
       firstName: 'Alex',
       lastName: 'Tech',
       phone: '+1-604-555-0201'

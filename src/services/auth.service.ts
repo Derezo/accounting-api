@@ -167,13 +167,13 @@ export class AuthService {
 
     // Validate device fingerprint
     const currentFingerprint = this.generateDeviceFingerprint(req);
-    if (session.deviceFingerprint !== currentFingerprint) {
+    if (session.deviceInfo !== currentFingerprint) {
       await auditService.logAction({
         action: 'SESSION_DEVICE_MISMATCH' as any,
         entityType: 'Session',
         entityId: session.id,
         changes: {
-          expectedFingerprint: session.deviceFingerprint,
+          expectedFingerprint: session.deviceInfo,
           actualFingerprint: currentFingerprint
         },
         context: {
@@ -324,7 +324,6 @@ export class AuthService {
           organizationId: organization.id,
           role: UserRole.ADMIN,
           isActive: true,
-          emailVerified: false,
           passwordExpiresAt
         }
       });
@@ -346,7 +345,6 @@ export class AuthService {
           refreshToken: '',
           ipAddress: '127.0.0.1',
           userAgent: 'registration',
-          deviceFingerprint: 'registration',
           deviceInfo: JSON.stringify({ source: 'registration' }),
           lastActivityAt: new Date(),
           expiresAt
@@ -394,7 +392,7 @@ export class AuthService {
     }
 
     // Check if account is locked
-    if (user.lockedUntil && user.lockedUntil > new Date()) {
+    if (user.lockoutUntil && user.lockoutUntil > new Date()) {
       throw new Error('Account is locked. Please try again later.');
     }
 
@@ -452,8 +450,8 @@ export class AuthService {
       data: {
         lastLoginAt: new Date(),
         lastLoginIp: credentials.ipAddress,
-        failedAttempts: 0,
-        lockedUntil: null
+        failedLoginCount: 0,
+        lockoutUntil: null
       }
     });
 
@@ -763,7 +761,6 @@ export class AuthService {
         refreshToken: generateRandomToken(32),
         ipAddress,
         userAgent,
-        deviceFingerprint: 'legacy', // For backwards compatibility
         deviceInfo: JSON.stringify({ userAgent }),
         lastActivityAt: new Date(),
         expiresAt
@@ -781,7 +778,6 @@ export class AuthService {
     req: Request
   ): Promise<Session> {
     const expiresAt = new Date(Date.now() + this.SESSION_DURATION_MS);
-    const deviceFingerprint = this.generateDeviceFingerprint(req);
     const deviceInfo = this.extractDeviceInfo(req);
 
     return prisma.session.create({
@@ -791,7 +787,6 @@ export class AuthService {
         refreshToken: generateRandomToken(32),
         ipAddress,
         userAgent,
-        deviceFingerprint,
         deviceInfo,
         lastActivityAt: new Date(),
         expiresAt
@@ -832,12 +827,12 @@ export class AuthService {
 
     if (!user) return;
 
-    const failedAttempts = user.failedAttempts + 1;
-    const updates: any = { failedAttempts };
+    const failedLoginCount = user.failedLoginCount + 1;
+    const updates: any = { failedLoginCount };
 
     // Lock account after 5 failed attempts
-    if (failedAttempts >= 5) {
-      updates.lockedUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+    if (failedLoginCount >= 5) {
+      updates.lockoutUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
 
       // Log security event
       await auditService.logAction({
@@ -845,8 +840,8 @@ export class AuthService {
         entityType: 'User',
         entityId: userId,
         changes: {
-          failedAttempts,
-          lockedUntil: updates.lockedUntil
+          failedLoginCount,
+          lockoutUntil: updates.lockoutUntil
         },
         context: {
           userId,

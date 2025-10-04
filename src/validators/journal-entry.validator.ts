@@ -113,7 +113,7 @@ export class JournalEntryValidator {
       .filter(([_, count]) => (count) > 1)
       .map(([accountId, count]) => {
         const account = accounts.find(a => a.id === accountId);
-        return `${account?.accountNumber || accountId} appears ${count} times`;
+        return `${account?.accountCode || accountId} appears ${count} times`;
       });
 
     if (duplicateAccounts.length > 0) {

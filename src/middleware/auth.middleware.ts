@@ -187,7 +187,7 @@ export async function validateApiKey(
     const hashedKey = hashApiKey(apiKey);
 
     const key = await prisma.apiKey.findUnique({
-      where: { hashedKey },
+      where: { keyHash: hashedKey },
       include: { organization: true }
     });
 

@@ -97,10 +97,13 @@ export class IntakeTokenService {
 
   /**
    * Validate and retrieve session by token
+   * Note: IntakeSession model is currently not in the Prisma schema
+   * This code will need updating when the model is added
    */
   public async validateToken(
     token: string,
     ipAddress: string
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   ): Promise<IntakeSession | null> {
     try {
       // Get all active sessions for this IP (optimization)

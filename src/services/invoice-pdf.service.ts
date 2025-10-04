@@ -17,6 +17,7 @@ export interface InvoicePDFGenerationOptions {
 }
 
 export interface InvoiceWithRelations extends Invoice {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   items: (InvoiceItem & {
     product?: { sku: string; name: string } | null;
     service?: { code: string; name: string } | null;
@@ -306,21 +307,25 @@ export class InvoicePDFService {
           invoice: {
             ...invoice,
             subtotal: toNumber(invoice.subtotal),
-            taxAmount: branding.taxesEnabled ? toNumber(invoice.taxAmount) : 0,
+            taxTotal: branding.taxesEnabled ? toNumber(invoice.taxTotal) : 0,
             total: toNumber(invoice.total),
-            depositRequired: toNumber(invoice.depositRequired),
+            depositAmount: invoice.depositAmount ? toNumber(invoice.depositAmount) : undefined,
             amountPaid: toNumber(invoice.amountPaid),
-            balance: toNumber(invoice.balance),
-            exchangeRate: toNumber(invoice.exchangeRate),
+            amountDue: toNumber(invoice.amountDue),
             items: invoice.items.map(item => ({
-              ...item,
+              id: item.id,
+              invoiceId: item.invoiceId,
+              type: item.type,
+              productId: item.productId,
+              serviceId: item.serviceId,
+              description: item.description,
               quantity: toNumber(item.quantity),
               unitPrice: toNumber(item.unitPrice),
-              discountPercent: toNumber(item.discountPercent),
-              taxRate: branding.taxesEnabled ? toNumber(item.taxRate) : 0,
+              discountPercent: toNumber(item.discountPercent || 0),
+              taxRate: branding.taxesEnabled ? toNumber(item.taxRate || 0) : 0,
               subtotal: toNumber(item.subtotal),
-              discountAmount: toNumber(item.discountAmount),
-              taxAmount: branding.taxesEnabled ? toNumber(item.taxAmount) : 0,
+              discountAmount: toNumber(item.discountAmount || 0),
+              taxAmount: branding.taxesEnabled ? toNumber(item.taxAmount || 0) : 0,
               total: toNumber(item.total)
             }))
           },

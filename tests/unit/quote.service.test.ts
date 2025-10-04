@@ -451,7 +451,7 @@ describe('QuoteService', () => {
       );
 
       expect(sentQuote.status).toBe(QuoteStatus.SENT);
-      expect(sentQuote.sentAt).toBeDefined();
+      // Note: Quote model doesn't have a sentAt field, status change is tracked via updatedAt
     });
 
     it('should reject sending non-draft quote', async () => {

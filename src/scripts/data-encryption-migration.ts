@@ -235,7 +235,7 @@ export class DataEncryptionMigrationService {
 
       // Process each migration plan
       for (const plan of migrationPlan) {
-        if ((job).status === 'cancelled') {
+        if ((job as any).status === 'cancelled') {
           break;
         }
 

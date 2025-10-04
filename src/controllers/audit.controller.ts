@@ -94,11 +94,17 @@ class AuditController {
     this.getAuditLogs = this.getAuditLogs.bind(this);
     this.getSecuritySummary = this.getSecuritySummary.bind(this);
     this.exportAuditLogs = this.exportAuditLogs.bind(this);
+    this.exportAuditLogsCSV = this.exportAuditLogsCSV.bind(this);
+    this.exportAuditLogsJSON = this.exportAuditLogsJSON.bind(this);
     this.getUserActivity = this.getUserActivity.bind(this);
     this.getActiveSessions = this.getActiveSessions.bind(this);
     this.getSuspiciousActivity = this.getSuspiciousActivity.bind(this);
     this.getSecurityMetrics = this.getSecurityMetrics.bind(this);
     this.getCurrentUserActivitySummary = this.getCurrentUserActivitySummary.bind(this);
+    this.getEntityHistory = this.getEntityHistory.bind(this);
+    this.getComplianceMetrics = this.getComplianceMetrics.bind(this);
+    this.getAuditStreamConfig = this.getAuditStreamConfig.bind(this);
+    this.updateAuditStreamConfig = this.updateAuditStreamConfig.bind(this);
   }
 
   async getAuditLogs(req: Request, res: Response): Promise<void> {
@@ -955,40 +961,9 @@ class AuditController {
     try {
       const { organizationId } = (req as any).user!;
 
-      const totalLogs = await prisma.auditLog.count({
-        where: { organizationId }
-      });
+      const metrics = await auditService.getComplianceMetrics(organizationId);
 
-      const encryptedFields = await prisma.user.count({
-        where: { organizationId }
-      });
-
-      const totalUsers = await prisma.user.count({
-        where: { organizationId }
-      });
-
-      res.json({
-        auditCoverage: {
-          totalEvents: totalLogs,
-          coveragePercentage: totalLogs > 0 ? 100 : 0,
-          lastAuditDate: new Date().toISOString()
-        },
-        dataProtection: {
-          encryptedFields: encryptedFields,
-          totalFields: totalUsers,
-          encryptionPercentage: totalUsers > 0 ? (encryptedFields / totalUsers * 100) : 0
-        },
-        retentionCompliance: {
-          policyDays: 365,
-          oldestRecord: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
-          complianceStatus: 'COMPLIANT'
-        },
-        encryptionUsage: {
-          algorithmsUsed: ['AES-256-GCM'],
-          keyRotationEnabled: true,
-          lastRotation: new Date().toISOString()
-        }
-      });
+      res.json(metrics);
     } catch (error) {
       console.error('Error fetching compliance metrics:', error);
       res.status(500).json({
@@ -1003,17 +978,9 @@ class AuditController {
     try {
       const { organizationId } = (req as any).user!;
 
-      // TODO: Store this in database
-      res.json({
-        enabled: false,
-        filters: {
-          minSeverity: 'MEDIUM',
-          actions: ['CREATE', 'UPDATE', 'DELETE'],
-          resources: []
-        },
-        format: 'json',
-        destination: null
-      });
+      const config = await auditService.getAuditStreamConfig(organizationId);
+
+      res.json(config);
     } catch (error) {
       console.error('Error fetching audit stream config:', error);
       res.status(500).json({
@@ -1029,12 +996,9 @@ class AuditController {
       const { organizationId } = (req as any).user!;
       const config = req.body;
 
-      // TODO: Store this in database
+      const result = await auditService.updateAuditStreamConfig(organizationId, config);
 
-      res.json({
-        message: 'Audit stream configuration updated successfully',
-        config
-      });
+      res.json(result);
     } catch (error) {
       console.error('Error updating audit stream config:', error);
       res.status(500).json({

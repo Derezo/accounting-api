@@ -197,7 +197,6 @@ export async function createTestUser(
     firstName: faker.person.firstName(),
     lastName: faker.person.lastName(),
     isActive: true,
-    emailVerified: true
   };
 
   const user = await prisma.user.create({

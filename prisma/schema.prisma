@@ -107,8 +107,18 @@ model User {
   role             String // UserRole enum
   isActive         Boolean @default(true)
   lastLoginAt      DateTime?
+  lastLoginIp      String?
   failedLoginCount Int       @default(0)
   lockoutUntil     DateTime?
+
+  // Password Management
+  passwordExpiresAt    DateTime?
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+
+  // Two-Factor Authentication
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
 
   // Timestamps
   createdAt DateTime  @default(now())
@@ -124,9 +134,11 @@ model User {
   notifications           Notification[]
   googleTokens            UserGoogleToken[]
   sessions                Session[]
+  passwordHistory         PasswordHistory[]
   createdSystemIntegrations SystemIntegration[] @relation("CreatedSystemIntegrations")
   createdSystemBackups SystemBackup[] @relation("CreatedSystemBackups")
   deletedSystemBackups SystemBackup[] @relation("DeletedSystemBackups")
+  createdQuotes           Quote[] @relation("QuoteCreatedBy")
 
   // Keep compound unique for backward compatibility and additional validation
   @@unique([organizationId, email])
@@ -156,6 +168,19 @@ model Session {
   @@map("sessions")
 }
 
+model PasswordHistory {
+  id           String   @id @default(cuid())
+  userId       String
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("password_history")
+}
+
 model ApiKey {
   id             String  @id @default(cuid())
   organizationId String
@@ -165,6 +190,10 @@ model ApiKey {
   permissions    String // JSON array
   isActive       Boolean @default(true)
   expiresAt      DateTime?
+
+  // Usage Tracking
+  lastUsedAt DateTime?
+  lastUsedIp String?
 
   // Timestamps
   createdAt DateTime  @default(now())
@@ -186,10 +215,16 @@ model Person {
   organizationId String
 
   // Personal Information
-  firstName String
-  lastName  String
-  email     String
-  phone     String
+  firstName   String
+  middleName  String?
+  lastName    String
+  email       String?
+  phone       String?
+  mobile      String?
+  dateOfBirth DateTime?
+
+  // Tax Information
+  socialInsNumber String? // Social Insurance Number (SIN)
 
   // Timestamps
   createdAt DateTime  @default(now())
@@ -212,17 +247,20 @@ model Business {
   organizationId String
 
   // Business Information
-  legalName      String
-  tradingName    String?
-  businessNumber String?
-  taxNumber      String?
-  type           String // BusinessType enum
-  industry       String?
-  website        String?
+  legalName         String
+  tradeName         String?
+  tradingName       String?
+  businessNumber    String?
+  taxNumber         String?
+  type              String  // BusinessType enum
+  businessType      String?
+  industry          String?
+  website           String?
+  incorporationDate DateTime?
 
   // Contact
-  email String
-  phone String
+  email String?
+  phone String?
 
   // Timestamps
   createdAt DateTime  @default(now())
@@ -289,6 +327,13 @@ model Customer {
   email String
   phone String
   name  String // Full name or business name
+
+  // Customer Settings
+  notes              String?
+  creditLimit        Float?
+  paymentTerms       String?
+  taxExempt          Boolean @default(false)
+  preferredCurrency  String  @default("CAD")
 
   // Timestamps
   createdAt DateTime  @default(now())
@@ -542,14 +587,19 @@ model Quote {
   organizationId String
 
   // Reference
-  quoteNumber String @unique
-  customerId  String
+  quoteNumber      String @unique
+  customerId       String
+  createdById      String? // User who created the quote
+  intakeSessionId  String? // If created from intake form
 
   // Quote Details
-  subject     String?
-  description String?
-  status      String  @default("DRAFT") // QuoteStatus
-  validUntil  DateTime
+  subject      String?
+  description  String?
+  status       String  @default("DRAFT") // QuoteStatus
+  validUntil   DateTime
+  notes        String?
+  terms        String?
+  customFields String? // JSON string for custom fields
 
   // Financial
   subtotal       Decimal
@@ -563,6 +613,11 @@ model Quote {
   acceptedAt     DateTime?
   acceptedBy     String? // Email or name
   acceptanceNote String?
+  rejectedAt     DateTime?
+
+  // Sent tracking
+  sentAt   DateTime?
+  viewedAt DateTime?
 
   // Conversion
   convertedToInvoice Boolean   @default(false)
@@ -577,8 +632,10 @@ model Quote {
   // Relationships
   organization      Organization            @relation(fields: [organizationId], references: [id])
   customer          Customer                @relation(fields: [customerId], references: [id])
+  createdBy         User?                   @relation("QuoteCreatedBy", fields: [createdById], references: [id])
   lineItems         QuoteLineItem[]
   acceptanceTokens  QuoteAcceptanceToken[]
+  invoices          Invoice[]
 
   @@index([organizationId])
   @@index([quoteNumber])
@@ -597,17 +654,21 @@ model QuoteLineItem {
   serviceId  String?
 
   // Item Details
-  description String
-  quantity    Decimal
-  unitPrice   Decimal
-  discount    Decimal @default(0)
-  taxAmount   Decimal @default(0)
-  total       Decimal
+  description     String
+  quantity        Decimal
+  unitPrice       Decimal
+  discount        Decimal @default(0)
+  discountPercent Decimal @default(0)
+  discountAmount  Decimal @default(0)
+  subtotal        Decimal
+  taxAmount       Decimal @default(0)
+  taxTotal        Decimal @default(0)
+  total           Decimal
 
   // Tax
   isTaxable Boolean @default(true)
   taxCode   String?
-  taxRate   Decimal?
+  taxRate   Decimal @default(0)
 
   // Sort Order
   sortOrder Int @default(0)
@@ -663,6 +724,7 @@ model Appointment {
   // Reference
   appointmentNumber String @unique
   customerId        String
+  projectId         String?
 
   // Appointment Details
   title       String
@@ -675,6 +737,9 @@ model Appointment {
   scheduledEnd   DateTime
   actualStart    DateTime?
   actualEnd      DateTime?
+  startTime      DateTime? // Alias for scheduledStart
+  endTime        DateTime? // Alias for scheduledEnd
+  duration       Int?      // Duration in minutes
 
   // Notifications
   reminderSent   Boolean   @default(false)
@@ -688,12 +753,14 @@ model Appointment {
   // Relationships
   organization  Organization              @relation(fields: [organizationId], references: [id])
   customer      Customer                  @relation(fields: [customerId], references: [id])
+  project       Project?                  @relation(fields: [projectId], references: [id])
   location      Location?                 @relation(fields: [locationId], references: [id])
   bookingTokens AppointmentBookingToken[]
 
   @@index([organizationId])
   @@index([appointmentNumber])
   @@index([customerId])
+  @@index([projectId])
   @@index([status])
   @@index([scheduledStart])
   @@map("appointments")
@@ -753,26 +820,35 @@ model Invoice {
   amountPaid    Decimal @default(0)
   amountDue     Decimal
   currency      String  @default("CAD")
+  exchangeRate  Decimal @default(1)
 
   // Payment Terms
   paymentTerms String?
   notes        String?
 
   // Deposits
-  depositAmount Decimal?
-  depositPaid   Boolean @default(false)
-  depositPaidAt DateTime?
+  depositAmount   Decimal?
+  depositRequired Decimal?
+  depositPaid     Boolean @default(false)
+  depositPaidAt   DateTime?
+  balance         Decimal?
 
   // Timestamps
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
   sentAt    DateTime?
+  viewedAt  DateTime?
   paidAt    DateTime?
+
+  // Audit
+  createdBy String?
+  updatedBy String?
 
   // Relationships
   organization     Organization        @relation(fields: [organizationId], references: [id])
   customer         Customer            @relation(fields: [customerId], references: [id])
+  quote            Quote?              @relation(fields: [quoteId], references: [id])
   lineItems        InvoiceLineItem[]
   payments         Payment[]
   generatedPDFs    GeneratedPDF[]
@@ -795,20 +871,32 @@ model InvoiceLineItem {
   serviceId  String?
 
   // Item Details
-  description String
-  quantity    Decimal
-  unitPrice   Decimal
-  discount    Decimal @default(0)
-  taxAmount   Decimal @default(0)
-  total       Decimal
+  description     String
+  quantity        Decimal
+  unitPrice       Decimal
+  discount        Decimal @default(0)
+  discountPercent Decimal @default(0)
+  discountAmount  Decimal @default(0)
+  subtotal        Decimal
+  taxAmount       Decimal @default(0)
+  taxTotal        Decimal @default(0)
+  total           Decimal
 
   // Tax
   isTaxable Boolean @default(true)
   taxCode   String?
-  taxRate   Decimal?
+  taxRate   Decimal @default(0)
 
   // Sort Order
   sortOrder Int @default(0)
+
+  // Versioning for financial record immutability
+  version          Int      @default(1)
+  isLatestVersion  Boolean  @default(true)
+  supersededAt     DateTime?
+  supersededById   String?
+  supersededBy     InvoiceLineItem? @relation("InvoiceLineItemVersioning", fields: [supersededById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  previousVersions InvoiceLineItem[] @relation("InvoiceLineItemVersioning")
 
   // Timestamps
   createdAt DateTime  @default(now())
@@ -820,6 +908,7 @@ model InvoiceLineItem {
   service Service? @relation(fields: [serviceId], references: [id])
 
   @@index([invoiceId])
+  @@index([isLatestVersion])
   @@map("invoice_line_items")
 }
 
@@ -906,6 +995,10 @@ model Payment {
   refundedAt      DateTime?
   refundAmount    Decimal?
   refundReason    String?
+
+  // Notes
+  customerNotes String?
+  adminNotes    String?
 
   // Timestamps
   createdAt DateTime  @default(now())
@@ -1101,8 +1194,9 @@ model Project {
   deletedAt DateTime?
 
   // Relationships
-  organization Organization @relation(fields: [organizationId], references: [id])
-  customer     Customer     @relation(fields: [customerId], references: [id])
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  appointments Appointment[]
 
   @@index([organizationId])
   @@index([projectNumber])
@@ -1313,6 +1407,13 @@ model AuditLog {
   // Request Context
   ipAddress String?
   userAgent String?
+  requestId String?
+
+  // Blockchain Integrity Fields (for audit trail verification)
+  entryHash    String?
+  sequenceNum  Int?
+  previousHash String?
+  signature    String?
 
   // Timestamp
   timestamp DateTime @default(now())

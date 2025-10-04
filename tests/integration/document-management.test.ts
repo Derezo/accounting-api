@@ -42,7 +42,6 @@ describe('Document Management Integration Tests', () => {
         role: 'ADMIN',
         organizationId,
         isActive: true,
-        emailVerified: true
       }
     });
     userId = user.id;

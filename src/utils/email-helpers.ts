@@ -78,7 +78,7 @@ export async function sendInvoiceEmail(
         totalAmount: invoice.total.toNumber(),
         depositRequired: invoice.depositRequired ? invoice.depositRequired.toNumber() : undefined,
         currency: invoice.currency,
-        terms: invoice.terms || undefined,
+        terms: invoice.paymentTerms || undefined,
         notes: invoice.notes || undefined,
         items: invoice.items || [],
 
@@ -128,7 +128,9 @@ export async function sendQuoteEmail(
 
     const appUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
     const viewUrl = `${appUrl}/quotes/${quote.id}`;
-    const acceptUrl = `${appUrl}/public/quotes/${quote.acceptanceToken}/accept`;
+    // acceptanceToken should be fetched from QuoteAcceptanceToken model - using quote ID as fallback
+    const acceptToken = (quote as any).acceptanceTokens?.[0]?.token || quote.id;
+    const acceptUrl = `${appUrl}/public/quotes/${acceptToken}/accept`;
 
     await emailQueueService.queueEmail({
       to: customerEmail,
@@ -249,7 +251,7 @@ export async function sendPaymentConfirmation(
     const receiptUrl = `${appUrl}/receipts/${payment.id}`;
     const accountUrl = `${appUrl}/account`;
 
-    const remainingBalance = payment.invoice
+    const remainingBalance = payment.invoice?.balance
       ? payment.invoice.balance.toNumber()
       : undefined;
 
@@ -266,11 +268,11 @@ export async function sendPaymentConfirmation(
         paymentNumber: payment.paymentNumber,
         amount: payment.amount.toNumber(),
         currency: payment.currency,
-        paymentMethod: payment.paymentMethod,
-        paymentDate: payment.paymentDate,
+        paymentMethod: payment.method,
+        paymentDate: payment.processedAt || payment.createdAt,
         customerName: getCustomerName(payment.customer),
-        confirmationCode: payment.referenceNumber || undefined,
-        referenceNumber: payment.referenceNumber || undefined,
+        confirmationCode: payment.reference || undefined,
+        referenceNumber: payment.reference || undefined,
 
         // Invoice data
         invoiceNumber: payment.invoice?.invoiceNumber || undefined,
@@ -334,9 +336,8 @@ export async function sendAppointmentReminder(
         customerName: getCustomerName(appointment.customer),
         title: appointment.title,
         description: appointment.description || undefined,
-        startTime: appointment.startTime,
-        endTime: appointment.endTime,
-        duration: appointment.duration,
+        scheduledStart: appointment.scheduledStart,
+        scheduledEnd: appointment.scheduledEnd,
         location: appointment.locationId || undefined
       },
       organizationId: appointment.organizationId,
@@ -392,9 +393,8 @@ export async function sendAppointmentConfirmation(
         customerName: getCustomerName(appointment.customer),
         title: appointment.title,
         description: appointment.description || undefined,
-        startTime: appointment.startTime,
-        endTime: appointment.endTime,
-        duration: appointment.duration,
+        scheduledStart: appointment.scheduledStart,
+        scheduledEnd: appointment.scheduledEnd,
         location: appointment.locationId || undefined,
 
         // URLs

@@ -111,6 +111,7 @@ export class FeatureToggleService {
   /**
    * Get a toggle from cache (Redis or in-memory)
    */
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   private async getFromCache(key: string): Promise<any | null> {
     // Try Redis first
     if (this.redisClient) {
@@ -204,6 +205,7 @@ export class FeatureToggleService {
    * @param id - Toggle ID
    * @returns Feature toggle or null
    */
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   async getById(id: string): Promise<any | null> {
     const toggle = await prisma.featureToggle.findUnique({
       where: { id }
@@ -218,6 +220,7 @@ export class FeatureToggleService {
    * @param key - Toggle key
    * @returns Feature toggle or null
    */
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   async getByKey(key: string): Promise<any | null> {
     // Check cache first
     const cached = await this.getFromCache(key);

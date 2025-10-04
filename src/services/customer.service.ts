@@ -27,6 +27,9 @@ interface CreateCustomerData {
   type: CustomerType;
   tier?: CustomerTier;
   status?: CustomerStatus;
+  email?: string;
+  phone?: string;
+  name?: string;
   notes?: string;
   creditLimit?: number;
   paymentTerms?: number;
@@ -245,11 +248,11 @@ class CustomerService {
           const person = await tx.person.create({
             data: {
               organizationId,
-              firstName: encryptedPersonData.firstName,
-              lastName: encryptedPersonData.lastName,
+              firstName: encryptedPersonData.firstName || data.personData!.firstName,
+              lastName: encryptedPersonData.lastName || data.personData!.lastName,
               middleName: encryptedPersonData.middleName,
-              email: encryptedPersonData.email,
-              phone: encryptedPersonData.phone,
+              email: encryptedPersonData.email || data.personData!.email,
+              phone: encryptedPersonData.phone || data.personData!.phone,
               mobile: encryptedPersonData.mobile,
               dateOfBirth: encryptedPersonData.dateOfBirth,
               socialInsNumber: encryptedPersonData.socialInsNumber
@@ -266,6 +269,7 @@ class CustomerService {
             businessNumber: data.businessData.businessNumber,
             taxNumber: data.businessData.taxNumber,
             incorporationDate: data.businessData.incorporationDate ? new Date(data.businessData.incorporationDate) : null,
+            type: data.businessData.businessType || 'CORPORATION',
             businessType: data.businessData.businessType || 'CORPORATION',
             email: data.businessData.email,
             phone: data.businessData.phone,
@@ -280,13 +284,17 @@ class CustomerService {
         data: {
           organizationId,
           customerNumber,
+          type: data.type,
           personId,
           businessId,
+          email: data.email || (data.personData?.email) || (data.businessData?.email) || '',
+          phone: data.phone || (data.personData?.phone) || (data.businessData?.phone) || '',
+          name: data.name || (data.personData ? `${data.personData.firstName} ${data.personData.lastName}` : data.businessData?.legalName || ''),
           tier: data.tier || CustomerTier.PERSONAL,
           status: data.status || CustomerStatus.PROSPECT,
           notes: data.notes,
           creditLimit: data.creditLimit,
-          paymentTerms: data.paymentTerms || 15,
+          paymentTerms: data.paymentTerms ? String(data.paymentTerms) : 'Net 15',
           taxExempt: data.taxExempt || false,
           preferredCurrency: data.preferredCurrency || 'CAD'
         },
@@ -337,7 +345,6 @@ class CustomerService {
       include: {
         person: true,
         business: true,
-        addresses: true,
         _count: {
           select: {
             quotes: true,
@@ -404,7 +411,7 @@ class CustomerService {
           status: data.status,
           notes: data.notes,
           creditLimit: data.creditLimit,
-          paymentTerms: data.paymentTerms,
+          paymentTerms: data.paymentTerms ? String(data.paymentTerms) : undefined,
           taxExempt: data.taxExempt,
           preferredCurrency: data.preferredCurrency,
           updatedAt: new Date()

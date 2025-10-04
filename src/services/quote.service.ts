@@ -1,4 +1,4 @@
-import { Quote, QuoteItem, Invoice, InvoiceItem } from '@prisma/client';
+import { Quote, QuoteLineItem, Invoice, InvoiceLineItem } from '@prisma/client';
 import { sendQuoteEmail } from '../utils/email-helpers';
 import { Decimal } from '@prisma/client/runtime/library';
 import { QuoteStatus } from '../types/enums';
@@ -29,7 +29,7 @@ interface CreateQuoteData {
   terms?: string;
   intakeSessionId?: string; // Link to intake session
   customFields?: Record<string, any>; // Dynamic custom fields
-  items: {
+  lineItems: {
     productId?: string;
     serviceId?: string;
     description: string;
@@ -47,7 +47,7 @@ interface UpdateQuoteData {
   terms?: string;
   status?: QuoteStatus;
   customFields?: Record<string, any>; // Dynamic custom fields
-  items?: {
+  lineItems?: {
     id?: string;
     productId?: string;
     serviceId?: string;
@@ -74,7 +74,7 @@ export class QuoteService {
     data: CreateQuoteData,
     organizationId: string,
     auditContext: { userId: string; ipAddress?: string; userAgent?: string }
-  ): Promise<Quote & { items: QuoteItem[]; customer?: unknown }> {
+  ): Promise<Quote & { lineItems: QuoteLineItem[]; customer?: unknown }> {
     // Verify customer exists and belongs to organization
     const customer = await prisma.customer.findFirst({
       where: {
@@ -93,7 +93,7 @@ export class QuoteService {
     // Calculate totals from items using Decimal arithmetic
     let subtotal = new Decimal(0);
     let taxAmount = new Decimal(0);
-    const itemCalculations = data.items.map(item => {
+    const itemCalculations = data.lineItems.map(item => {
       const itemSubtotal = FinancialMath.multiply(item.quantity, item.unitPrice);
       const discountPercent = new Decimal(item.discountPercent || 0);
       const itemDiscountAmount = FinancialMath.multiply(itemSubtotal, FinancialMath.divide(discountPercent, 100));
@@ -107,7 +107,7 @@ export class QuoteService {
       return {
         subtotal: FinancialMath.toNumber(itemSubtotal),
         discountAmount: FinancialMath.toNumber(itemDiscountAmount),
-        taxAmount: FinancialMath.toNumber(itemTaxAmount),
+        taxTotal: FinancialMath.toNumber(itemTaxAmount),
         total: FinancialMath.toNumber(itemTotal)
       };
     });
@@ -131,11 +131,11 @@ export class QuoteService {
           intakeSessionId: data.intakeSessionId,
           customFields: data.customFields ? JSON.stringify(data.customFields) : null,
           subtotal: FinancialMath.toNumber(subtotal),
-          taxAmount: FinancialMath.toNumber(taxAmount),
+          taxTotal: FinancialMath.toNumber(taxAmount),
           total: FinancialMath.toNumber(total)
         },
         include: {
-          items: true,
+          lineItems: true,
           customer: {
             include: {
               person: true,
@@ -146,13 +146,14 @@ export class QuoteService {
       });
 
       // Create quote items with calculations
-      for (let i = 0; i < data.items.length; i++) {
-        const itemData = data.items[i];
+      for (let i = 0; i < data.lineItems.length; i++) {
+        const itemData = data.lineItems[i];
         const calc = itemCalculations[i];
 
-        await tx.quoteItem.create({
+        await tx.quoteLineItem.create({
           data: {
             quoteId: newQuote.id,
+            type: itemData.productId ? 'PRODUCT' : (itemData.serviceId ? 'SERVICE' : 'CUSTOM'),
             productId: itemData.productId,
             serviceId: itemData.serviceId,
             description: itemData.description,
@@ -162,7 +163,7 @@ export class QuoteService {
             taxRate: itemData.taxRate,
             subtotal: calc.subtotal,
             discountAmount: calc.discountAmount,
-            taxAmount: calc.taxAmount,
+            taxTotal: calc.taxTotal,
             total: calc.total,
             sortOrder: i + 1
           }
@@ -173,7 +174,7 @@ export class QuoteService {
       const completeQuote = await tx.quote.findUnique({
         where: { id: newQuote.id },
         include: {
-          items: {
+          lineItems: {
             include: {
               product: true,
               service: true
@@ -210,7 +211,7 @@ export class QuoteService {
     id: string,
     organizationId: string,
     auditContext: { userId: string; ipAddress?: string; userAgent?: string }
-  ): Promise<(Quote & { items: QuoteItem[]; customer?: unknown }) | null> {
+  ): Promise<(Quote & { lineItems: QuoteLineItem[]; customer?: unknown }) | null> {
     const quote = await prisma.quote.findFirst({
       where: {
         id,
@@ -218,7 +219,7 @@ export class QuoteService {
         deletedAt: null
       },
       include: {
-        items: {
+        lineItems: {
           include: {
             product: true,
             service: true
@@ -262,7 +263,7 @@ export class QuoteService {
     data: UpdateQuoteData,
     organizationId: string,
     auditContext: { userId: string; ipAddress?: string; userAgent?: string }
-  ): Promise<Quote & { items: QuoteItem[] }> {
+  ): Promise<Quote & { lineItems: QuoteLineItem[] }> {
     const existingQuote = await prisma.quote.findFirst({
       where: {
         id,
@@ -270,7 +271,7 @@ export class QuoteService {
         deletedAt: null
       },
       include: {
-        items: true
+        lineItems: true
       }
     });
 
@@ -284,20 +285,20 @@ export class QuoteService {
     }
 
     let subtotal = existingQuote.subtotal;
-    let taxAmount = existingQuote.taxAmount;
+    let taxAmount = existingQuote.taxTotal;
     let total = existingQuote.total;
     let itemCalculations: Array<{
       subtotal: number;
       discountAmount: number;
-      taxAmount: number;
+      taxTotal: number;
       total: number;
     }> = [];
 
     // Recalculate if items are provided
-    if (data.items) {
+    if (data.lineItems) {
       let subtotalDecimal = new Decimal(0);
       let taxAmountDecimal = new Decimal(0);
-      itemCalculations = data.items.map(item => {
+      itemCalculations = data.lineItems.map(item => {
         const itemSubtotal = FinancialMath.multiply(item.quantity, item.unitPrice);
         const discountPercent = new Decimal(item.discountPercent || 0);
         const itemDiscountAmount = FinancialMath.multiply(itemSubtotal, FinancialMath.divide(discountPercent, 100));
@@ -311,7 +312,7 @@ export class QuoteService {
         return {
           subtotal: FinancialMath.toNumber(itemSubtotal),
           discountAmount: FinancialMath.toNumber(itemDiscountAmount),
-          taxAmount: FinancialMath.toNumber(itemTaxAmount),
+          taxTotal: FinancialMath.toNumber(itemTaxAmount),
           total: FinancialMath.toNumber(itemTotal)
         };
       });
@@ -334,27 +335,28 @@ export class QuoteService {
           status: data.status,
           customFields: data.customFields !== undefined ? JSON.stringify(data.customFields) : undefined,
           subtotal: subtotal instanceof Decimal ? FinancialMath.toNumber(subtotal) : subtotal,
-          taxAmount: taxAmount instanceof Decimal ? FinancialMath.toNumber(taxAmount) : taxAmount,
+          taxTotal: taxAmount instanceof Decimal ? FinancialMath.toNumber(taxAmount) : taxAmount,
           total: total instanceof Decimal ? FinancialMath.toNumber(total) : total,
           updatedAt: new Date()
         }
       });
 
       // Update items if provided
-      if (data.items) {
+      if (data.lineItems) {
         // Delete existing items
-        await tx.quoteItem.deleteMany({
+        await tx.quoteLineItem.deleteMany({
           where: { quoteId: id }
         });
 
         // Create new items with calculations
-        for (let i = 0; i < data.items.length; i++) {
-          const itemData = data.items[i];
+        for (let i = 0; i < data.lineItems.length; i++) {
+          const itemData = data.lineItems[i];
           const calc = itemCalculations[i];
 
-          await tx.quoteItem.create({
+          await tx.quoteLineItem.create({
             data: {
               quoteId: id,
+              type: itemData.productId ? 'PRODUCT' : (itemData.serviceId ? 'SERVICE' : 'CUSTOM'),
               productId: itemData.productId,
               serviceId: itemData.serviceId,
               description: itemData.description,
@@ -364,7 +366,7 @@ export class QuoteService {
               taxRate: itemData.taxRate,
               subtotal: calc.subtotal,
               discountAmount: calc.discountAmount,
-              taxAmount: calc.taxAmount,
+              taxTotal: calc.taxTotal,
               total: calc.total,
               sortOrder: i + 1
             }
@@ -376,7 +378,7 @@ export class QuoteService {
       const completeQuote = await tx.quote.findUnique({
         where: { id },
         include: {
-          items: {
+          lineItems: {
             include: {
               product: true,
               service: true
@@ -407,7 +409,7 @@ export class QuoteService {
   async listQuotes(
     filters: QuoteFilters,
     organizationId: string
-  ): Promise<{ quotes: (Quote & { items?: QuoteItem[]; customer?: unknown })[], total: number }> {
+  ): Promise<{ quotes: (Quote & { lineItems?: QuoteLineItem[]; customer?: unknown })[], total: number }> {
     const where: Record<string, unknown> = {
       organizationId,
       deletedAt: null
@@ -471,7 +473,7 @@ export class QuoteService {
               business: true
             }
           },
-          items: true,
+          lineItems: true,
           createdBy: {
             select: {
               firstName: true,
@@ -500,7 +502,7 @@ export class QuoteService {
       include: {
         customer: true,
         organization: true,
-        items: true
+        lineItems: true
       }
     });
 
@@ -589,7 +591,7 @@ export class QuoteService {
     id: string,
     organizationId: string,
     auditContext: { userId: string; ipAddress?: string; userAgent?: string }
-  ): Promise<Quote & { items: QuoteItem[] }> {
+  ): Promise<Quote & { lineItems: QuoteLineItem[] }> {
     const originalQuote = await prisma.quote.findFirst({
       where: {
         id,
@@ -597,7 +599,7 @@ export class QuoteService {
         deletedAt: null
       },
       include: {
-        items: true
+        lineItems: true
       }
     });
 
@@ -621,19 +623,20 @@ export class QuoteService {
           notes: originalQuote.notes,
           terms: originalQuote.terms,
           subtotal: originalQuote.subtotal,
-          taxAmount: originalQuote.taxAmount,
+          taxTotal: originalQuote.taxTotal,
           total: originalQuote.total
         },
         include: {
-          items: true
+          lineItems: true
         }
       });
 
       // Duplicate items
-      for (const item of originalQuote.items) {
-        await tx.quoteItem.create({
+      for (const item of originalQuote.lineItems) {
+        await tx.quoteLineItem.create({
           data: {
             quoteId: newQuote.id,
+            type: item.type,
             productId: item.productId,
             serviceId: item.serviceId,
             description: item.description,
@@ -643,7 +646,7 @@ export class QuoteService {
             taxRate: item.taxRate,
             subtotal: item.subtotal,
             discountAmount: item.discountAmount,
-            taxAmount: item.taxAmount,
+            taxTotal: item.taxAmount,
             total: item.total,
             sortOrder: item.sortOrder
           }
@@ -654,7 +657,7 @@ export class QuoteService {
       const completeQuote = await tx.quote.findUnique({
         where: { id: newQuote.id },
         include: {
-          items: true
+          lineItems: true
         }
       });
 
@@ -684,7 +687,7 @@ export class QuoteService {
     autoGenerateInvoice: boolean = true
   ): Promise<{
     quote: Quote;
-    invoice?: Invoice & { items: InvoiceItem[]; customer?: unknown; quote?: unknown } | null;
+    invoice?: Invoice & { lineItems: InvoiceLineItem[]; customer?: unknown; quote?: unknown } | null;
     suggestedAppointments?: unknown;
   }> {
     const quote = await prisma.quote.findFirst({
@@ -751,7 +754,7 @@ export class QuoteService {
             auditContext,
             {
               // Use customer payment terms or default to 15 days
-              dueDate: new Date(Date.now() + ((quote.customer.paymentTerms || 15) * 24 * 60 * 60 * 1000)),
+              dueDate: new Date(Date.now() + ((parseInt(quote.customer.paymentTerms || '15') || 15) * 24 * 60 * 60 * 1000)),
               // Default deposit requirement based on business rules (25-50%)
               depositRequired: Math.round(Number(quote.total) * 0.3 * 100) / 100, // 30% deposit
               terms: quote.terms || 'Payment due within terms. Work begins after deposit payment.',
@@ -979,7 +982,7 @@ export class QuoteService {
       terms?: string;
       notes?: string;
     }
-  ): Promise<Invoice & { items: InvoiceItem[]; customer?: unknown; quote?: unknown }> {
+  ): Promise<Invoice & { lineItems: InvoiceLineItem[]; customer?: unknown; quote?: unknown }> {
     return invoiceService.createInvoiceFromQuote(quoteId, organizationId, auditContext, options);
   }
 }

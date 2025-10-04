@@ -10,37 +10,63 @@ export let prisma: PrismaClient;
 export let testApp: Application;
 
 beforeAll(async () => {
-  console.log('🚀 Starting integration test setup...');
+  try {
+    console.log('🚀 Starting integration test setup...');
 
-  // Ensure NODE_ENV is set to test
-  process.env.NODE_ENV = 'test';
+    // Ensure NODE_ENV is set to test
+    process.env.NODE_ENV = 'test';
+    console.log('📝 NODE_ENV:', process.env.NODE_ENV);
 
-  // Initialize Prisma client with test database
-  prisma = new PrismaClient({
-    datasources: {
-      db: {
-        url: process.env.TEST_DATABASE_URL || 'file:./test.db'
-      }
-    },
-    log: [] // Disable logging to reduce memory usage
-  });
+    // Initialize Prisma client with test database
+    prisma = new PrismaClient({
+      datasources: {
+        db: {
+          url: process.env.TEST_DATABASE_URL || 'file:./test.db'
+        }
+      },
+      log: [] // Disable logging to reduce memory usage
+    });
 
-  await prisma.$connect();
-  console.log('✅ Database connected');
+    console.log('🔗 Connecting to database...');
+    await prisma.$connect();
+    console.log('✅ Database connected');
 
-  // Dynamically import app to ensure it's loaded after environment setup
-  const appModule = await import('../../src/app');
-  testApp = appModule.default;
+    // Dynamically import app to ensure it's loaded after environment setup
+    console.log('📦 Loading Express application...');
+    const appModule = await import('../../src/app');
+    console.log('📦 App module loaded, default export type:', typeof appModule.default);
+    testApp = appModule.default;
 
-  if (!testApp) {
-    throw new Error('Failed to load Express application');
+    if (!testApp) {
+      console.error('❌ testApp is undefined after import');
+      throw new Error('Failed to load Express application');
+    }
+
+    console.log('✅ testApp assigned successfully, type:', typeof testApp);
+    console.log('✅ Integration test setup complete');
+  } catch (error) {
+    console.error('❌ SETUP FAILED:', error);
+    if (error instanceof Error) {
+      console.error('Error stack:', error.stack);
+    }
+    throw error;
   }
-
-  console.log('✅ Integration test setup complete');
 });
 
 afterAll(async () => {
   console.log('🛑 Shutting down integration test environment...');
+
+  // Shutdown encryption audit service
+  try {
+    const { encryptionAuditService } = await import('../../src/services/encryption-audit.service');
+    if (encryptionAuditService) {
+      await encryptionAuditService.shutdown();
+      console.log('✅ Encryption audit service shut down');
+    }
+  } catch (error) {
+    // Service may not be initialized in all tests
+    console.log('ℹ️  Encryption audit service not initialized');
+  }
 
   // Disconnect Prisma
   if (prisma) {
@@ -180,8 +206,7 @@ export async function createRealTestToken(payload: {
           passwordHash: 'hashed-test-password',
           role: payload.role,
           organizationId: payload.organizationId,
-          isActive: true,
-          emailVerified: true
+          isActive: true
         }
       });
     }

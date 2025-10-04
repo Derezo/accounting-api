@@ -40,8 +40,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
         passwordHash: 'hashedpassword',
         role: 'ADMIN',
         organizationId,
-        isActive: true,
-        emailVerified: true
+        isActive: true
       }
     });
     userId = user.id;
@@ -54,7 +53,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
         refreshToken: 'test-refresh-token-' + Date.now(),
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
         ipAddress: '127.0.0.1',
-        deviceFingerprint: 'test-device-fingerprint',
+        deviceInfo: 'test-device-info',
         userAgent: 'test-agent'
       }
     });
@@ -82,10 +81,6 @@ describe('Enhanced Audit Logging Integration Tests', () => {
         ipAddress: '127.0.0.1',
         userAgent: 'test-agent',
         changes: JSON.stringify({ loginTime: new Date() }),
-        entryHash: "test-hash-" + Date.now(),
-        signature: "test-signature",
-        sequenceNum: 1,
-        previousHash: null
       }
     });
 
@@ -99,10 +94,6 @@ describe('Enhanced Audit Logging Integration Tests', () => {
         ipAddress: '127.0.0.1',
         userAgent: 'test-agent',
         changes: JSON.stringify({ name: 'Test Customer' }),
-        entryHash: "test-hash-" + Date.now(),
-        signature: "test-signature",
-        sequenceNum: 1,
-        previousHash: null
       }
     });
 
@@ -116,10 +107,6 @@ describe('Enhanced Audit Logging Integration Tests', () => {
         ipAddress: '192.168.1.100',
         userAgent: 'suspicious-agent',
         changes: JSON.stringify({ viewedAt: new Date() }),
-        entryHash: "test-hash-" + Date.now(),
-        signature: "test-signature",
-        sequenceNum: 1,
-        previousHash: null
       }
     });
 
@@ -134,10 +121,6 @@ describe('Enhanced Audit Logging Integration Tests', () => {
         ipAddress: '192.168.1.100',
         userAgent: 'test-agent',
         changes: JSON.stringify({ deletedUser: 'test@example.com' }),
-        entryHash: "test-hash-" + Date.now(),
-        signature: "test-signature",
-        sequenceNum: 1,
-        previousHash: null
       }
     });
 
@@ -151,10 +134,6 @@ describe('Enhanced Audit Logging Integration Tests', () => {
         ipAddress: '192.168.1.100',
         userAgent: 'test-agent',
         changes: JSON.stringify({ amount: 1000, currency: 'CAD' }),
-        entryHash: "test-hash-" + Date.now(),
-        signature: "test-signature",
-        sequenceNum: 1,
-        previousHash: null
       }
     });
 
@@ -194,10 +173,6 @@ describe('Enhanced Audit Logging Integration Tests', () => {
           ipAddress: '127.0.0.1',
           userAgent: 'test-agent',
           changes: JSON.stringify({ loginTime: new Date() }),
-          entryHash: "test-hash-" + Date.now(),
-          signature: "test-signature",
-          sequenceNum: 1,
-          previousHash: null,
         },
         {
           organizationId,
@@ -208,10 +183,6 @@ describe('Enhanced Audit Logging Integration Tests', () => {
           ipAddress: '127.0.0.1',
           userAgent: 'test-agent',
           changes: JSON.stringify({ name: 'Test Customer' }),
-          entryHash: "test-hash-" + Date.now(),
-          signature: "test-signature",
-          sequenceNum: 1,
-          previousHash: null,
         },
         {
           organizationId,
@@ -222,10 +193,6 @@ describe('Enhanced Audit Logging Integration Tests', () => {
           ipAddress: '192.168.1.100',
           userAgent: 'suspicious-agent',
           changes: JSON.stringify({ viewedAt: new Date() }),
-          entryHash: "test-hash-" + Date.now(),
-          signature: "test-signature",
-          sequenceNum: 1,
-          previousHash: null,
         }
       ]
     });
@@ -347,7 +314,7 @@ describe('Enhanced Audit Logging Integration Tests', () => {
           refreshToken: 'additional-refresh-token-' + Date.now(),
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
           ipAddress: '127.0.0.1',
-          deviceFingerprint: 'test-device-fingerprint-2',
+          deviceInfo: 'test-device-fingerprint-2',
           userAgent: 'test-agent-2'
         }
       });
@@ -387,10 +354,6 @@ describe('Enhanced Audit Logging Integration Tests', () => {
             ipAddress: '192.168.1.100', // Different IP
             userAgent: 'suspicious-agent',
             changes: JSON.stringify({ failedLogin: true }),
-          entryHash: "test-hash-" + Date.now(),
-          signature: "test-signature",
-          sequenceNum: 1,
-          previousHash: null,
           },
           {
             organizationId,
@@ -401,10 +364,6 @@ describe('Enhanced Audit Logging Integration Tests', () => {
             ipAddress: '192.168.1.100',
             userAgent: 'suspicious-agent',
             changes: JSON.stringify({ failedLogin: true }),
-          entryHash: "test-hash-" + Date.now(),
-          signature: "test-signature",
-          sequenceNum: 1,
-          previousHash: null,
           },
           {
             organizationId,
@@ -415,10 +374,6 @@ describe('Enhanced Audit Logging Integration Tests', () => {
             ipAddress: '192.168.1.100',
             userAgent: 'suspicious-agent',
             changes: JSON.stringify({ sensitiveAccess: true }),
-          entryHash: "test-hash-" + Date.now(),
-          signature: "test-signature",
-          sequenceNum: 1,
-          previousHash: null,
           }
         ]
       });
@@ -436,10 +391,6 @@ describe('Enhanced Audit Logging Integration Tests', () => {
           ipAddress: '192.168.1.100',
           userAgent: 'test-agent',
           changes: JSON.stringify({ deletedUser: 'suspicious@example.com' }),
-        entryHash: "test-hash-" + Date.now(),
-        signature: "test-signature",
-        sequenceNum: 1,
-        previousHash: null
         }
       });
 
@@ -453,10 +404,6 @@ describe('Enhanced Audit Logging Integration Tests', () => {
           ipAddress: '192.168.1.100',
           userAgent: 'test-agent',
           changes: JSON.stringify({ amount: 50000, previousAmount: 100 }),
-        entryHash: "test-hash-" + Date.now(),
-        signature: "test-signature",
-        sequenceNum: 1,
-        previousHash: null
         }
       });
 
@@ -661,7 +608,6 @@ describe('Enhanced Audit Logging Integration Tests', () => {
           role: 'EMPLOYEE',
           organizationId,
           isActive: true,
-          emailVerified: true
         }
       });
 

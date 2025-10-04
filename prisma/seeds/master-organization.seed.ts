@@ -123,7 +123,6 @@ export async function seedMasterOrganization(): Promise<void> {
       role: 'SUPER_ADMIN',
       organizationId: masterOrg.id,
       isActive: true,
-      emailVerified: true
     },
     create: {
       email: 'eric@lifestreamdynamics.com',
@@ -133,7 +132,6 @@ export async function seedMasterOrganization(): Promise<void> {
       role: 'SUPER_ADMIN',
       organizationId: masterOrg.id,
       isActive: true,
-      emailVerified: true
     }
   });
 

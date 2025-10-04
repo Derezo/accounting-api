@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="20" failures="20" errors="0" time="1.61">
-  <testsuite name="Enhanced Audit Logging Integration Tests" errors="0" failures="20" skipped="0" timestamp="2025-10-02T23:01:38" time="1.577" tests="20">
+<testsuites name="jest tests" tests="468" failures="468" errors="0" time="29.111">
+  <testsuite name="Enhanced Audit Logging Integration Tests" errors="0" failures="20" skipped="0" timestamp="2025-10-04T08:06:47" time="8.411" tests="20">
     <testcase classname="Enhanced Audit Logging Integration Tests › User Activity Tracking" name="should get user activity logs" time="0">
       <failure></failure>
     </testcase>
@@ -43,10 +43,10 @@
     <testcase classname="Enhanced Audit Logging Integration Tests › Security Metrics" name="should get compliance metrics" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Enhanced Audit Logging Integration Tests › Audit Log Export" name="should export audit logs in CSV format" time="0.001">
+    <testcase classname="Enhanced Audit Logging Integration Tests › Audit Log Export" name="should export audit logs in CSV format" time="0">
       <failure></failure>
     </testcase>
-    <testcase classname="Enhanced Audit Logging Integration Tests › Audit Log Export" name="should export audit logs in JSON format" time="0">
+    <testcase classname="Enhanced Audit Logging Integration Tests › Audit Log Export" name="should export audit logs in JSON format" time="0.001">
       <failure></failure>
     </testcase>
     <testcase classname="Enhanced Audit Logging Integration Tests › Real-time Audit Streaming" name="should get real-time audit stream configuration" time="0">
@@ -59,6 +59,1876 @@
       <failure></failure>
     </testcase>
     <testcase classname="Enhanced Audit Logging Integration Tests › Access Control and Authorization" name="should enforce role-based access to sensitive audit data" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Public Appointment API Integration Tests" errors="0" failures="33" skipped="0" timestamp="2025-10-04T08:06:55" time="0.677" tests="33">
+    <testcase classname="Public Appointment API Integration Tests › GET /api/v1/public/appointments/availability" name="should fetch available time slots" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › GET /api/v1/public/appointments/availability" name="should return 400 without quoteId" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › GET /api/v1/public/appointments/availability" name="should return 400 without token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › GET /api/v1/public/appointments/availability" name="should return 404 with invalid token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › GET /api/v1/public/appointments/availability" name="should filter by date range" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › GET /api/v1/public/appointments/availability" name="should reject expired token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › GET /api/v1/public/appointments/availability" name="should reject already used token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › POST /api/v1/public/appointments/book" name="should book appointment with valid token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › POST /api/v1/public/appointments/book" name="should return 400 without required fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › POST /api/v1/public/appointments/book" name="should return 400 with invalid time range" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › POST /api/v1/public/appointments/book" name="should return 400 with past date" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › POST /api/v1/public/appointments/book" name="should return 404 with invalid token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › POST /api/v1/public/appointments/book" name="should prevent double booking with same token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › POST /api/v1/public/appointments/book" name="should track IP address on booking" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › POST /api/v1/public/appointments/book" name="should handle Google Meet creation failure gracefully" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › POST /api/v1/public/appointments/book" name="should validate email format" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › GET /api/v1/public/appointments/:appointmentId/details" name="should get appointment details" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › GET /api/v1/public/appointments/:appointmentId/details" name="should return 400 without token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › GET /api/v1/public/appointments/:appointmentId/details" name="should return 404 with invalid token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › GET /api/v1/public/appointments/:appointmentId/details" name="should return 404 for non-existent appointment" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › GET /api/v1/public/appointments/:appointmentId/details" name="should include customer and organization info" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › POST /api/v1/public/appointments/:appointmentId/cancel" name="should cancel appointment with valid token" time="0.001">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › POST /api/v1/public/appointments/:appointmentId/cancel" name="should allow cancellation without reason" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › POST /api/v1/public/appointments/:appointmentId/cancel" name="should return 400 without token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › POST /api/v1/public/appointments/:appointmentId/cancel" name="should return 404 with invalid token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › POST /api/v1/public/appointments/:appointmentId/cancel" name="should reject cancellation of already cancelled appointment" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › POST /api/v1/public/appointments/:appointmentId/cancel" name="should handle Google Meet cancellation failure gracefully" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › Token Security and Validation" name="should use bcrypt for token verification" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › Token Security and Validation" name="should reject tokens for different quotes" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › Rate Limiting" name="should rate limit availability requests" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › Rate Limiting" name="should rate limit booking requests" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › Email Notifications" name="should send confirmation email on booking" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Appointment API Integration Tests › Email Notifications" name="should send cancellation email" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Canadian Tax Compliance Permission Tests" errors="0" failures="8" skipped="0" timestamp="2025-10-04T08:06:56" time="0.661" tests="8">
+    <testcase classname="Canadian Tax Compliance Permission Tests › GST/HST Tax Rate Management Permissions" name="should enforce proper permissions for provincial tax rate configuration" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Canadian Tax Compliance Permission Tests › GST/HST Tax Rate Management Permissions" name="should validate tax calculation permissions across provinces" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Canadian Tax Compliance Permission Tests › CRA Compliance and Tax Filing Permissions" name="should enforce proper permissions for GST/HST return preparation" time="0.001">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Canadian Tax Compliance Permission Tests › CRA Compliance and Tax Filing Permissions" name="should enforce Quebec QST compliance permissions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Canadian Tax Compliance Permission Tests › Tax Audit and Compliance Reporting Permissions" name="should enforce proper permissions for tax audit trails" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Canadian Tax Compliance Permission Tests › Multi-Currency Tax Compliance Permissions" name="should enforce permissions for foreign exchange tax calculations" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Canadian Tax Compliance Permission Tests › Cross-Border Transaction Tax Compliance" name="should enforce permissions for export/import tax handling" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Canadian Tax Compliance Permission Tests › Canadian Tax Integration with Financial Statements" name="should enforce permissions for tax-integrated financial reporting" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Public Quote API Integration Tests" errors="0" failures="30" skipped="0" timestamp="2025-10-04T08:06:57" time="0.668" tests="30">
+    <testcase classname="Public Quote API Integration Tests › GET /api/v1/public/quotes/:quoteId/view" name="should view quote with valid token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › GET /api/v1/public/quotes/:quoteId/view" name="should return 400 without token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › GET /api/v1/public/quotes/:quoteId/view" name="should return 404 with invalid token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › GET /api/v1/public/quotes/:quoteId/view" name="should return 404 if public view disabled" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › GET /api/v1/public/quotes/:quoteId/view" name="should return 410 for expired quote" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › GET /api/v1/public/quotes/:quoteId/view" name="should include quote items with product/service details" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › GET /api/v1/public/quotes/:quoteId/view" name="should not expose sensitive organization data" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › GET /api/v1/public/quotes/:quoteId/status" name="should check quote status" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › GET /api/v1/public/quotes/:quoteId/status" name="should indicate if quote is expired" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › POST /api/v1/public/quotes/:quoteId/accept" name="should accept quote with valid token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › POST /api/v1/public/quotes/:quoteId/accept" name="should return 400 without token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › POST /api/v1/public/quotes/:quoteId/accept" name="should return 404 with invalid token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › POST /api/v1/public/quotes/:quoteId/accept" name="should reject already accepted quote" time="0.001">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › POST /api/v1/public/quotes/:quoteId/accept" name="should reject expired token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › POST /api/v1/public/quotes/:quoteId/accept" name="should reject invalidated token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › POST /api/v1/public/quotes/:quoteId/accept" name="should track IP address on acceptance" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › POST /api/v1/public/quotes/:quoteId/accept" name="should generate appointment booking token after acceptance" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › POST /api/v1/public/quotes/:quoteId/reject" name="should reject quote with valid token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › POST /api/v1/public/quotes/:quoteId/reject" name="should allow rejection without reason" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › POST /api/v1/public/quotes/:quoteId/reject" name="should return 400 with invalid token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › POST /api/v1/public/quotes/:quoteId/reject" name="should reject already rejected quote" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › Quote Token Validation" name="should validate token format" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › Quote Token Validation" name="should handle bcrypt verification correctly" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › Quote Lifecycle State Transitions" name="should only accept quote in SENT or DRAFT status" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › Quote Lifecycle State Transitions" name="should handle concurrent acceptance attempts" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › Email Notifications" name="should send acceptance confirmation to customer" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › Email Notifications" name="should send rejection notification to organization" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › Security Features" name="should prevent quote viewing without token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › Security Features" name="should not expose deleted quotes" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Public Quote API Integration Tests › Security Features" name="should rate limit quote viewing requests" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Intake Form V2 Integration Tests" errors="0" failures="14" skipped="0" timestamp="2025-10-04T08:06:57" time="0.863" tests="14">
+    <testcase classname="Intake Form V2 Integration Tests › Template Management" name="should create a new intake form template with steps" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Intake Form V2 Integration Tests › Template Management" name="should add fields to a template step" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Intake Form V2 Integration Tests › Template Management" name="should list all templates for organization" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Intake Form V2 Integration Tests › Template Management" name="should prevent duplicate template names" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Intake Form V2 Integration Tests › Session Management" name="should create a new anonymous session" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Intake Form V2 Integration Tests › Session Management" name="should retrieve session by token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Intake Form V2 Integration Tests › Session Management" name="should update form data in session" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Intake Form V2 Integration Tests › Session Management" name="should advance to next step" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Intake Form V2 Integration Tests › Session Management" name="should validate required fields on submit" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Intake Form V2 Integration Tests › Session Management" name="should complete session with valid data" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Intake Form V2 Integration Tests › Session Management" name="should reject expired session" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Intake Form V2 Integration Tests › Session Management" name="should track bot detection metrics" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Intake Form V2 Integration Tests › Security &amp; Rate Limiting" name="should rate limit session creation requests" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Intake Form V2 Integration Tests › Security &amp; Rate Limiting" name="should enforce multi-tenant isolation" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Invoice PDF Generation Integration Tests" errors="0" failures="44" skipped="0" timestamp="2025-10-04T08:06:58" time="0.792" tests="44">
+    <testcase classname="Invoice PDF Generation Integration Tests › Basic PDF Generation" name="should generate PDF with default template and style" time="0.001">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Basic PDF Generation" name="should generate PDF with A4 format" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Basic PDF Generation" name="should generate PDF with Letter format" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Basic PDF Generation" name="should generate PDF with landscape orientation" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Template System Tests" name="should generate PDF with default template" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Template System Tests" name="should generate PDF with modern template" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Template System Tests" name="should generate PDF with minimal template" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Style System Tests" name="should generate PDF with classic style" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Style System Tests" name="should generate PDF with modern blue style" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Style System Tests" name="should generate PDF with corporate gray style" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Organization Branding Tests" name="should generate PDF with logo display enabled" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Organization Branding Tests" name="should generate PDF with organization name display enabled" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Organization Branding Tests" name="should generate PDF with custom color scheme" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Tax Disable Functionality" name="should generate PDF with taxes disabled" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Tax Disable Functionality" name="should generate PDF with taxes enabled" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Complex Customization Scenarios" name="should generate PDF with full customization" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › PDF Regeneration Tests" name="should regenerate PDF with new settings" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › PDF Regeneration Tests" name="should force regeneration with regenerate=true query param" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › PDF Status Tracking" name="should track PDF generation status" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › PDF Status Tracking" name="should filter status by template and style" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Error Handling" name="should return 404 for non-existent invoice" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Error Handling" name="should return 403 for wrong organization" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Error Handling" name="should validate invalid template ID" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Error Handling" name="should validate invalid style ID" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Performance Tests" name="should handle concurrent PDF generation requests" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Performance Tests" name="should cache and reuse PDFs when appropriate" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Template CRUD Operations" name="should get single template by ID" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Template CRUD Operations" name="should return 404 for non-existent template" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Template CRUD Operations" name="should create custom template" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Template CRUD Operations" name="should update custom template" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Template CRUD Operations" name="should not update system template" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Template CRUD Operations" name="should delete custom template" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Template CRUD Operations" name="should not delete system template" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Style CRUD Operations" name="should get single style by ID" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Style CRUD Operations" name="should return 404 for non-existent style" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Style CRUD Operations" name="should create custom style" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Style CRUD Operations" name="should update custom style" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Style CRUD Operations" name="should not update system style" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Style CRUD Operations" name="should delete custom style" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Style CRUD Operations" name="should not delete system style" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Style CRUD Operations" name="should not delete default style" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Security Tests" name="should require authentication" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Security Tests" name="should validate organization access" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Invoice PDF Generation Integration Tests › Security Tests" name="should validate user permissions for regeneration" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Complete Customer Lifecycle Workflow Integration Tests" errors="0" failures="4" skipped="0" timestamp="2025-10-04T08:06:59" time="0.655" tests="4">
+    <testcase classname="Complete Customer Lifecycle Workflow Integration Tests › 8-Stage Customer Lifecycle: Complete End-to-End Workflow" name="should complete all 8 stages of customer lifecycle with comprehensive validations" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Complete Customer Lifecycle Workflow Integration Tests › 8-Stage Customer Lifecycle: Complete End-to-End Workflow" name="should handle workflow failures and recovery scenarios" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Complete Customer Lifecycle Workflow Integration Tests › Role-Based Workflow Permissions" name="should enforce proper role permissions throughout lifecycle" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Complete Customer Lifecycle Workflow Integration Tests › Data Integrity and Consistency" name="should maintain data integrity throughout entire workflow" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Multi-Tenant Isolation Integration Tests" errors="0" failures="10" skipped="0" timestamp="2025-10-04T08:07:00" time="0.641" tests="10">
+    <testcase classname="Multi-Tenant Isolation Integration Tests › Data Isolation Between Tenants" name="should prevent cross-tenant data access for all entities" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Isolation Integration Tests › Data Isolation Between Tenants" name="should prevent cross-tenant data modification" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Isolation Integration Tests › Data Isolation Between Tenants" name="should maintain audit log isolation" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Isolation Integration Tests › Role-Based Access Control Across Tenants" name="should enforce RBAC within tenant boundaries" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Isolation Integration Tests › Role-Based Access Control Across Tenants" name="should handle role elevation attempts across tenants" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Isolation Integration Tests › API Key and Session Isolation" name="should isolate API keys between tenants" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Isolation Integration Tests › API Key and Session Isolation" name="should isolate user sessions between tenants" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Isolation Integration Tests › Cross-Tenant Attack Prevention" name="should prevent tenant ID manipulation attacks" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Isolation Integration Tests › Cross-Tenant Attack Prevention" name="should prevent SQL injection across tenant boundaries" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Isolation Integration Tests › Cross-Tenant Attack Prevention" name="should handle concurrent operations without cross-tenant pollution" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Multi-Tenant Financial Data Isolation Tests" errors="0" failures="13" skipped="0" timestamp="2025-10-04T08:07:00" time="0.647" tests="13">
+    <testcase classname="Multi-Tenant Financial Data Isolation Tests › Financial Transaction Isolation" name="should isolate payment transactions between organizations" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Financial Data Isolation Tests › Financial Transaction Isolation" name="should isolate e-Transfer transactions with Canadian compliance" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Financial Data Isolation Tests › Financial Statement and Accounting Isolation" name="should isolate chart of accounts between organizations" time="0.001">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Financial Data Isolation Tests › Financial Statement and Accounting Isolation" name="should isolate journal entries and transactions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Financial Data Isolation Tests › Financial Statement and Accounting Isolation" name="should isolate financial statements between organizations" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Financial Data Isolation Tests › Canadian Tax Compliance Isolation" name="should isolate GST/HST calculations between provinces" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Financial Data Isolation Tests › Canadian Tax Compliance Isolation" name="should isolate tax filing and compliance data" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Financial Data Isolation Tests › Organization-Specific Encryption Key Usage" name="should use organization-specific encryption keys for sensitive data" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Financial Data Isolation Tests › Organization-Specific Encryption Key Usage" name="should isolate API keys with organization-specific encryption" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Financial Data Isolation Tests › Cross-Tenant Financial Attack Prevention" name="should prevent financial data enumeration attacks" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Financial Data Isolation Tests › Cross-Tenant Financial Attack Prevention" name="should prevent cross-tenant invoice manipulation attacks" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Financial Data Isolation Tests › Cross-Tenant Financial Attack Prevention" name="should prevent cross-tenant payment processing attacks" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Financial Data Isolation Tests › Concurrent Multi-Tenant Financial Operations" name="should handle concurrent financial operations without cross-contamination" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Financial Workflow Integration Tests" errors="0" failures="5" skipped="0" timestamp="2025-10-04T08:07:01" time="0.635" tests="5">
+    <testcase classname="Financial Workflow Integration Tests › Complete Accounting Cycle: Quote → Invoice → Payment → Journal Entries → Financial Statements" name="should complete full accounting cycle with double-entry bookkeeping" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Workflow Integration Tests › Complete Accounting Cycle: Quote → Invoice → Payment → Journal Entries → Financial Statements" name="should handle complex Canadian tax scenarios" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Workflow Integration Tests › Complete Accounting Cycle: Quote → Invoice → Payment → Journal Entries → Financial Statements" name="should handle multi-currency transactions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Workflow Integration Tests › Financial Reporting and Analytics" name="should generate basic financial reports" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Workflow Integration Tests › Financial Reporting and Analytics" name="should track project profitability" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Customer Lifecycle Workflow Permissions Tests" errors="0" failures="11" skipped="0" timestamp="2025-10-04T08:07:01" time="1.001" tests="11">
+    <testcase classname="Customer Lifecycle Workflow Permissions Tests › Stage 1: Request Quote - Initial Customer Contact" name="should enforce proper permissions for quote request stage" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Customer Lifecycle Workflow Permissions Tests › Stage 1: Request Quote - Initial Customer Contact" name="should track customer lifecycle stage transitions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Customer Lifecycle Workflow Permissions Tests › Stage 2: Quote Estimated - Professional Quote Creation" name="should enforce BOOKKEEPER+ permissions for quote creation" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Customer Lifecycle Workflow Permissions Tests › Stage 2: Quote Estimated - Professional Quote Creation" name="should validate quote estimation workflow controls" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Customer Lifecycle Workflow Permissions Tests › Stage 3: Quote Accepted - Customer Commitment" name="should enforce USER+ permissions for quote acceptance" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Customer Lifecycle Workflow Permissions Tests › Stage 4: Appointment Scheduled - Project Planning" name="should enforce BOOKKEEPER+ permissions for appointment management" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Customer Lifecycle Workflow Permissions Tests › Stage 5: Invoice Generated - Billing Initiation" name="should enforce BOOKKEEPER+ permissions for invoice generation" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Customer Lifecycle Workflow Permissions Tests › Stage 6: Deposit Paid - Financial Commitment" name="should enforce USER+ permissions for payment processing" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Customer Lifecycle Workflow Permissions Tests › Stage 7: Work Begins - Project Execution" name="should enforce ADMIN+ permissions for project initiation" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Customer Lifecycle Workflow Permissions Tests › Stage 8: Project Completion - Final Billing and Closure" name="should enforce BOOKKEEPER+ permissions for project completion" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Customer Lifecycle Workflow Permissions Tests › End-to-End Workflow Permission Validation" name="should validate complete 8-stage workflow with proper role transitions" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Payment Integration Tests" errors="0" failures="16" skipped="0" timestamp="2025-10-04T08:07:02" time="0.644" tests="16">
+    <testcase classname="Payment Integration Tests › Stripe Payment Processing" name="should process complete Stripe payment flow" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Stripe Payment Processing" name="should handle Stripe payment failures" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Stripe Payment Processing" name="should handle partial payments via Stripe" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Stripe Payment Processing" name="should handle Stripe refunds" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › E-Transfer Payment Processing" name="should process e-transfer payment workflow" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › E-Transfer Payment Processing" name="should handle e-transfer timeout and cancellation" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Manual Payment Processing" name="should record manual cash payment" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Manual Payment Processing" name="should record manual cheque payment" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Manual Payment Processing" name="should handle bounced cheque" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Payment Reconciliation" name="should reconcile multiple payments for single invoice" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Payment Reconciliation" name="should handle overpayment scenarios" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Payment Reconciliation" name="should generate payment reconciliation report" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Payment Security and Validation" name="should validate payment amounts and prevent fraud" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Payment Security and Validation" name="should handle payment processor webhooks securely" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Payment Security and Validation" name="should prevent duplicate payment processing" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Integration Tests › Payment Analytics and Reporting" name="should generate comprehensive payment analytics" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Authentication and Authorization Integration Tests" errors="0" failures="19" skipped="0" timestamp="2025-10-04T08:07:03" time="0.644" tests="19">
+    <testcase classname="Authentication and Authorization Integration Tests › JWT Authentication Flow" name="should handle complete JWT lifecycle" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › JWT Authentication Flow" name="should handle token expiry correctly" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › JWT Authentication Flow" name="should handle invalid tokens" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › Role-Based Access Control (RBAC)" name="should enforce SUPER_ADMIN permissions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › Role-Based Access Control (RBAC)" name="should enforce ADMIN permissions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › Role-Based Access Control (RBAC)" name="should enforce MANAGER permissions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › Role-Based Access Control (RBAC)" name="should enforce ACCOUNTANT permissions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › Role-Based Access Control (RBAC)" name="should enforce EMPLOYEE permissions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › Role-Based Access Control (RBAC)" name="should enforce VIEWER permissions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › Session Management" name="should handle concurrent sessions for same user" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › Session Management" name="should handle session cleanup on user deactivation" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › Password Security" name="should enforce strong password requirements" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › Password Security" name="should handle password reset flow" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › Password Security" name="should handle account lockout on failed attempts" time="0.001">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › API Key Authentication" name="should authenticate with valid API key" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › API Key Authentication" name="should respect API key permissions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › API Key Authentication" name="should handle expired API keys" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › Authorization Edge Cases" name="should handle role changes during active session" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication and Authorization Integration Tests › Authorization Edge Cases" name="should handle organization access after user transfer" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Financial Role Permissions Integration Tests" errors="0" failures="10" skipped="0" timestamp="2025-10-04T08:07:04" time="0.637" tests="10">
+    <testcase classname="Financial Role Permissions Integration Tests › Financial Role Permission Matrix - Authentication Endpoints" name="should enforce proper access to authentication endpoints by role" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Role Permissions Integration Tests › Financial Role Permission Matrix - Authentication Endpoints" name="should enforce password change permissions correctly" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Role Permissions Integration Tests › Financial Role Permission Matrix - Customer Management Endpoints" name="should enforce customer management permissions by financial role hierarchy" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Role Permissions Integration Tests › Financial Role Permission Matrix - Payment Processing Endpoints" name="should enforce payment processing permissions with financial controls" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Role Permissions Integration Tests › Financial Role Permission Matrix - Payment Processing Endpoints" name="should enforce e-Transfer specific permissions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Role Permissions Integration Tests › Financial Role Permission Matrix - Financial Statements Endpoints" name="should enforce financial statements access with proper role hierarchy" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Role Permissions Integration Tests › Financial Role Permission Matrix - Financial Statements Endpoints" name="should enforce period locking permissions for financial statements" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Role Permissions Integration Tests › Role-Based Audit and Compliance Access" name="should enforce audit log access based on financial roles" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Role Permissions Integration Tests › Role-Based Audit and Compliance Access" name="should enforce data retention and compliance permissions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Role Permissions Integration Tests › API Key Permission Inheritance" name="should enforce API key permissions based on creating user role" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Error Handling and Recovery Integration Tests" errors="0" failures="17" skipped="0" timestamp="2025-10-04T08:07:04" time="0.638" tests="17">
+    <testcase classname="Error Handling and Recovery Integration Tests › Network Failure Simulation" name="should handle database connection timeouts gracefully" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Network Failure Simulation" name="should recover from temporary database unavailability" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Network Failure Simulation" name="should handle external service failures (Stripe simulation)" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Data Corruption Recovery" name="should detect and handle data integrity violations" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Data Corruption Recovery" name="should handle orphaned records recovery" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Data Corruption Recovery" name="should recover from transaction rollback scenarios" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Graceful Degradation Scenarios" name="should handle reduced functionality when external services fail" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Graceful Degradation Scenarios" name="should provide meaningful error messages to users" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Graceful Degradation Scenarios" name="should handle high load with appropriate backpressure" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Recovery Procedures" name="should support manual data recovery operations" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Recovery Procedures" name="should provide data export for backup/recovery" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Recovery Procedures" name="should handle system recovery after crashes" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Error Monitoring and Alerting" name="should log errors with sufficient detail for debugging" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Error Monitoring and Alerting" name="should handle cascading failures appropriately" time="0.001">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Error Monitoring and Alerting" name="should maintain audit trail during error conditions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Disaster Recovery Scenarios" name="should support point-in-time recovery" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Error Handling and Recovery Integration Tests › Disaster Recovery Scenarios" name="should handle data center failover simulation" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="API v1 Backwards Compatibility Tests" errors="0" failures="9" skipped="0" timestamp="2025-10-04T08:07:05" time="1.136" tests="9">
+    <testcase classname="API v1 Backwards Compatibility Tests › Legacy Endpoint Pattern Support" name="should support legacy /api/v1/resource patterns with role permissions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="API v1 Backwards Compatibility Tests › Legacy Endpoint Pattern Support" name="should maintain consistent response formats between legacy and multi-tenant patterns" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="API v1 Backwards Compatibility Tests › Permission Inheritance Models" name="should maintain hierarchical permissions across API versions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="API v1 Backwards Compatibility Tests › Permission Inheritance Models" name="should support contextual permissions for project and customer-specific access" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="API v1 Backwards Compatibility Tests › Role Migration and Upgrade Path" name="should support seamless role migration from v1 to multi-tenant" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="API v1 Backwards Compatibility Tests › Role Migration and Upgrade Path" name="should maintain session compatibility during role transitions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="API v1 Backwards Compatibility Tests › Error Code Preservation and Consistency" name="should maintain consistent HTTP status codes across API versions" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="API v1 Backwards Compatibility Tests › Error Code Preservation and Consistency" name="should provide consistent error messages and formats" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="API v1 Backwards Compatibility Tests › Feature Parity Validation" name="should maintain feature parity between API versions" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Organization Settings Customization Integration Tests" errors="0" failures="29" skipped="0" timestamp="2025-10-04T08:07:06" time="0.683" tests="29">
+    <testcase classname="Organization Settings Customization Integration Tests › Settings Initialization" name="should initialize settings for new organization" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Settings Initialization" name="should not allow viewers to initialize settings" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Invoice Settings Management" name="should get complete invoice settings" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Invoice Settings Management" name="should update invoice settings with full customization" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Invoice Settings Management" name="should validate color formats in settings" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Invoice Settings Management" name="should allow managers to update settings" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Invoice Settings Management" name="should not allow viewers to update settings" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Logo Management" name="should upload logo successfully" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Logo Management" name="should validate file types for logo upload" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Logo Management" name="should validate file size for logo upload" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Logo Management" name="should remove logo successfully" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Logo Management" name="should not allow viewers to manage logos" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Tax Settings Management" name="should get current tax settings" time="0.001">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Tax Settings Management" name="should disable taxes organization-wide" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Tax Settings Management" name="should enable taxes organization-wide" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Tax Settings Management" name="should validate boolean values for tax settings" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Tax Settings Management" name="should allow managers to update tax settings" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Tax Settings Management" name="should not allow viewers to update tax settings" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Default Template and Style Management" name="should set default template and style" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Default Template and Style Management" name="should validate template and style IDs" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Default Template and Style Management" name="should allow managers to set defaults" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Complex Branding Scenarios" name="should handle logo display vs organization name preference" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Complex Branding Scenarios" name="should handle comprehensive display settings" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Complex Branding Scenarios" name="should handle custom CSS injection" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Integration with PDF Generation" name="should apply settings to PDF generation workflow" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Integration with PDF Generation" name="should respect tax disable setting in PDF generation" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Error Handling and Edge Cases" name="should handle missing organization gracefully" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Error Handling and Edge Cases" name="should handle malformed JSON in display settings" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Organization Settings Customization Integration Tests › Error Handling and Edge Cases" name="should handle concurrent settings updates" time="0">
+      <failure></failure>
+      <failure>Error: Test environment not initialized. This should be called after global beforeAll.
+    at setupTestApp (/home/eric/Projects/accounting-api/tests/integration/setup.ts:124:11)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/organization-settings-customization.test.ts:24:39)
+    at Promise.then.completed (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusHook (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:281:40)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:95:7)
+    at _runTestsForDescribeBlock (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/eric/Projects/accounting-api/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/eric/Projects/accounting-api/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Authentication &amp; Authorization Validation" errors="0" failures="4" skipped="0" timestamp="2025-10-04T08:07:07" time="0.669" tests="4">
+    <testcase classname="Authentication &amp; Authorization Validation" name="should authenticate with test token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication &amp; Authorization Validation" name="should validate organization access with test token" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication &amp; Authorization Validation" name="should reject requests without authentication" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Authentication &amp; Authorization Validation" name="test token should have isTestToken flag" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Financial Approval Workflow Tests" errors="0" failures="8" skipped="0" timestamp="2025-10-04T08:07:08" time="0.643" tests="8">
+    <testcase classname="Financial Approval Workflow Tests › Monetary Threshold Approval Matrix" name="should enforce approval thresholds based on transaction amounts" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Approval Workflow Tests › Monetary Threshold Approval Matrix" name="should enforce invoice approval thresholds" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Approval Workflow Tests › Multi-Level Approval Workflows" name="should enforce sequential approval requirements" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Approval Workflow Tests › Multi-Level Approval Workflows" name="should handle approval delegation and temporary authority" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Approval Workflow Tests › Escalation Path and Timeout Handling" name="should handle approval timeouts and automatic escalation" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Approval Workflow Tests › Escalation Path and Timeout Handling" name="should enforce emergency approval procedures" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Approval Workflow Tests › Compliance and Audit Trail Validation" name="should maintain comprehensive approval audit trails" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Financial Approval Workflow Tests › Compliance and Audit Trail Validation" name="should enforce segregation of duties in approval processes" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Multi-Tenant Data Isolation Integration Tests" errors="0" failures="6" skipped="0" timestamp="2025-10-04T08:07:08" time="0.652" tests="6">
+    <testcase classname="Multi-Tenant Data Isolation Integration Tests › Complete Data Isolation Between Organizations" name="should enforce complete data isolation between tenants" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Data Isolation Integration Tests › Complete Data Isolation Between Organizations" name="should prevent privilege escalation across tenants" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Data Isolation Integration Tests › Complete Data Isolation Between Organizations" name="should handle concurrent multi-tenant operations safely" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Data Isolation Integration Tests › Organization Management and Lifecycle" name="should handle organization deactivation and data retention" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Data Isolation Integration Tests › Organization Management and Lifecycle" name="should enforce organization-specific resource limits" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Multi-Tenant Data Isolation Integration Tests › Data Migration and Export" name="should export organization data without cross-tenant contamination" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Payment Processing Integration Tests" errors="0" failures="10" skipped="0" timestamp="2025-10-04T08:07:09" time="1.095" tests="10">
+    <testcase classname="Payment Processing Integration Tests › Stripe Payment Processing Workflows" name="should process complete Stripe payment lifecycle with webhooks" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Processing Integration Tests › Stripe Payment Processing Workflows" name="should handle Stripe payment failures and retries" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Processing Integration Tests › Stripe Payment Processing Workflows" name="should handle Stripe dispute and chargeback processing" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Processing Integration Tests › e-Transfer Payment Processing Workflows" name="should process complete e-Transfer payment lifecycle" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Processing Integration Tests › e-Transfer Payment Processing Workflows" name="should handle e-Transfer security and fraud detection" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Processing Integration Tests › Payment Processing Security and Compliance" name="should enforce PCI compliance for card data handling" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Processing Integration Tests › Payment Processing Security and Compliance" name="should implement proper payment authorization controls" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Processing Integration Tests › Payment Processing Security and Compliance" name="should maintain comprehensive audit trails for all payment activities" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Processing Integration Tests › Payment Processing Performance and Reliability" name="should handle high-volume payment processing efficiently" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Payment Processing Integration Tests › Payment Processing Performance and Reliability" name="should implement payment retry and recovery mechanisms" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Data Integrity and Consistency Integration Tests" errors="0" failures="12" skipped="0" timestamp="2025-10-04T08:07:10" time="0.674" tests="12">
+    <testcase classname="Data Integrity and Consistency Integration Tests › Database Transaction Integrity" name="should maintain ACID properties during complex operations" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Data Integrity and Consistency Integration Tests › Database Transaction Integrity" name="should handle concurrent operations without data corruption" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Data Integrity and Consistency Integration Tests › Foreign Key Constraint Validation" name="should enforce referential integrity across all entities" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Data Integrity and Consistency Integration Tests › Foreign Key Constraint Validation" name="should handle cascading deletes properly" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Data Integrity and Consistency Integration Tests › Data Validation Consistency" name="should validate business rules across operations" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Data Integrity and Consistency Integration Tests › Data Validation Consistency" name="should maintain numerical precision in financial calculations" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Data Integrity and Consistency Integration Tests › Audit Trail Completeness" name="should create complete audit trail for all operations" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Data Integrity and Consistency Integration Tests › Audit Trail Completeness" name="should track data changes with before/after snapshots" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Data Integrity and Consistency Integration Tests › Data Consistency Across Services" name="should maintain consistency between quotes and invoices" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Data Integrity and Consistency Integration Tests › Data Consistency Across Services" name="should maintain payment-invoice balance integrity" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Data Integrity and Consistency Integration Tests › Data Consistency Across Services" name="should handle complex multi-entity consistency scenarios" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Data Integrity and Consistency Integration Tests › Database Performance and Optimization" name="should maintain query performance with large datasets" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Encryption System Tests" errors="0" failures="49" skipped="0" timestamp="2025-10-04T08:07:11" time="0.67" tests="49">
+    <testcase classname="Encryption System Tests › Key Management" name="should generate organization-specific keys" time="0.001">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Key Management" name="should generate deterministic keys for same organization" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Key Management" name="should validate key properties" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Key Management" name="should support key rotation" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Key Management" name="should export and import keys securely" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Field Encryption" name="should encrypt and decrypt various data types" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Field Encryption" name="should use different encryption for probabilistic mode" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Field Encryption" name="should use same encryption for deterministic mode" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Field Encryption" name="should handle batch encryption/decryption" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Field Encryption" name="should validate field formats" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Field Encryption" name="should handle empty and null values gracefully" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Searchable Encryption" name="should index fields for search" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Searchable Encryption" name="should perform partial search" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Searchable Encryption" name="should check bloom filter for privacy-preserving search" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Searchable Encryption" name="should clear search caches" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Encryption Middleware" name="should validate configuration" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Encryption Middleware" name="should identify encrypted fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Encryption Middleware" name="should get encrypted fields for model" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Encryption Middleware" name="should generate search conditions for encrypted fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Key Rotation" name="should schedule key rotation" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Key Rotation" name="should handle emergency key rotation" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Key Rotation" name="should get rotation statistics" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Key Rotation" name="should manage rotation policies" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Audit Logging" name="should log encryption events" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Audit Logging" name="should generate audit summary" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Audit Logging" name="should generate compliance reports" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Audit Logging" name="should verify audit log integrity" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Performance Optimization" name="should cache encryption operations" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Performance Optimization" name="should perform batch operations efficiently" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Performance Optimization" name="should run performance benchmarks" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Performance Optimization" name="should provide cache statistics" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Performance Optimization" name="should clear caches" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Data Migration" name="should create migration plan" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Data Migration" name="should start migration in dry-run mode" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Data Migration" name="should get active migrations" time="0.001">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Security Tests" name="should use different keys for different organizations" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Security Tests" name="should not decrypt with wrong organization key" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Security Tests" name="should handle tampered encrypted data" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Security Tests" name="should generate cryptographically secure random values" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Security Tests" name="should securely delete keys" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Error Handling" name="should handle invalid encryption options gracefully" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Error Handling" name="should handle corrupted encrypted data" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Error Handling" name="should validate key parameters" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Integration Tests" name="should work end-to-end with Prisma middleware" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Integration Tests" name="should maintain data integrity across operations" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Encryption System Tests › Integration Tests" name="should handle concurrent operations safely" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Stress Tests" name="should handle large data encryption efficiently" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Stress Tests" name="should handle high volume of operations" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Stress Tests" name="should maintain memory efficiency" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Performance and Security Integration Tests" errors="0" failures="20" skipped="0" timestamp="2025-10-04T08:07:11" time="0.649" tests="20">
+    <testcase classname="Performance and Security Integration Tests › Rate Limiting and DDoS Protection" name="should enforce rate limits on login attempts" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Rate Limiting and DDoS Protection" name="should enforce API rate limits per user" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Rate Limiting and DDoS Protection" name="should handle concurrent user sessions efficiently" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Input Validation and SQL Injection Prevention" name="should prevent SQL injection in search parameters" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Input Validation and SQL Injection Prevention" name="should sanitize and validate input data" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Input Validation and SQL Injection Prevention" name="should validate email formats and prevent injection" time="0.001">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Input Validation and SQL Injection Prevention" name="should prevent path traversal attacks" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Authentication Security" name="should prevent brute force attacks on passwords" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Authentication Security" name="should enforce strong password requirements" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Authentication Security" name="should validate JWT tokens properly" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Data Privacy and Encryption" name="should encrypt sensitive customer data" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Data Privacy and Encryption" name="should mask sensitive data in logs and responses" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Performance Benchmarking" name="should handle high-volume customer operations efficiently" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Performance Benchmarking" name="should maintain query performance with pagination" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Performance Benchmarking" name="should handle complex search queries efficiently" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Performance Benchmarking" name="should handle memory usage efficiently during large operations" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Security Headers and CORS" name="should include proper security headers" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Security Headers and CORS" name="should handle CORS properly" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Resource Usage and Limits" name="should enforce request size limits" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Performance and Security Integration Tests › Resource Usage and Limits" name="should handle file upload size limits" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Customer Lifecycle Integration Tests" errors="0" failures="4" skipped="0" timestamp="2025-10-04T08:07:12" time="0.647" tests="4">
+    <testcase classname="Customer Lifecycle Integration Tests › Complete Customer Journey: Quote → Invoice → Payment → Project" name="should complete full customer lifecycle workflow" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Customer Lifecycle Integration Tests › Customer Onboarding Workflow" name="should handle complete customer onboarding process" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Customer Lifecycle Integration Tests › Quote Management Workflow" name="should handle quote lifecycle with revisions and approvals" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Customer Lifecycle Integration Tests › Multi-Project Customer Management" name="should handle customer with multiple concurrent projects" time="0">
+      <failure></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Encryption Service Integration Tests" errors="0" failures="17" skipped="0" timestamp="2025-10-04T08:07:13" time="0.6" tests="17">
+    <testcase classname="Encryption Service Integration Tests › Field-level Encryption" name="should encrypt and decrypt text data" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Field-level Encryption" name="should encrypt and decrypt JSON data" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Field-level Encryption" name="should encrypt and decrypt buffer data" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Field-level Encryption" name="should handle searchable encryption" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Field-level Encryption" name="should enforce organization isolation" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Document Encryption" name="should generate document encryption keys" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Document Encryption" name="should encrypt and decrypt document content" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Document Encryption" name="should handle large binary files" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Document Encryption" name="should prevent cross-document decryption" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Key Management" name="should handle key versioning" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Key Management" name="should validate key material security" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Error Handling and Edge Cases" name="should handle empty data gracefully" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Error Handling and Edge Cases" name="should reject invalid ciphertext" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Error Handling and Edge Cases" name="should reject tampered ciphertext" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Error Handling and Edge Cases" name="should handle special characters and unicode" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Performance and Concurrency" name="should handle concurrent encryption operations" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+    <testcase classname="Encryption Service Integration Tests › Performance and Concurrency" name="should maintain performance for bulk operations" time="0">
+      <failure></failure>
+      <failure>Error: ENOENT: no such file or directory, open &apos;/home/eric/Projects/accounting-api/tests/fixtures/test-document.txt&apos;
+    at open (node:internal/fs/promises:641:25)
+    at Object.readFile (node:internal/fs/promises:1245:14)
+    at Object.&lt;anonymous&gt; (/home/eric/Projects/accounting-api/tests/integration/encryption-service.test.ts:47:22)</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Business Templates Integration Tests" errors="0" failures="46" skipped="0" timestamp="2025-10-04T08:07:13" time="0.783" tests="46">
+    <testcase classname="Business Templates Integration Tests › Template Retrieval" name="should get all available templates" time="0.006">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Template Retrieval" name="should have all expected industry categories" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Template Retrieval" name="should get template summaries" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Template Retrieval" name="should get specific template by category" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Template Retrieval" name="should throw error for invalid category" time="0.005">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Template Retrieval" name="should be case-insensitive for category lookup" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Template Retrieval" name="should check if category has template" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Template Retrieval" name="should get available categories" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › HVAC Template Validation" name="should validate complete HVAC fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › HVAC Template Validation" name="should detect missing required HVAC fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › HVAC Template Validation" name="should validate HVAC field types" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › HVAC Template Validation" name="should warn about unknown HVAC fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › PLUMBING Template Validation" name="should validate complete PLUMBING fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › PLUMBING Template Validation" name="should detect missing required PLUMBING fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › ELECTRICAL Template Validation" name="should validate complete ELECTRICAL fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › ELECTRICAL Template Validation" name="should validate ELECTRICAL number ranges" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › LANDSCAPING Template Validation" name="should validate complete LANDSCAPING fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › LANDSCAPING Template Validation" name="should validate LANDSCAPING multiselect fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › CLEANING Template Validation" name="should validate complete CLEANING fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › CONSTRUCTION Template Validation" name="should validate complete CONSTRUCTION fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › ROOFING Template Validation" name="should validate complete ROOFING fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › GENERAL Template Validation" name="should validate GENERAL category with minimal fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Field Type Validation" name="should validate text fields" time="0.001">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Field Type Validation" name="should validate number fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Field Type Validation" name="should validate select fields with options" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Field Type Validation" name="should reject invalid select options" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Field Type Validation" name="should validate date fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Field Type Validation" name="should validate multiselect/array fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Conditional Fields" name="should handle conditional field visibility" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Field Constraints" name="should validate minimum values" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Field Constraints" name="should validate maximum values" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Field Constraints" name="should validate text length constraints" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Sanitization" name="should sanitize HTML in text fields" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Sanitization" name="should handle special characters" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Empty and Null Values" name="should handle empty strings" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Empty and Null Values" name="should handle null values" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Empty and Null Values" name="should handle undefined values" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Template Structure" name="all templates should have consistent structure" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Template Structure" name="all templates should have at least one field" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Template Structure" name="field types should be valid" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Template Structure" name="select fields should have options" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Integration with Intake Workflow" name="should validate full HVAC workflow data" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Integration with Intake Workflow" name="should handle mixed valid and invalid data" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Integration with Intake Workflow" name="should provide helpful error messages" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Performance" name="should validate quickly with large dataset" time="0">
+      <failure></failure>
+    </testcase>
+    <testcase classname="Business Templates Integration Tests › Performance" name="should handle all templates efficiently" time="0">
       <failure></failure>
     </testcase>
   </testsuite>

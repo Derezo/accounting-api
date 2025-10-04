@@ -1,4 +1,4 @@
-import { Invoice, InvoiceItem } from '@prisma/client';
+import { Invoice, InvoiceLineItem } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { InvoiceStatus } from '../types/enums';
 import { auditService } from './audit.service';
@@ -27,10 +27,10 @@ interface CreateInvoiceData {
   depositRequired: Decimal | number;
   terms?: string;
   notes?: string;
-  items: CreateInvoiceItemData[];
+  lineItems: CreateInvoiceLineItemData[];
 }
 
-interface CreateInvoiceItemData {
+interface CreateInvoiceLineItemData {
   productId?: string;
   serviceId?: string;
   description: string;
@@ -47,7 +47,7 @@ interface UpdateInvoiceData {
   depositRequired?: Decimal | number;
   terms?: string;
   notes?: string;
-  items?: CreateInvoiceItemData[];
+  lineItems?: CreateInvoiceLineItemData[];
 }
 
 interface InvoiceFilters {
@@ -72,7 +72,7 @@ export class InvoiceService {
     data: CreateInvoiceData,
     organizationId: string,
     auditContext: { userId: string; ipAddress?: string; userAgent?: string }
-  ): Promise<Invoice & { items: InvoiceItem[]; customer?: unknown; quote?: unknown }> {
+  ): Promise<Invoice & { lineItems: InvoiceLineItem[]; customer?: unknown; quote?: unknown }> {
     // Verify customer exists and belongs to organization
     const customer = await prisma.customer.findFirst({
       where: { id: data.customerId, organizationId, deletedAt: null }
@@ -92,7 +92,7 @@ export class InvoiceService {
           organizationId,
           deletedAt: null
         },
-        include: { items: true }
+        include: { lineItems: true }
       });
 
       if (!quote) {
@@ -114,7 +114,7 @@ export class InvoiceService {
     }
 
     // Validate deposit requirement
-    const { subtotal, taxAmount, total } = this.calculateTotals(data.items);
+    const { subtotal, taxAmount, total } = this.calculateTotals(data.lineItems);
     const depositRequired = this.toDecimal(data.depositRequired);
 
     if (depositRequired.lt(0)) {
@@ -150,17 +150,18 @@ export class InvoiceService {
           currency: data.currency || 'CAD',
           exchangeRate: data.exchangeRate || 1.0,
           subtotal,
-          taxAmount,
+          taxTotal: taxAmount,
           total,
           depositRequired,
           amountPaid: 0,
+          amountDue: total,
           balance,
-          terms: data.terms,
+          paymentTerms: data.terms,
           notes: data.notes,
           createdBy: auditContext.userId
         },
         include: {
-          items: true,
+          lineItems: true,
           customer: {
             include: {
               person: true,
@@ -172,15 +173,16 @@ export class InvoiceService {
       });
 
       // Create invoice items
-      for (let i = 0; i < data.items.length; i++) {
-        const item = data.items[i];
+      for (let i = 0; i < data.lineItems.length; i++) {
+        const item = data.lineItems[i];
         if (!item) continue;
 
         const itemCalculations = this.calculateItemTotals(item);
 
-        await tx.invoiceItem.create({
+        await tx.invoiceLineItem.create({
           data: {
             invoiceId: newInvoice.id,
+            type: item.productId ? 'PRODUCT' : (item.serviceId ? 'SERVICE' : 'CUSTOM'),
             productId: item.productId || null,
             serviceId: item.serviceId || null,
             description: item.description,
@@ -190,7 +192,7 @@ export class InvoiceService {
             taxRate: item.taxRate,
             subtotal: itemCalculations.subtotal,
             discountAmount: itemCalculations.discountAmount,
-            taxAmount: itemCalculations.taxAmount,
+            taxTotal: itemCalculations.taxAmount,
             total: itemCalculations.total,
             sortOrder: i + 1
           }
@@ -201,7 +203,7 @@ export class InvoiceService {
       const completeInvoice = await tx.invoice.findUnique({
         where: { id: newInvoice.id },
         include: {
-          items: true,
+          lineItems: true,
           customer: {
             include: {
               person: true,
@@ -261,7 +263,7 @@ export class InvoiceService {
       terms?: string;
       notes?: string;
     }
-  ): Promise<Invoice & { items: InvoiceItem[]; customer?: unknown; quote?: unknown }> {
+  ): Promise<Invoice & { lineItems: InvoiceLineItem[]; customer?: unknown; quote?: unknown }> {
     // Get the quote with items
     const quote = await prisma.quote.findFirst({
       where: {
@@ -270,7 +272,7 @@ export class InvoiceService {
         deletedAt: null
       },
       include: {
-        items: true,
+        lineItems: true,
         customer: true
       }
     });
@@ -284,7 +286,7 @@ export class InvoiceService {
     }
 
     // Convert quote items to invoice items
-    const invoiceItems: CreateInvoiceItemData[] = quote.items.map(item => ({
+    const invoiceItems: CreateInvoiceLineItemData[] = quote.lineItems.map(item => ({
       productId: item.productId || undefined,
       serviceId: item.serviceId || undefined,
       description: item.description,
@@ -299,7 +301,7 @@ export class InvoiceService {
     const defaultDeposit = quote.total.mul(defaultDepositPercentage);
 
     // Get customer payment terms for due date
-    const paymentTerms = quote.customer.paymentTerms || 15;
+    const paymentTerms = parseInt(quote.customer.paymentTerms || '15') || 15;
     const defaultDueDate = new Date();
     defaultDueDate.setDate(defaultDueDate.getDate() + paymentTerms);
 
@@ -310,7 +312,7 @@ export class InvoiceService {
       depositRequired: options?.depositRequired ? new Decimal(options.depositRequired) : defaultDeposit,
       terms: options?.terms || quote.terms || undefined,
       notes: options?.notes || quote.notes || undefined,
-      items: invoiceItems
+      lineItems: invoiceItems
     };
 
     return this.createInvoice(invoiceData, organizationId, auditContext);
@@ -320,7 +322,7 @@ export class InvoiceService {
     id: string,
     organizationId: string,
     auditContext: { userId: string; ipAddress?: string; userAgent?: string }
-  ): Promise<(Invoice & { items: InvoiceItem[]; customer?: unknown; quote?: unknown }) | null> {
+  ): Promise<(Invoice & { lineItems: InvoiceLineItem[]; customer?: unknown; quote?: unknown }) | null> {
     const invoice = await prisma.invoice.findFirst({
       where: {
         id,
@@ -328,7 +330,7 @@ export class InvoiceService {
         deletedAt: null
       },
       include: {
-        items: {
+        lineItems: {
           include: {
             product: true,
             service: true
@@ -365,14 +367,14 @@ export class InvoiceService {
     data: UpdateInvoiceData,
     organizationId: string,
     auditContext: { userId: string; ipAddress?: string; userAgent?: string }
-  ): Promise<Invoice & { items: InvoiceItem[] }> {
+  ): Promise<Invoice & { lineItems: InvoiceLineItem[] }> {
     const existingInvoice = await prisma.invoice.findFirst({
       where: {
         id,
         organizationId,
         deletedAt: null
       },
-      include: { items: true }
+      include: { lineItems: true }
     });
 
     if (!existingInvoice) {
@@ -387,10 +389,10 @@ export class InvoiceService {
       dueDate?: Date;
       currency?: string;
       exchangeRate?: number;
-      terms?: string;
+      paymentTerms?: string;
       notes?: string;
       subtotal?: Decimal;
-      taxAmount?: Decimal;
+      taxTotal?: Decimal;
       total?: Decimal;
       depositRequired?: Decimal;
       balance?: Decimal;
@@ -402,15 +404,15 @@ export class InvoiceService {
     if (data.dueDate !== undefined) updatedData.dueDate = data.dueDate;
     if (data.currency !== undefined) updatedData.currency = data.currency;
     if (data.exchangeRate !== undefined) updatedData.exchangeRate = data.exchangeRate;
-    if (data.terms !== undefined) updatedData.terms = data.terms;
+    if (data.terms !== undefined) updatedData.paymentTerms = data.terms;
     if (data.notes !== undefined) updatedData.notes = data.notes;
 
     // If items are being updated, recalculate totals
-    if (data.items) {
-      const { subtotal, taxAmount, total } = this.calculateTotals(data.items);
+    if (data.lineItems) {
+      const { subtotal, taxAmount, total } = this.calculateTotals(data.lineItems);
 
       updatedData.subtotal = subtotal;
-      updatedData.taxAmount = taxAmount;
+      updatedData.taxTotal = taxAmount;
       updatedData.total = total;
 
       // Recalculate balance based on new total and existing amountPaid
@@ -452,11 +454,11 @@ export class InvoiceService {
       });
 
       // If items are being updated, use versioning to preserve history
-      if (data.items) {
+      if (data.lineItems) {
         // COMPLETE FIX: Implement proper versioning for financial record immutability
         // Instead of deleting items, we create new versions and mark old ones as superseded
 
-        const existingItems = await tx.invoiceItem.findMany({
+        const existingItems = await tx.invoiceLineItem.findMany({
           where: {
             invoiceId: id,
             isLatestVersion: true
@@ -465,7 +467,7 @@ export class InvoiceService {
         });
 
         // Mark ALL existing items as superseded first
-        await tx.invoiceItem.updateMany({
+        await tx.invoiceLineItem.updateMany({
           where: {
             invoiceId: id,
             isLatestVersion: true
@@ -477,17 +479,18 @@ export class InvoiceService {
         });
 
         // Create new versions for all items
-        for (let i = 0; i < data.items.length; i++) {
-          const item = data.items[i];
+        for (let i = 0; i < data.lineItems.length; i++) {
+          const item = data.lineItems[i];
           if (!item) continue;
 
           const itemCalculations = this.calculateItemTotals(item);
           const oldItem = existingItems[i]; // Get corresponding old item if it exists
 
           // Create new version
-          const newItem = await tx.invoiceItem.create({
+          const newItem = await tx.invoiceLineItem.create({
             data: {
               invoiceId: id,
+              type: item.productId ? 'PRODUCT' : (item.serviceId ? 'SERVICE' : 'CUSTOM'),
               productId: item.productId || null,
               serviceId: item.serviceId || null,
               description: item.description,
@@ -497,7 +500,7 @@ export class InvoiceService {
               taxRate: item.taxRate,
               subtotal: itemCalculations.subtotal,
               discountAmount: itemCalculations.discountAmount,
-              taxAmount: itemCalculations.taxAmount,
+              taxTotal: itemCalculations.taxAmount,
               total: itemCalculations.total,
               sortOrder: i + 1,
               version: oldItem ? oldItem.version + 1 : 1,
@@ -507,7 +510,7 @@ export class InvoiceService {
 
           // Link old item to new version if it exists
           if (oldItem) {
-            await tx.invoiceItem.update({
+            await tx.invoiceLineItem.update({
               where: { id: oldItem.id },
               data: {
                 supersededById: newItem.id
@@ -521,7 +524,7 @@ export class InvoiceService {
       return await tx.invoice.findUnique({
         where: { id },
         include: {
-          items: {
+          lineItems: {
             where: { isLatestVersion: true }
           }
         }
@@ -550,7 +553,7 @@ export class InvoiceService {
   async listInvoices(
     filters: InvoiceFilters,
     organizationId: string
-  ): Promise<{ invoices: (Invoice & { items: InvoiceItem[]; customer?: unknown })[]; total: number }> {
+  ): Promise<{ invoices: (Invoice & { lineItems: InvoiceLineItem[]; customer?: unknown })[]; total: number }> {
     const where: any = { organizationId, deletedAt: null };
 
     if (filters.customerId) {
@@ -625,7 +628,7 @@ export class InvoiceService {
         take: filters.limit || 50,
         skip: filters.offset || 0,
         include: {
-          items: true,
+          lineItems: true,
           customer: {
             include: {
               person: true,
@@ -654,7 +657,7 @@ export class InvoiceService {
       include: {
         customer: true,
         organization: true,
-        items: true
+        lineItems: true
       }
     });
 
@@ -950,11 +953,11 @@ export class InvoiceService {
     };
   }
 
-  private calculateTotals(items: CreateInvoiceItemData[]): { subtotal: Decimal; taxAmount: Decimal; total: Decimal } {
+  private calculateTotals(lineItems: CreateInvoiceLineItemData[]): { subtotal: Decimal; taxAmount: Decimal; total: Decimal } {
     let subtotal = new Decimal(0);
     let taxAmount = new Decimal(0);
 
-    for (const item of items) {
+    for (const item of lineItems) {
       const itemCalculations = this.calculateItemTotals(item);
       subtotal = subtotal.plus(itemCalculations.subtotal);
       taxAmount = taxAmount.plus(itemCalculations.taxAmount);
@@ -969,7 +972,7 @@ export class InvoiceService {
     };
   }
 
-  private calculateItemTotals(item: CreateInvoiceItemData): {
+  private calculateItemTotals(item: CreateInvoiceLineItemData): {
     subtotal: Decimal;
     discountAmount: Decimal;
     taxAmount: Decimal;
